@@ -466,6 +466,7 @@ type Package struct {
 	SwigFiles         []string // .swig files
 	SwigCXXFiles      []string // .swigcxx files
 	SysoFiles         []string // .syso system object files to add to archive
+	WoFiles           []string // .wo source files
 
 	// Cgo directives
 	CgoCFLAGS    []string // Cgo CFLAGS directives
@@ -1102,6 +1103,8 @@ func fileListForExt(p *Package, ext string) *[]string {
 		return &p.SwigCXXFiles
 	case ".syso":
 		return &p.SysoFiles
+	case ".wo":
+		return &p.WoFiles
 	}
 	return nil
 }
