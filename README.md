@@ -1,30 +1,49 @@
 ### Wo is a fork of Go
 
-Wo offers an alternative syntax and functionality to the Go programming language. It aims to be interoperable with Go.
+The Wo language offers an alternative syntax and functionality to the Go programming language. It aims to be interoperable with Go.
 
-Here is one example.
+Here's one example:
 
-Go:
 ```go
-r, err := os.Open(fileName)
+f, err := os.Open("open_me.go")
 if err != nil {
   return err
 }
 ```
-Wo:
+in Wo would be:
 ```go
-r = os!Open(fileName)
+file = os!Open("open_me.go")
 ```
-as well as
+or
 ```go
-r, log("Oh no: ", err) = os.Open(fileName)
+file, log("Oh no: ", err) = os.Open(fileName)
 ```
 
-Besides syntactical and formatting difference, it also offers a functional difference, notably the `set`:
+The point of these features is to drop the bantering about the theories of when to boilerplate or how to be readable, and to just try it out to really see what works well before judgement.
+
+Wo also:
+- Supplies native string and slice operations like `==`
+- Doesn't allow keyword or import overloading like `var int int = 1` and `rune := 'W'`
+- Doesn't prefer shortenings like `f` for `file` or function names like `SprintF` for `ConcatFormat`
+- Separates the usage of `var` and `:=` amongst initializing, shadowing, and setting variables
+- Doesn't allow undeclared variables / "zero values"
+- Warns about unused variables instead of giving an error (then compiles them away)
+- Allow function overloading
+- Plans to do something about null checking somehow in the future (e.g. nonnull or option)
+- Will still commit to universal formatting
+- Makes you say "woah"
+
+To justify these decisions, I provide a much deeper analysis of the design at [err.nil](https://err.nil/)
+
+
+Besides syntactical and formatting difference, it also offers functional differences such as `set`:
 
 ```go
 map... etc.
 ```
+
+`set` is meant to be more optimized than any personal implementations using map.
+
 
 ### Trademark disclaimer
 
