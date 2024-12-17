@@ -42,7 +42,7 @@ Wo also...
   - *MAYBE* make `_, val = f()` redundant by accessing only specific values from multi-return values -> `val = f()` where `val` matches the name in `func f() (other, val)` unless it is returning an `error`, maybe needing something like `<=` when that happens
   - *MAYBE* removing **mixing shadowed** and initialized variable declarations together
   - separating the usage of **`var`, `:=`, and `=`** amongst initializing, shadowing, and setting variables without any overlapping functionality
-  - *MAYBE* use `=` for initialization and setting, requiring `:=` for shadowing (but not `for range`), and then use **`int i = 5`** (good old C) syntax for initializing with `var i = 5` for vague untyped variables (or just remove untyped variables altogether)
+  - *MAYBE* use `=` for initialization and setting, requiring `:=` for shadowing (but not `for range`), and then use **`int i = 5`** (good old C) syntax for initializing with `var i = 5` for vague untyped variables (or just remove untyped variables syntactically)
 - *MAYBE* switch type with the name of parameters, put the return types before the function, remove `func`, use `errable`, and generic types before the fuction name like `func (c C*) f[A rune](a int) (float32, error) {}` to `float32 (C* c) [rune A] f(int a) errable {}` or arrow style, `(C* c) [rune A] f(int a) -> float32 | error {}` (or `!float32`)
   - and *MAYBE* do similarly for function types: `var f func(func(float64) int) string` for `string func(int func(float64)) f`, `string f(int _(float64))`, or `(float64 -> int) -> string f`
 - Uses `interface A {}`, as well as `struct B {}`, unlike `type A interface {}`
@@ -69,13 +69,6 @@ I'd rather `wo` were a lite CLI command that just uses the Go compiler rather th
 
 ### Code example
 
-test table
-|invalid|✔️|
-|---------|--------|
-|`interface{}` |`<>`|
-|`interface{func() int}` |`<int _()>` |
-|`var int int`|No keyword overloading|
-
 ```go
 import { "strings" }
 type FilePath interface {
@@ -94,9 +87,8 @@ func runProgram() string {
   }
   return output
 }
-map[FilePath, string] fs = {"/app/host": "server.ts", "/", "Main.java"}
+var fs = map[FilePath]string{"/app/host": "server.ts", "/", "Main.java"}
 func runProgramO(dir interface{string|url}) (*string, error) {
-    dir := strings.ReplaceAll(dir, "/", "\\")
     f, ok = fs[dir]
     if (!ok) {
       return nil, errors.New("invalid filepath")
@@ -119,18 +111,16 @@ func runProgramO(dir interface{string|url}) (*string, error) {
 ```
 a possible design for Wo:
 ```c
-string? runProgram(<string|url> directory) errable { // members ordered by relevancy
-    directory := directory.replaceAll("/", "\\")
-    fileName, if(ok) = runnableFiles[directory] {
-      *File reader = os!Open(fileName)
-      defer reader!Close()
-      reader!Sync()
-      Program program = myCompiler.build(reader)
-      string directory := program.outputPath() // shadowing
-      return directory // converts it to some(string) and error as nil/none
-    } else {
+string? runProgram(<string|url> directory) errable { // members reversed to order by relevancy
+    fileName, if(!ok) = runnableFiles[directory] {
       return errors.New("invalid filepath") // like throw
     }
+    *File reader = os!Open(fileName)
+    defer reader!Close()
+    reader!Sync()
+    Program program = myCompiler.build(reader)
+    string directory := program.outputPath() // shadowing
+    return directory // converts it to some(string) and error as nil/none
 }
 map[FilePath, string] runnableFiles = {"/app/host": "server.ts", "/", "Main.java"}
 string runProgram() {
@@ -147,6 +137,17 @@ interface FilePath {
   string | url
 }
 ```
+
+Again, the types before variable names is TBD. It isn't really a problem, but just fits with other syntax choices.
+
+|go|wo|
+|---------|--------|
+|<pre>var fs = map[FilePath]string</pre>|<pre>map[FilePath, string] runnableFiles</pre>|
+|<pre>func runProgramO(dir interface{string:url}) (*string, error) {</pre>|<pre>string? runProgram(<string:url> directory) errable {</pre>|
+|<pre>&emsp;f, ok = fs[dir]<br>&emsp;if (!ok) {<br>&emsp;&emsp;return nil, errors.New("invalid filepath")<br>&emsp;}</pre>|<pre>&emsp;fileName, if(!ok) = runnableFiles[directory] {<br>&emsp;&emsp;throw error("invalid filepath")<br>&emsp;}<br><br></pre>|
+|<pre>&emsp;r, err := os.Open(f)<br>&emsp;if err != nil {<br>&emsp;&emsp;return nil, err`<br>&emsp;}|<pre>&emsp;*File reader = os!Open(fileName)<br><br><br></pre>|
+|<pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>|<pre>&emsp;defer reader!Close()<br><br><br><br></pre>|
+|<pre>type Program struct {<br>&emsp;executable [...]byte<br>}<br>func (p Program*) output() string {<br>&emsp;return p.executable[:strings.LastIndex(p.executable, ".exe"))<br>}</pre>|<pre>struct Program {<br>&emsp;byte[...] executable<br>&emsp;string outputPath() {<br>&emsp;&emsp;return executable[:executable.LastIndex(".exe")]<br>&emsp;}<br>}</pre>|
 
 Yes, the mascot is a **wo**mbat.
 
