@@ -1,49 +1,154 @@
 ### Wo is a fork of Go
 
-The Wo language offers an alternative syntax and functionality to the Go programming language. It aims to be interoperable with Go.
+The Wo language offers an alternative syntax and functionality to the Go programming language and interoperates with Go.
 
 Here's one example:
-
 ```go
-f, err := os.Open("open_me.go")
+f, err := os.Open("hi.wo")
 if err != nil {
   return err
 }
 ```
-in Wo would be:
-```go
-file = os!Open("open_me.go")
+
+would be done like this:
+
+```c
+file = os!Open("hi.wo")
 ```
-or
-```go
-file, log("Oh no: ", err) = os.Open(fileName)
+
+And it would return with any other return values filled in as their zero value.
+
+A few other potential ways:
+```c
+file = os!!Open("hi.wo") // panic
+file, log("couldn't open:", err) = os.Open("hi.wo")
+file, handle(err) = os.Open("hi.wo")
+file, return(none, 3, err) = os.Open("hi.wo") // with other return values
+file, if(err) = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
 ```
 
 The point of these features is to drop the bantering about the theories of when to boilerplate or how to be readable, and to just try it out to really see what works well before judgement.
 
-Wo also:
-- Supplies native string and slice operations like `==`
-- Doesn't allow keyword or import overloading like `var int int = 1` and `rune := 'W'`
-- Doesn't prefer shortenings like `f` for `file` or function names like `SprintF` for `ConcatFormat`
-- Separates the usage of `var` and `:=` amongst initializing, shadowing, and setting variables
-- Doesn't allow undeclared variables / "zero values"
-- Warns about unused variables instead of giving an error (then compiles them away)
-- Allow function overloading
-- Plans to do something about null checking somehow in the future (e.g. nonnull or option)
+Wo also...
+- Uses `interface{}` for `<>` in type parameters, e.g. `f(a interface{})` -> `f(a <>)` or `interface{Length() int}` to `<Length() int>`
+- Allows **function overloading** like `print(string), print(formatter, string), print(stdout, formatter, string)`
+- But allows **default arguments** in functions anyway like `print(stdout = console, formatter = defaultFormatter, string)`
+- Doesn't allow import or **keyword overloading** like `var int int = 1` and `rune := 'W'`
+- Doens't use `range` in **enhanced for** loops or `_,` to ignore the index like `for _, v := range nums {}` for `for v : nums {}`
+- Doesn't prefer shortenings like `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)
+- Reworks variables by
+  - not giving an **error for unused variables**, (just warn and compile them away)
+  - not allowing undeclared variables or **"zero values"**
+  - *MAYBE* make `_, val = f()` redundant by accessing only specific values from multi-return values -> `val = f()` where `val` matches the name in `func f() (other, val)` unless it is returning an `error`, maybe needing something like `<=` when that happens
+  - *MAYBE* removing **mixing shadowed** and initialized variable declarations together
+  - separating the usage of **`var`, `:=`, and `=`** amongst initializing, shadowing, and setting variables without any overlapping functionality
+  - *MAYBE* use `=` for initialization and setting, requiring `:=` for shadowing (but not `for range`), and then use **`int i = 5`** (good old C) syntax for initializing with `var i = 5` for vague untyped variables (or just remove untyped variables altogether)
+- *MAYBE* switch type with the name of parameters, put the return types before the function, remove `func`, use `errable`, and generic types before the fuction name like `func (c C*) f[A rune](a int) (float32, error) {}` to `float32 (C* c) [rune A] f(int a) errable {}` or arrow style, `(C* c) [rune A] f(int a) -> float32 | error {}` (or `!float32`)
+  - and *MAYBE* do similarly for function types: `var f func(func(float64) int) string` for `string func(int func(float64)) f`, `string f(int _(float64))`, or `(float64 -> int) -> string f`
+- Uses `interface A {}`, as well as `struct B {}`, unlike `type A interface {}`
+- *MAYBE* allow methods to be in their struct like `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` for `struct Bug { fly()   flee() { this.fly() } }` or `struct (Bug* bug) { }` to allow `bug` instead of `this`
+- Has the **ternary operator** `if cond {} else {}` (or ?: upon more deliberation) and `if a, cond := call(); cond {}` for `a, if(cond) = call() {}` or maybe `a, cond? = call() : {}`
+- Uses `[]` after the type for arrays like **`int[]`** and `int[...][3]`. A `map` of arrays would be ambiguous, so `map[int][]int` becomes **`map[int, int[]]`** and `map` in general uses `[A, B]`
+- Allows optionals for when the zero value has a double meaning like `string?` or `File?` to not be `""` or `nil` which means I could allow zero value initialization without declaration by setting it to `none` like `int x` would mean `int x = none`
+- *MAYBE* Make it more obvious that map and slice are pointers like `*map[string, string]`
 - Will still commit to universal formatting
-- Makes you say "woah"
+- Is a **WIP**, but will always accept change and criticism
+- Makes you say **"woah"**
 
-To justify these decisions, I provide a much deeper analysis of the design at [err.nil](https://err.nil/)
+To justify these decisions, I provide a deeper analysis of the design at [err.nil](https://err.nil/)
 
+Besides syntactical and formatting difference, Wo also offers functional differences such as
+- a native `set`, which is meant to be more optimized than implementations using map
+- could address **null checking** somehow (e.g. `nonnull` or `option`) and pointer/value receivers
+- error values: a few potential options: not returning `nil` if there is no error, but something like `status.isErr()` being true, maybe like Rust's [result](https://doc.rust-lang.org/std/result/). Or `error` overriding all other return values like an exception: `io.Read` returns either `n` or throws `error` like `errable io.Read() n` or [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html)
+- (complie time) **enum**
+- native string and slice operations like `==` and `.contains`
+- being able to run other functions besides main
 
-Besides syntactical and formatting difference, it also offers functional differences such as `set`:
+I'd rather `wo` were a lite CLI command that just uses the Go compiler rather than needing a different build of the entire compiler, but I'm making it a separate build for now.
+
+### Code example
+
+test table
+|invalid|✔️|
+|---------|--------|
+|`interface{}` |`<>`|
+|`interface{func() int}` |`<int _()>` |
+|`var int int`|No keyword overloading|
 
 ```go
-map... etc.
+import { "strings" }
+type FilePath interface {
+  string | url
+}
+type Program struct {
+  executable [...]byte
+}
+func (p Program*) output() string {
+    return p.executable[:strings.LastIndex(p.executable, ".exe"))
+}
+func runProgram() string {
+  output, err = runProgram("/")
+  if err != nil {
+    log(err)
+  }
+  return output
+}
+map[FilePath, string] fs = {"/app/host": "server.ts", "/", "Main.java"}
+func runProgramO(dir interface{string|url}) (*string, error) {
+    dir := strings.ReplaceAll(dir, "/", "\\")
+    f, ok = fs[dir]
+    if (!ok) {
+      return nil, errors.New("invalid filepath")
+    }
+    r, err := os.Open(f)
+    if err != nil {
+        return nil, err
+    }
+    defer func() {
+      if err := r.Close(); err != nil {
+        return nil, err
+      }
+    }()
+    if err := reader.Sync(); err != nil {
+      return nil, err
+    }
+    p := myCompiler.build(reader)
+    return *p.outputPath(), nil
+}
+```
+a possible design for Wo:
+```c
+string? runProgram(<string|url> directory) errable { // members ordered by relevancy
+    directory := directory.replaceAll("/", "\\")
+    fileName, if(ok) = runnableFiles[directory] {
+      *File reader = os!Open(fileName)
+      defer reader!Close()
+      reader!Sync()
+      Program program = myCompiler.build(reader)
+      string directory := program.outputPath() // shadowing
+      return directory // converts it to some(string) and error as nil/none
+    } else {
+      return errors.New("invalid filepath") // like throw
+    }
+}
+map[FilePath, string] runnableFiles = {"/app/host": "server.ts", "/", "Main.java"}
+string runProgram() {
+  output, log(err) = runProgram("/")
+  return output
+}
+struct Program {
+  byte[...] executable
+  string outputPath() {
+    return executable[:executable.LastIndex(".exe")]
+  }
+}
+interface FilePath {
+  string | url
+}
 ```
 
-`set` is meant to be more optimized than any personal implementations using map.
-
+Yes, the mascot is a **wo**mbat.
 
 ### Trademark disclaimer
 
