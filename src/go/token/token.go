@@ -222,6 +222,7 @@ var tokens = [...]string{
 
 	INTERFACE: "interface",
 	MAP:       "map",
+	SET:	   "set",
 	PACKAGE:   "package",
 	RANGE:     "range",
 	RETURN:    "return",
