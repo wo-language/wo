@@ -32,6 +32,7 @@ type Scanner struct {
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
 	err  ErrorHandler // error reporting; or nil
+	wo   bool		  // if scanning .wo
 	mode Mode         // scanning mode
 
 	// scanning state
@@ -129,6 +130,7 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 	s.dir, _ = filepath.Split(file.Name())
 	s.src = src
 	s.err = err
+	s.wo = false
 	s.mode = mode
 
 	s.ch = ' '
@@ -884,10 +886,16 @@ scanAgain:
 				insertSemi = true
 			}
 		case '-':
-			tok = s.switch3(token.SUB, token.SUB_ASSIGN, '-', token.DEC)
-			if tok == token.DEC {
-				insertSemi = true
+			if s.wo && s.ch == '>' {
+				s.next()
+				tok = token.RIGHT_ARROW
+			} else {
+				tok = s.switch3(token.SUB, token.SUB_ASSIGN, '-', token.DEC)
+				if tok == token.DEC {
+					insertSemi = true
+				}
 			}
+
 		case '*':
 			tok = s.switch2(token.MUL, token.MUL_ASSIGN)
 		case '/':
