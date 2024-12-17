@@ -34,7 +34,7 @@ The point of these features is to drop the bantering about the theories of when 
 - Allows **function overloading** like `print(string), print(formatter, string), print(stdout, formatter, string)`
 - But allows **default arguments** in functions anyway like `print(stdout = console, formatter = defaultFormatter, string)`
 - Doesn't allow import or **keyword overloading** like `var int int = 1` and `rune := 'W'`
-- Doens't use `range` in **enhanced for** loops nor `_,`, ignoring the index like `for _, v := range nums {}` for `for v : nums {}`
+- Doens't use `range` in **enhanced for** loops like `for i, v := range nums {}` for `for i, v : nums {}`, and *MAYBE* make the default the value, not index: `for v : nums`
 - Doesn't prefer shortenings like `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)
 - Reworks variables by
   - not giving an **error for unused variables**, (just warns and compiles them away)
@@ -46,7 +46,7 @@ The point of these features is to drop the bantering about the theories of when 
 - *MAYBE* switch type with the name of parameters, put the return types before the function, remove `func`, use `errable`, and generic types before the fuction name like `func (c C*) f[A rune](a int) (float32, error) {}` to `float32 (C* c) [rune A] f(int a) errable {}` or arrow style, `(C* c) [rune A] f(int a) -> float32 | error {}` (or `!float32`)
   - and *MAYBE* do similarly for function types: `var f func(func(float64) int) string` for `string func(int func(float64)) f`, `string f(int _(float64))`, or `(float64 -> int) -> string f`
 - Uses `interface A {}`, as well as `struct B {}`, unlike `type A interface {}`
-- *MAYBE* allow methods to be in their struct like `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` for `struct Bug { fly()   flee() { this.fly() } }` or `struct (Bug* bug) { }` to allow `bug` instead of `this`
+- *MAYBE* (probably won't) allow methods to be in their struct like `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` for `struct Bug { fly()   flee() { this.fly() } }` or `struct (Bug* bug) { }` to allow `bug` instead of `this`
 - Has the **ternary operator** `if cond {} else {}` (or ?: upon more deliberation) and `if a, cond := call(); cond {}` for `a, if(cond) = call() {}` or maybe `a, cond? = call() : {}`
 - Uses `[]` after the type for arrays like **`int[]`** and `int[...][3]`. A `map` of arrays would be ambiguous, so `map[int][]int` becomes **`map[int, int[]]`** and `map` in general uses `[A, B]`
 - Allows optionals for when the zero value has a double meaning like `string?` or `File?` to not be `""` or `nil` which means I could allow zero value initialization without declaration by setting it to `none` like `int x` would mean `int x = none`
