@@ -1505,6 +1505,16 @@ func (p *parser) parseSelector(x ast.Expr) ast.Expr {
 	return &ast.SelectorExpr{X: x, Sel: sel}
 }
 
+func (p *parser) parseBangSelector(x ast.Expr) ast.Expr {
+	if p.trace {
+		defer un(trace(p, "Selector"))
+	}
+
+	sel := p.parseIdent()
+
+	return &ast.BangSelectorExpr{X: x, Sel: sel}
+}
+
 func (p *parser) parseTypeAssertion(x ast.Expr) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "TypeAssertion"))
@@ -1717,6 +1727,7 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 			switch p.tok {
 			case token.IDENT:
 				x = p.parseSelector(x)
+				
 			case token.LPAREN:
 				x = p.parseTypeAssertion(x)
 			default:
@@ -1727,6 +1738,22 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 				//                pass with the new parsing logic introduced for type
 				//                parameters. Remove this once error recovery has been
 				//                more generally reconsidered.
+				if p.tok != token.RBRACE {
+					p.next() // make progress
+				}
+				sel := &ast.Ident{NamePos: pos, Name: "_"}
+				x = &ast.SelectorExpr{X: x, Sel: sel}
+			}
+		case token.NOT:
+			if (!p.scanner.wo)
+				fallthrough;
+			p.next()
+			switch p.tok {
+			case token.IDENT:
+				x = p.parseBangSelector(x)
+			default:
+				pos := p.pos
+				p.errorExpected(pos, "selector or type assertion")
 				if p.tok != token.RBRACE {
 					p.next() // make progress
 				}
