@@ -32,24 +32,28 @@ The point of these features is to drop the bantering about the theories of when 
 (In the future) Wo also...
 - Uses `interface{}` for `<>` in type parameters, e.g. `f(a interface{})` -> `f(a <>)` or `interface{Length() int}` to `<Length() int>`
 - Allows **function overloading** like `print(string), print(formatter, string), print(stdout, formatter, string)`
-- But allows **default arguments** in functions anyway like `print(stdout = console, formatter = defaultFormatter, string)`
+- But allows **default arguments** in functions anyway like `print(stdout = console, formatter = defaultFormatter, string)` (like [:] is already doing: `slice(start=0, end=0)`)
 - Doesn't allow import or **keyword overloading** like `var int int = 1` and `rune := 'W'`
 - Doens't use `range` in **enhanced for** loops like `for i, v := range nums {}` for `for i, v : nums {}`, and *MAYBE* make the default the value, not index: `for v : nums`
 - Doesn't prefer shortenings like `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)
 - Reworks variables by
   - not giving an **error for unused variables**, (just warns and compiles them away)
   - not allowing undeclared variables or **"zero values"**
-  - *MAYBE* make `_, val = f()` redundant by accessing only specific values from multi-return values -> `val = f()` where `val` matches the name in `func f() (other, val)` unless it is returning an `error`, maybe needing something like `<=` when that happens
+  - allow optionals for when the zero value would have had a double meaning like `string?` or `File?` to not be `""` or `nil` which means I could allow zero value initialization without declaration by setting it to `none` like `int x` would mean `int x = none`
+
+  - *MAYBE* make `_, val = f()` redundant by accessing only specific values from multi-return values: `val = f()` where `val` matches the name in `func f() (other, val)` unless `f` were returning an `error`, maybe requiring something like `val, err <!= f()` when that could happen
   - *MAYBE* not allowing **mixing shadowed** and initialized variable declarations
   - separating the usage of **`var`, `:=`, and `=`** amongst initializing, shadowing, and setting variables without any overlapping functionality
-  - *MAYBE* use `=` for initialization and setting, requiring `:=` for shadowing (but not `for range`), and then use **`int i = 5`** (good old C) syntax for initializing with `var i = 5` for vague untyped variables (or just remove untyped variables syntactically)
-- *MAYBE* switch type with the name of parameters, put the return types before the function, remove `func`, use `errable`, and generic types before the fuction name like `func (c C*) f[A rune](a int) (float32, error) {}` to `float32 (C* c) [rune A] f(int a) errable {}` or arrow style, `(C* c) [rune A] f(int a) -> float32 | error {}` (or `!float32`)
-  - and *MAYBE* do similarly for function types: `var f func(func(float64) int) string` for `string func(int func(float64)) f`, `string f(int _(float64))`, or `(float64 -> int) -> string f`
-- Uses `interface A {}`, as well as `struct B {}`, unlike `type A interface {}`
+  - *MAYBE* use `=` for initialization and setting, requiring `:=` for shadowing (but not `for range`), and then use **`i: int = 5`** with type syntax for initializing or `var i = 5` for vague untyped variables (or just remove untyped variables syntactically)
+- *MAYBE* remove `func`, use "`errable`", and put remove parens from the receiver like `func (C* c) f[A rune](a int) (float32, error) {}` to `C.f[rune A](int a) errable float32? {}`
+  - arrow return style `-> float32 | error` (or `!float32` or !> for errable) `f() errable (int, string)` means `f() error? | (int, string)?` where only one is some and the other is none
+  - and *MAYBE* do similarly for function types: `var f func(func(float64) int) string` for `f(_(float64) int) string`, or `(float64 -> int) -> string f`
+  - *Undecided* whewher to switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types like `int i`, `struct s`, `string proc(float32 f)`
+- Doesn't use `type` from `type A interface {}` (if the base compiler will allow it)
 - *MAYBE* (probably won't) allow methods to be in their struct like `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` for `struct Bug { fly()   flee() { this.fly() } }` or `struct (Bug* bug) { }` to allow `bug` instead of `this`
-- Has the **ternary operator** `if cond {} else {}` (or ?: upon more deliberation) and `if a, cond := call(); cond {}` for `a, if(cond) = call() {}` or maybe `a, cond? = call() : {}`
-- Uses `[]` after the type for arrays like **`int[]`** and `int[...][3]`. A `map` of arrays would be ambiguous, so `map[int][]int` becomes **`map[int, int[]]`** and `map` in general uses `[A, B]`
-- Allows optionals for when the zero value has a double meaning like `string?` or `File?` to not be `""` or `nil` which means I could allow zero value initialization without declaration by setting it to `none` like `int x` would mean `int x = none`
+- Has the **ternary operator** `if cond {} else {}` (or `?:` upon more deliberation) and `if a, cond := call(); cond {}` for `a, if(cond) = call() {}` or maybe `a, cond? = call() : {}`
+- Uses `map[A, B]`
+- Uses `[]` after the type for arrays like **`int[]`** and `int[...][3]`. A `map` of arrays would be ambiguous, so `map[int][]int` becomes **`map[int, int[]]`**
 - *MAYBE* Make it more obvious that map and slice are pointers like `*map[string, string]`
 - Will still commit to universal formatting
 - Is a **WIP**, but will always accept change and criticism
@@ -61,8 +65,8 @@ Besides syntactical and formatting difference, Wo also offers functional differe
 - a native `set`, which is meant to be more optimized than implementations using map
 - could address **null checking** somehow (e.g. `nonnull` or `option`) and pointer/value receivers
 - error values: a few potential options: not returning `nil` if there is no error, but something like `status.isErr()` being true, maybe like Rust's [result](https://doc.rust-lang.org/std/result/). Or `error` overriding all other return values like an exception: `io.Read` returns either `n` or throws `error` like `errable io.Read() n` or [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html)
-- (complie time) **enum**
-- native string and slice operations like `==` and `.contains`
+- (complie time) **enum**s and unions
+- native string and slice operations like `==` and `"".contains`
 - being able to run other functions besides main
 
 I'd rather `wo` were a lite CLI command that just uses the Go compiler rather than needing a different build of the entire compiler, but I'm making it a separate build for now.
@@ -80,6 +84,9 @@ type Program struct {
 func (p Program*) output() string {
     return p.executable[:strings.LastIndex(p.executable, ".exe"))
 }
+func (p Program*) len() int {
+    return len(p.executable)
+}
 func runProgram() string {
   output, err = runProgram("/")
   if err != nil {
@@ -88,7 +95,7 @@ func runProgram() string {
   return output
 }
 var fs = map[FilePath]string{"/app/host": "server.ts", "/", "Main.java"}
-func runProgramO(dir interface{string|url}) (*string, error) {
+func runProgramO(dir interface{string|url}) (int, *string, error) {
     f, ok = fs[dir]
     if (!ok) {
       return nil, errors.New("invalid filepath")
@@ -106,40 +113,41 @@ func runProgramO(dir interface{string|url}) (*string, error) {
       return nil, err
     }
     p := myCompiler.build(reader)
-    return *p.outputPath(), nil
+    return p.len(), *p.outputPath(), nil
 }
 ```
 a possible design for Wo:
 ```c
-string? runProgram(<string|url> directory) errable { // members reversed to order by relevancy
+runProgram(<string|url> directory) -> errable (int, string)? { // members reversed to order by relevancy
     fileName, if(!ok) = runnableFiles[directory] {
       return errors.New("invalid filepath") // like throw
     }
-    *File reader = os!Open(fileName)
+    reader *File = os!Open(fileName)
     defer reader!Close()
     reader!Sync()
-    Program program = myCompiler.build(reader)
-    string directory := program.outputPath() // shadowing
+    program Program = myCompiler.build(reader)
+    directory := program.outputPath() // shadowing
     return directory // converts it to some(string) and error as nil/none
 }
-map[FilePath, string] runnableFiles = {"/app/host": "server.ts", "/", "Main.java"}
-string runProgram() {
+runnableFiles = map[FilePath, string]{"/app/host": "server.ts", "/", "Main.java"}
+runProgram() -> string {
   output, log(err) = runProgram("/")
   return output
 }
-struct Program {
+Program struct {
   byte[...] executable
-  string outputPath() {
+  outputPath() -> string {
     return executable[:executable.LastIndex(".exe")]
   }
+  len() -> int {
+    len(executable)
+  }
 }
-interface FilePath {
+FilePath interface {
   string | url
 }
 ```
-
-Again, the types before variable names is TBD. It isn't really a problem, but just fits with other syntax choices.
-
+Comparison with types and names switched:
 |go|wo|
 |---------|--------|
 |<pre>var fs = map[FilePath]string</pre>|<pre>map[FilePath, string] runnableFiles</pre>|
