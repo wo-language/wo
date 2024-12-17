@@ -18,7 +18,7 @@ file = os!Open("hi.wo")
 
 And it would return with any other return values filled in as their zero value.
 
-A few other potential ways:
+Some other ways to deal with error handling:
 ```c
 file = os!!Open("hi.wo") // panic
 file, log("couldn't open:", err) = os.Open("hi.wo")
@@ -27,20 +27,20 @@ file, return(none, 3, err) = os.Open("hi.wo") // with other return values
 file, if(err) = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
 ```
 
-The point of these features is to drop the bantering about the theories of when to boilerplate or how to be readable, and to just try it out to really see what works well before judgement.
+The point of these features is to drop the bantering about the theories of when to boilerplate, how to be readable, whether to copy what people are used to, and to just try it out to really see what works well before judgement.
 
-Wo also...
+(In the future) Wo also...
 - Uses `interface{}` for `<>` in type parameters, e.g. `f(a interface{})` -> `f(a <>)` or `interface{Length() int}` to `<Length() int>`
 - Allows **function overloading** like `print(string), print(formatter, string), print(stdout, formatter, string)`
 - But allows **default arguments** in functions anyway like `print(stdout = console, formatter = defaultFormatter, string)`
 - Doesn't allow import or **keyword overloading** like `var int int = 1` and `rune := 'W'`
-- Doens't use `range` in **enhanced for** loops or `_,` to ignore the index like `for _, v := range nums {}` for `for v : nums {}`
+- Doens't use `range` in **enhanced for** loops nor `_,`, ignoring the index like `for _, v := range nums {}` for `for v : nums {}`
 - Doesn't prefer shortenings like `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)
 - Reworks variables by
-  - not giving an **error for unused variables**, (just warn and compile them away)
+  - not giving an **error for unused variables**, (just warns and compiles them away)
   - not allowing undeclared variables or **"zero values"**
   - *MAYBE* make `_, val = f()` redundant by accessing only specific values from multi-return values -> `val = f()` where `val` matches the name in `func f() (other, val)` unless it is returning an `error`, maybe needing something like `<=` when that happens
-  - *MAYBE* removing **mixing shadowed** and initialized variable declarations together
+  - *MAYBE* not allowing **mixing shadowed** and initialized variable declarations
   - separating the usage of **`var`, `:=`, and `=`** amongst initializing, shadowing, and setting variables without any overlapping functionality
   - *MAYBE* use `=` for initialization and setting, requiring `:=` for shadowing (but not `for range`), and then use **`int i = 5`** (good old C) syntax for initializing with `var i = 5` for vague untyped variables (or just remove untyped variables syntactically)
 - *MAYBE* switch type with the name of parameters, put the return types before the function, remove `func`, use `errable`, and generic types before the fuction name like `func (c C*) f[A rune](a int) (float32, error) {}` to `float32 (C* c) [rune A] f(int a) errable {}` or arrow style, `(C* c) [rune A] f(int a) -> float32 | error {}` (or `!float32`)
