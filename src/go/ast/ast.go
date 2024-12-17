@@ -345,6 +345,12 @@ type (
 		Sel *Ident // field selector
 	}
 
+	// exp!field
+	BangSelectorExpr struct {
+		X   Expr   // expression
+		Sel *Ident // field selector
+	}
+
 	// An IndexExpr node represents an expression followed by an index.
 	IndexExpr struct {
 		X      Expr      // expression
