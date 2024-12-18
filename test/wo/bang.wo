@@ -1,0 +1,72 @@
+package wo
+
+import (
+	"errors"
+	"fmt"
+)
+
+func main_bang() {
+	_, err := errFunc(true)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	errVar := errors.New("Error errVar")
+
+	//errVar!
+
+	z := 0
+
+	fmt.Println(z)
+
+	os.Op
+	{
+		z := 3
+		fmt.Println(z)
+	}
+
+	//var z int = 8
+	//var ( z = 8 ) ; fmt.Println(z)
+	//var z string;
+	//var ( z, y string ) ; fmt.Println(z)
+	//z := 10 ; fmt.Println(z)
+	//const z int = 8;
+	//const ( z = 8 ) ; fmt.Println(z)
+	//z := 10 ; fmt.Println(z)
+
+	if errVar != nil {
+		fmt.Println(errVar, z)
+	}
+	//n := !errFunc(true)
+	// _ := !booler() // different meaning
+	// _ := !!booler() // different meaning
+	//_, err := (!errFuncRef())(true)
+	// a.b.c!()
+	// b.c!()
+	// c!()
+	// d!
+
+}
+
+type errable struct {
+	a   []interface{}
+	err error
+}
+
+func booler() bool { return false }
+
+func errFunc(willErr bool) (int, error) {
+	if willErr {
+		return 5, errors.New("test error")
+	} else {
+		return 0, nil
+	}
+}
+
+func justErr() error {
+	return errors.New("1 err")
+}
+
+func errFuncRef() func(bool) (int, error) {
+	return errFunc
+}
