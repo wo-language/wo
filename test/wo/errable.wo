@@ -1,0 +1,51 @@
+package wo
+
+import (
+	"fmt"
+	"os"
+)
+
+func main_errable() {
+
+	// "errable" means "can resolve to err or tuple with err"
+	// these are errable: error ; (any?, error) ; (error, error)
+	// don't return error, instead do "func() errable {}"
+
+	// format:
+	// Go code example
+	// errable syntax word style.
+	// errable syntax symbol style.
+	// style 1 with arrows.
+	// style 2 with arrows.
+
+	var f func(string) (*os.File, error) = os.Open
+	//  var f func(string) errable *os.File = os.Open
+	//  var f func(string) ! *os.File = os.Open
+	//  var f string -> errable *os.File = os.Open
+	//  var f string -> ! *os.File = os.Open // still quite recognizable, as much as * at least
+	//  var f string -> *os.File ! = os.Open //!=
+	//  var f string -> *os.File errable = os.Open
+
+	// with this errable type, it can be ran on bang.wo
+
+	b := func(f func() (int, error)) func() (int8, string, error) {
+		// b := func(f func() errable int) func() errable (int8, string) {
+		// b := (f() -> errable int) -> (() -> errable (int8, string)) {
+		// b := func(f func() ! int) func() ! (int8, string) {
+		// b := (f() -> #int) -> (() -> #(int8, string))
+		return func() (int8, string, error) { return 8, "", nil }
+	}
+
+	z := []string{"", "", ""}
+	var sum int
+	for i, v := range z {
+		sum += i
+		println(v)
+	}
+
+	// appears at X in: "func(X) X", "v X := (X)"
+	// name         = (can resolve to err)
+	// name1, name2 = (can resolve to values and err)
+
+	fmt.Println(f, b) // sigh
+}
