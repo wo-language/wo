@@ -98,15 +98,19 @@ import { "strings" }
 type FilePath interface {
   string | url
 }
+
 type Program struct {
   executable [...]byte
 }
+
 func (p Program*) output() string {
   return p.executable[:strings.LastIndex(p.executable, ".exe"))
 }
+
 func (p Program*) len() int {
   return len(p.executable)
 }
+
 func runProgram() string {
   output, err = runProgram("/")
   if err != nil {
@@ -114,26 +118,33 @@ func runProgram() string {
   }
   return output
 }
+
 var fs = map[FilePath]string{"/app/host": "server.ts", "/", "Main.java"}
+
 func runProgramO(dir interface{string|url}) (int, *string, error) {
   f, ok = fs[dir]
   if (!ok) {
     return nil, errors.New("invalid filepath")
   }
+
   r, err := os.Open(f)
   if err != nil {
     return nil, err
   }
+
   defer func() {
     if err := r.Close(); err != nil {
       return nil, err
     }
   }()
+
   if err := reader.Sync(); err != nil {
     return nil, err
   }
+
   p := myCompiler.build(reader)
-    return p.len(), *p.outputPath(), nil
+
+  return p.len(), *p.outputPath(), nil
 }
 ```
 a possible design for Wo:
@@ -143,39 +154,43 @@ runProgram(<string|url> directory) -> errable (int, string) { // members reverse
     return errors.New("invalid filepath") // like throw
   }
   reader *File = os.Open(fileName)
-  defer reader!Close()
-  reader!Sync()
+  defer reader.Close!()
+  reader.Sync!()
   program Program = myCompiler.build(reader)
-  directory := program.outputPath() // shadowing
-  return directory // converts it to some(string) and error as nil/none
+  return program.outputPath() // converts it to some(string) and error as nil/none
 }
+
 runnableFiles = map[FilePath, string]{"/app/host": "server.ts", "/", "Main.java"}
+
 runProgram() -> string {
   output, log(err) = runProgram("/")
   return output
 }
+
 Program struct {
   byte[...] executable
   outputPath() -> string {
     return executable[:executable.LastIndex(".exe")]
   }
+
   len() -> int {
     len(executable)
   }
 }
+
 FilePath interface {
   string | url
 }
 ```
 
 
-|go| wo with types before name|
+|go| wo with types before name                                                                                                                                                |
 |------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 |<pre>var fs = map[FilePath]string</pre>| <pre>map[FilePath, string] runnableFiles</pre>                                                                                                                           |
-|<pre>func runProgramO(dir interface{string:url}) (*string, error) {</pre>| <pre>string? runProgram(<string:url> directory) errable {</pre>                                                                                                          |
+|<pre>func runProgramO(dir interface{string:url})</pre>| <pre>runProgram(<string:url> directory)</pre>                                                                                                                            |
 |<pre>&emsp;f, ok = fs[dir]<br>&emsp;if (!ok) {<br>&emsp;&emsp;return nil, errors.New("invalid filepath")<br>&emsp;}</pre>| <pre>&emsp;fileName, if(!ok) = runnableFiles[directory] {<br>&emsp;&emsp;throw error("invalid filepath")<br>&emsp;}<br><br></pre>                                        |
-|<pre>&emsp;r, err := os.Open(f)<br>&emsp;if err != nil {<br>&emsp;&emsp;return nil, err`<br>&emsp;}| <pre>&emsp;*File reader = os!Open(fileName)<br><br><br></pre>                                                                                                            |
-|<pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>| <pre>&emsp;defer reader!Close()<br><br><br><br></pre>                                                                                                                    |
+|<pre>&emsp;r, err := os.Open(f)<br>&emsp;if err != nil {<br>&emsp;&emsp;return nil, err`<br>&emsp;}| <pre>&emsp;*File reader = os.Open!(fileName)<br><br><br><br></pre>                                                                                                       |
+|<pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>| <pre>&emsp;defer reader.Close!()<br><br><br><br><br></pre>                                                                                                               |
 |<pre>type Program struct {<br>&emsp;executable [...]byte<br>}<br>func (p Program*) output() string {<br>&emsp;return p.executable[:strings.LastIndex(p.executable, ".exe"))<br>}</pre>| <pre>struct Program {<br>&emsp;byte[...] executable<br>&emsp;string outputPath() {<br>&emsp;&emsp;return executable[:executable.LastIndex(".exe")]<br>&emsp;}<br>}</pre> |
 
 Yes, the mascot is a **wo**mbat.
