@@ -564,6 +564,11 @@ func (p *parser) parseTypeName(ident *ast.Ident) ast.Expr {
 		p.next()
 		sel := p.parseIdent()
 		return &ast.SelectorExpr{X: ident, Sel: sel}
+	} else if p.tok == token.NOT {
+		// ident is a package name
+		p.next()
+		sel := p.parseIdent()
+		return &ast.BangSelectorExpr{X: ident, Sel: sel}
 	}
 
 	return ident
@@ -1741,21 +1746,21 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 				sel := &ast.Ident{NamePos: pos, Name: "_"}
 				x = &ast.SelectorExpr{X: x, Sel: sel}
 			}
-		case token.NOT:
-			if (!p.scanner.wo)
-				fallthrough;
-			p.next()
-			switch p.tok {
-			case token.IDENT:
-				x = p.parseBangSelector(x)
-			default:
-				pos := p.pos
-				p.errorExpected(pos, "selector or type assertion")
-				if p.tok != token.RBRACE {
-					p.next() // make progress
+		case token.NOT: // !fn()   id!fn()   !id!fn()   ida!idb!fn()... should be considered
+			if p.scanner.IsWo() {
+				p.next()
+				switch p.tok {
+				case token.IDENT:
+					x = p.parseBangSelector(x)
+				default:
+					pos := p.pos
+					p.errorExpected(pos, "selector or type assertion")
+					if p.tok != token.RBRACE {
+						p.next() // make progress
+					}
+					sel := &ast.Ident{NamePos: pos, Name: "_"}
+					x = &ast.BangSelectorExpr{X: x, Sel: sel}
 				}
-				sel := &ast.Ident{NamePos: pos, Name: "_"}
-				x = &ast.SelectorExpr{X: x, Sel: sel}
 			}
 		case token.LBRACK:
 			x = p.parseIndexOrSliceOrInstance(x)
@@ -1767,7 +1772,7 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 			t := ast.Unparen(x)
 			// determine if '{' belongs to a composite literal or a block statement
 			switch t.(type) {
-			case *ast.BadExpr, *ast.Ident, *ast.SelectorExpr:
+			case *ast.BadExpr, *ast.Ident, *ast.SelectorExpr, *ast.BangSelectorExpr:
 				if p.exprLev < 0 {
 					return x
 				}
