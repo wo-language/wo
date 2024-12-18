@@ -7,6 +7,7 @@
 package ast
 
 import (
+	"go/token"
 	"strings"
 )
 
@@ -493,19 +494,6 @@ func (x *CompositeLit) Pos() token.Pos {
 	}
 	return x.Lbrace
 }
-func (x *ParenExpr) Pos() token.Pos      { return x.Lparen }
-func (x *SelectorExpr) Pos() token.Pos   { return x.X.Pos() }
-func (x *IndexExpr) Pos() token.Pos      { return x.X.Pos() }
-func (x *IndexListExpr) Pos() token.Pos  { return x.X.Pos() }
-func (x *SliceExpr) Pos() token.Pos      { return x.X.Pos() }
-func (x *TypeAssertExpr) Pos() token.Pos { return x.X.Pos() }
-func (x *CallExpr) Pos() token.Pos       { return x.Fun.Pos() }
-func (x *StarExpr) Pos() token.Pos       { return x.Star }
-func (x *UnaryExpr) Pos() token.Pos      { return x.OpPos }
-func (x *BinaryExpr) Pos() token.Pos     { return x.X.Pos() }
-func (x *KeyValueExpr) Pos() token.Pos   { return x.Key.Pos() }
-func (x *ArrayType) Pos() token.Pos      { return x.Lbrack }
-func (x *StructType) Pos() token.Pos     { return x.Struct }
 func (x *ParenExpr) Pos() token.Pos        { return x.Lparen }
 func (x *SelectorExpr) Pos() token.Pos     { return x.X.Pos() }
 func (x *BangSelectorExpr) Pos() token.Pos { return x.X.Pos() }

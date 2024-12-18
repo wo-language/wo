@@ -9,12 +9,12 @@ package parser
 import (
 	"bytes"
 	"errors"
+	"go/ast"
+	"go/token"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
-	"std/go/ast"
-	"std/go/token"
 	"strings"
 )
 

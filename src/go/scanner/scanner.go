@@ -10,8 +10,8 @@ package scanner
 import (
 	"bytes"
 	"fmt"
+	"go/token"
 	"path/filepath"
-	"std/go/token"
 	"strconv"
 	"unicode"
 	"unicode/utf8"

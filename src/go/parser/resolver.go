@@ -6,8 +6,8 @@ package parser
 
 import (
 	"fmt"
-	"std/go/ast"
-	"std/go/token"
+	"go/ast"
+	"go/token"
 	"strings"
 )
 
