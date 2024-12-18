@@ -17,7 +17,6 @@ import (
 	"internal/goroot"
 	"internal/goversion"
 	"internal/platform"
-	"internal/syslist"
 	"io"
 	"io/fs"
 	"os"
@@ -26,6 +25,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"std/internal/syslist" // not sure why my compile didn't have this
 	"strconv"
 	"strings"
 	"unicode"
@@ -899,7 +899,7 @@ Found:
 		ext := nameExt(name)
 
 		info, err := ctxt.matchFile(p.Dir, name, allTags, &p.BinaryOnly, fset)
-		if err != nil && strings.HasSuffix(name, ".go") {
+		if err != nil && (strings.HasSuffix(name, ".go") || strings.HasSuffix(name, ".wo")) {
 			badGoFile(name, err)
 			continue
 		}
@@ -916,7 +916,7 @@ Found:
 
 		// Going to save the file. For non-Go files, can stop here.
 		switch ext {
-		case ".go":
+		case ".go", ".wo":
 			// keep going
 		case ".S", ".sx":
 			// special case for cgo, handled at end
@@ -1301,7 +1301,7 @@ func equal(x, y []string) bool {
 func hasGoFiles(ctxt *Context, dir string) bool {
 	ents, _ := ctxt.readDir(dir)
 	for _, ent := range ents {
-		if !ent.IsDir() && strings.HasSuffix(ent.Name(), ".go") {
+		if !ent.IsDir() && (strings.HasSuffix(ent.Name(), ".go") || strings.HasSuffix(ent.Name(), ".wo")) {
 			return true
 		}
 	}
@@ -1494,7 +1494,7 @@ func (ctxt *Context) matchFile(dir, name string, allTags map[string]bool, binary
 		return nil, err
 	}
 
-	if strings.HasSuffix(name, ".go") {
+	if strings.HasSuffix(name, ".go") || strings.HasSuffix(name, ".wo") {
 		err = readGoInfo(f, info)
 		if strings.HasSuffix(name, "_test.go") {
 			binaryOnly = nil // ignore //go:binary-only-package comments in _test.go files

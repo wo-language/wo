@@ -6,9 +6,9 @@ package scanner
 
 import (
 	"fmt"
-	"go/token"
 	"io"
 	"sort"
+	"std/go/token"
 )
 
 // In an [ErrorList], an error is represented by an *Error.

@@ -9,12 +9,12 @@ package parser
 import (
 	"bytes"
 	"errors"
-	"go/ast"
-	"go/token"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"std/go/ast"
+	"std/go/token"
 	"strings"
 )
 
@@ -153,7 +153,7 @@ func ParseDir(fset *token.FileSet, path string, filter func(fs.FileInfo) bool, m
 
 	pkgs = make(map[string]*ast.Package)
 	for _, d := range list {
-		if d.IsDir() || !strings.HasSuffix(d.Name(), ".go") {
+		if d.IsDir() || !(strings.HasSuffix(d.Name(), ".go") || strings.HasSuffix(d.Name(), ".wo")) {
 			continue
 		}
 		if filter != nil {
