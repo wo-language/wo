@@ -9,7 +9,6 @@ import (
 	"internal/abi"
 	"reflect"
 	"runtime"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -32,22 +31,20 @@ type testStruct struct {
 	z float64
 	b string
 }
-type testZeroSize struct{}
 
 func TestHandle(t *testing.T) {
-	testHandle(t, testString("foo"))
-	testHandle(t, testString("bar"))
-	testHandle(t, testString(""))
-	testHandle(t, testIntArray{7, 77, 777, 7777})
-	testHandle(t, testEface(nil))
-	testHandle(t, testStringArray{"a", "b", "c"})
-	testHandle(t, testStringStruct{"x"})
-	testHandle(t, testStringStructArrayStruct{
-		s: [2]testStringStruct{{"y"}, {"z"}},
+	testHandle[testString](t, "foo")
+	testHandle[testString](t, "bar")
+	testHandle[testString](t, "")
+	testHandle[testIntArray](t, [4]int{7, 77, 777, 7777})
+	testHandle[testEface](t, nil)
+	testHandle[testStringArray](t, [3]string{"a", "b", "c"})
+	testHandle[testStringStruct](t, testStringStruct{"x"})
+	testHandle[testStringStructArrayStruct](t, testStringStructArrayStruct{
+		s: [2]testStringStruct{testStringStruct{"y"}, testStringStruct{"z"}},
 	})
-	testHandle(t, testStruct{0.5, "184"})
-	testHandle(t, testEface("hello"))
-	testHandle(t, testZeroSize(struct{}{}))
+	testHandle[testStruct](t, testStruct{0.5, "184"})
+	testHandle[testEface](t, testEface("hello"))
 }
 
 func testHandle[T comparable](t *testing.T, value T) {
@@ -68,18 +65,14 @@ func testHandle[T comparable](t *testing.T, value T) {
 			t.Error("v0 != v1")
 		}
 
-		drainMaps[T](t)
+		drainMaps(t)
 		checkMapsFor(t, value)
 	})
 }
 
 // drainMaps ensures that the internal maps are drained.
-func drainMaps[T comparable](t *testing.T) {
+func drainMaps(t *testing.T) {
 	t.Helper()
-
-	if unsafe.Sizeof(*(new(T))) == 0 {
-		return // zero-size types are not inserted.
-	}
 
 	wait := make(chan struct{}, 1)
 
@@ -114,7 +107,7 @@ func checkMapsFor[T comparable](t *testing.T, value T) {
 	if !ok {
 		return
 	}
-	if wp.Value() != nil {
+	if wp.Strong() != nil {
 		t.Errorf("value %v still referenced a handle (or tiny block?) ", value)
 		return
 	}
@@ -138,27 +131,4 @@ func TestMakeClonesStrings(t *testing.T) {
 	case <-ran:
 	}
 	runtime.KeepAlive(h)
-}
-
-func TestHandleUnsafeString(t *testing.T) {
-	var testData []string
-	for i := range 1024 {
-		testData = append(testData, strconv.Itoa(i))
-	}
-	var buf []byte
-	var handles []Handle[string]
-	for _, s := range testData {
-		if len(buf) < len(s) {
-			buf = make([]byte, len(s)*2)
-		}
-		copy(buf, s)
-		sbuf := unsafe.String(&buf[0], len(s))
-		handles = append(handles, Make(sbuf))
-	}
-	for i, s := range testData {
-		h := Make(s)
-		if handles[i].Value() != h.Value() {
-			t.Fatal("unsafe string improperly retained internally")
-		}
-	}
 }

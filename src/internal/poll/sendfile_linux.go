@@ -1,4 +1,4 @@
-// Copyright 2015 The Go Authors. All rights reserved.
+// Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -6,17 +6,12 @@ package poll
 
 import "syscall"
 
-// Not strictly needed, but very helpful for debugging, see issue #10221.
-//
-//go:cgo_import_dynamic _ _ "libsendfile.so"
-//go:cgo_import_dynamic _ _ "libsocket.so"
-
 // maxSendfileSize is the largest chunk size we ask the kernel to copy
 // at a time.
 const maxSendfileSize int = 4 << 20
 
 // SendFile wraps the sendfile system call.
-func SendFile(dstFD *FD, src int, pos, remain int64) (written int64, err error, handled bool) {
+func SendFile(dstFD *FD, src int, remain int64) (written int64, err error, handled bool) {
 	defer func() {
 		TestHookDidSendFile(dstFD, src, written, err, handled)
 	}()
@@ -35,14 +30,8 @@ func SendFile(dstFD *FD, src int, pos, remain int64) (written int64, err error, 
 		if int64(n) > remain {
 			n = int(remain)
 		}
-		pos1 := pos
-		n, err = syscall.Sendfile(dst, src, &pos1, n)
-		if err == syscall.EAGAIN || err == syscall.EINTR {
-			// partial write may have occurred
-			n = int(pos1 - pos)
-		}
+		n, err = syscall.Sendfile(dst, src, nil, n)
 		if n > 0 {
-			pos += int64(n)
 			written += int64(n)
 			remain -= int64(n)
 			continue

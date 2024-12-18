@@ -93,7 +93,11 @@ func TestStartProcessWithPidfd(t *testing.T) {
 
 // Issue #69284
 func TestPidfdLeak(t *testing.T) {
-	exe := testenv.Executable(t)
+	testenv.MustHaveExec(t)
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Find the next 10 descriptors.
 	// We need to get more than one descriptor in practice;

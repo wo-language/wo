@@ -6,14 +6,12 @@ package unique
 
 import (
 	"internal/abi"
-	isync "internal/sync"
+	"internal/concurrent"
+	"internal/weak"
 	"runtime"
 	"sync"
-	"unsafe"
-	"weak"
+	_ "unsafe"
 )
-
-var zero uintptr
 
 // Handle is a globally unique identity for some value of type T.
 //
@@ -25,20 +23,15 @@ type Handle[T comparable] struct {
 }
 
 // Value returns a shallow copy of the T value that produced the Handle.
-// Value is safe for concurrent use by multiple goroutines.
 func (h Handle[T]) Value() T {
 	return *h.value
 }
 
 // Make returns a globally unique handle for a value of type T. Handles
 // are equal if and only if the values used to produce them are equal.
-// Make is safe for concurrent use by multiple goroutines.
 func Make[T comparable](value T) Handle[T] {
 	// Find the map for type T.
 	typ := abi.TypeFor[T]()
-	if typ.Size() == 0 {
-		return Handle[T]{(*T)(unsafe.Pointer(&zero))}
-	}
 	ma, ok := uniqueMaps.Load(typ)
 	if !ok {
 		// This is a good time to initialize cleanup, since we must go through
@@ -76,7 +69,7 @@ func Make[T comparable](value T) Handle[T] {
 		}
 		// Now that we're sure there's a value in the map, let's
 		// try to get the pointer we need out of it.
-		ptr = wp.Value()
+		ptr = wp.Strong()
 		if ptr != nil {
 			break
 		}
@@ -89,7 +82,7 @@ func Make[T comparable](value T) Handle[T] {
 }
 
 var (
-	// uniqueMaps is an index of type-specific sync maps used for unique.Make.
+	// uniqueMaps is an index of type-specific concurrent maps used for unique.Make.
 	//
 	// The two-level map might seem odd at first since the HashTrieMap could have "any"
 	// as its key type, but the issue is escape analysis. We do not want to force lookups
@@ -98,7 +91,7 @@ var (
 	// benefit of not cramming every different type into a single map, but that's certainly
 	// not enough to outweigh the cost of two map lookups. What is worth it though, is saving
 	// on those allocations.
-	uniqueMaps isync.HashTrieMap[*abi.Type, any] // any is always a *uniqueMap[T].
+	uniqueMaps = concurrent.NewHashTrieMap[*abi.Type, any]() // any is always a *uniqueMap[T].
 
 	// cleanupFuncs are functions that clean up dead weak pointers in type-specific
 	// maps in uniqueMaps. We express cleanup this way because there's no way to iterate
@@ -114,7 +107,7 @@ var (
 )
 
 type uniqueMap[T comparable] struct {
-	isync.HashTrieMap[T, weak.Pointer[T]]
+	*concurrent.HashTrieMap[T, weak.Pointer[T]]
 	cloneSeq
 }
 
@@ -123,7 +116,10 @@ func addUniqueMap[T comparable](typ *abi.Type) *uniqueMap[T] {
 	// race with someone else, but that's fine; it's one
 	// small, stray allocation. The number of allocations
 	// this can create is bounded by a small constant.
-	m := &uniqueMap[T]{cloneSeq: makeCloneSeq(typ)}
+	m := &uniqueMap[T]{
+		HashTrieMap: concurrent.NewHashTrieMap[T, weak.Pointer[T]](),
+		cloneSeq:    makeCloneSeq(typ),
+	}
 	a, loaded := uniqueMaps.LoadOrStore(typ, m)
 	if !loaded {
 		// Add a cleanup function for the new map.
@@ -132,7 +128,7 @@ func addUniqueMap[T comparable](typ *abi.Type) *uniqueMap[T] {
 			// Delete all the entries whose weak references are nil and clean up
 			// deleted entries.
 			m.All()(func(key T, wp weak.Pointer[T]) bool {
-				if wp.Value() == nil {
+				if wp.Strong() == nil {
 					m.CompareAndDelete(key, wp)
 				}
 				return true
