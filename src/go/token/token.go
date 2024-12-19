@@ -221,7 +221,7 @@ var tokens = [...]string{
 	IF:     "if",
 	IMPORT: "import",
 
-	INTERFACE: "#",
+	INTERFACE: "tie",
 	MAP:       "map",
 	SET:       "set",
 	PACKAGE:   "package",

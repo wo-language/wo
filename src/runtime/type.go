@@ -237,6 +237,8 @@ type interfacetype = abi.InterfaceType
 
 type maptype = abi.MapType
 
+type settype = abi.SetType // #wo
+
 type arraytype = abi.ArrayType
 
 type chantype = abi.ChanType

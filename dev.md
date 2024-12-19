@@ -27,24 +27,35 @@ a transpiler that converts them between each other
 
 ---
 
-my notes:
+sometimes I get "function main is undeclared in the main package" until I added a println in main, then ran it, then removed it, then it worked like normal
 
 todo:
 
-1 refactor test/wo/*.wo -> test/wo_*.wo if they don't get ran, also need to change some bat file to include it in the tests maybe
+1. refactor test/wo/*.wo -> test/wo_*.wo if they don't get ran, also need to change some bat file to include it in the tests maybe
+2. add automated tests in my own run_wo.bat
+
+
 
 ### run without tests:
 ```
 cd src
 ./make.bat
 ```
+creation of the compiler runs:
+go test -run=Generate -write=all
+to create custom types
 
-current version syntax:
+I think the compiler runs in this order:
+build serialize scanner parser resolver walk
 
-`!ident()`
+current commit syntax attempt to add:
 
-`interface` is `#`
+`!ident()` - fails bc order of operations
 
-recognizes `->`
+`interface` is `tie` - fails because token defined in multiple places
 
-`set`
+recognizes `->` - fails bc doesn't belong anywhere
+
+### `set`
+- fails bc doesn't belong anywhere (no set type file)
+- refactored

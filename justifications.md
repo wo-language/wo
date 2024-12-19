@@ -1,6 +1,16 @@
 
 ## Theory
 
+When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language and it's based on C so it's fast.
+
+A similar situation was Scala's improvements over Java. It clearly improved the syntax and design, especially with pattern matching, and importantly, interoped with Java.
+
+I have not seen anything in the programming language landscape like this - a direct child of Go.
+
+Ultimately, in practice, certain improvements can be more valuable in different circumstances while it doesn't matter in others. For example, I had a program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
+
+So it is just nice to have the option of an improved design, not a forced grifting replacement for all of Go.
+
 ### The goals of code
 
 Code communicates and guarantees that it achieves something when ran by a computer. These two fight with each other in ways I won't be able to describe fully here. Intention seems to be an important part of Go's philosophy. Just keep this in mind for later.

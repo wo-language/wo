@@ -559,17 +559,18 @@ func (p *parser) parseTypeName(ident *ast.Ident) ast.Expr {
 		ident = p.parseIdent()
 	}
 
-	if p.tok == token.PERIOD {
+	if p.tok == token.PERIOD || p.tok == token.NOT {
 		// ident is a package name
 		p.next()
 		sel := p.parseIdent()
 		return &ast.SelectorExpr{X: ident, Sel: sel}
-	} else if p.tok == token.NOT {
-		// ident is a package name
-		p.next()
-		sel := p.parseIdent()
-		return &ast.BangSelectorExpr{X: ident, Sel: sel}
 	}
+	//else if p.tok == token.NOT {
+	//	// ident is a package name
+	//	p.next()
+	//	sel := p.parseIdent()
+	//	return &ast.BangSelectorExpr{X: ident, Sel: sel}
+	//}
 
 	return ident
 }
@@ -663,10 +664,10 @@ func (p *parser) parseFieldDecl() *ast.Field {
 	switch p.tok {
 	case token.IDENT:
 		name := p.parseIdent()
-		if p.tok == token.PERIOD || p.tok == token.STRING || p.tok == token.SEMICOLON || p.tok == token.RBRACE {
+		if p.tok == token.PERIOD || p.tok == token.NOT || p.tok == token.STRING || p.tok == token.SEMICOLON || p.tok == token.RBRACE {
 			// embedded type
 			typ = name
-			if p.tok == token.PERIOD {
+			if p.tok == token.PERIOD || p.tok == token.NOT {
 				typ = p.parseQualifiedIdent(name)
 			}
 		} else {
@@ -835,6 +836,11 @@ func (p *parser) parseParamDecl(name *ast.Ident, typeSetsOK bool) (f field) {
 
 		case token.PERIOD:
 			// name "." ...
+			f.typ = p.parseQualifiedIdent(f.name)
+			f.name = nil
+
+		case token.NOT:
+			// name "!" ...
 			f.typ = p.parseQualifiedIdent(f.name)
 			f.name = nil
 
@@ -1729,7 +1735,7 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 			switch p.tok {
 			case token.IDENT:
 				x = p.parseSelector(x)
-				
+
 			case token.LPAREN:
 				x = p.parseTypeAssertion(x)
 			default:
@@ -1759,7 +1765,7 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 						p.next() // make progress
 					}
 					sel := &ast.Ident{NamePos: pos, Name: "_"}
-					x = &ast.BangSelectorExpr{X: x, Sel: sel}
+					x = &ast.SelectorExpr{X: x, Sel: sel}
 				}
 			}
 		case token.LBRACK:
@@ -2524,7 +2530,7 @@ func (p *parser) parseImportSpec(doc *ast.CommentGroup, _ token.Token, _ int) as
 	switch p.tok {
 	case token.IDENT:
 		ident = p.parseIdent()
-	case token.PERIOD:
+	case token.PERIOD, token.NOT:
 		ident = &ast.Ident{NamePos: p.pos, Name: "."}
 		p.next()
 	}

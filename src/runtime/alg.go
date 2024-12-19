@@ -271,6 +271,13 @@ func typehash(t *_type, p unsafe.Pointer, h uintptr) uintptr {
 	}
 }
 
+func setKeyError(t *settype, p unsafe.Pointer) error {
+	if !t.HashMightPanic() {
+		return nil
+	}
+	return mapKeyError2(t.Key, p)
+}
+
 func mapKeyError(t *maptype, p unsafe.Pointer) error {
 	if !t.HashMightPanic() {
 		return nil
