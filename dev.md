@@ -4,9 +4,14 @@ For linking, it will depend on your IDE, but it wasn't hard to add ".wo" as a fi
 
 Development steps:
 
-running and testing this default repo [Works]
+- running and testing this default repo [✅]
 
-modifying the compiler code to support that syntax [Doing...]
+- run a modified compiler [✅]
+    - run a .wo file (in a separate project) [✅]
+
+- modifying the compiler code to support each kind of syntax [Doing...]
+  - doing it for just one and test running it
+  - make code formatter detect it
 
 modifying the runner to support that transformation
 

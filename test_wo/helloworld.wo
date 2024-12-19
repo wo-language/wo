@@ -1,4 +1,4 @@
-package wo
+package main
 
 import "fmt"
 
