@@ -25,7 +25,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
-	"std/internal/syslist" // not sure why my compile didn't have this
 	"strconv"
 	"strings"
 	"unicode"
