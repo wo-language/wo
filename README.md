@@ -1,6 +1,6 @@
 ### Wo is a fork of Go
 
-The Wo language offers an alternative syntax and functionality to the Go programming language and interoperates with Go.
+The Wo language is an interoperable successor to Go by offering an alternative syntax and language features.
 
 For example,
 ```go
@@ -13,14 +13,14 @@ if err != nil {
 would be done like this in Wo:
 
 ```go
-file var = os.Open!("hi.wo")
+var file = os.Open!("hi.wo") // pending decisions here; it's a WIP
 ```
 
 And it would return with any other return values filled in as their zero value.
 
 Some other ways to deal with error handling:
 ```go
-file var = os.Open!!("hi.wo") // panic
+var file = os.Open!!("hi.wo") // panic
 file, log("Error:", err)   var = os.Open("hi.wo")
 file, handle(err)          var = os!Open("hi.wo") // handle and throw
 file, return(none, 3, err) var = os.Open("hi.wo") // with other return values
@@ -56,14 +56,14 @@ The point of these features is to drop the bantering about the theories of how m
 - Makes you say **"woah"**
 
 Besides syntactical and formatting difference, Wo also offers functional differences such as
-- A native `set`, which is more optimized than implementations using map
+- A native `set`
 - Could address **null checking** somehow (e.g. `nonnull` or `option`) and pointer/value receivers
 - Error values: a few potential options: not returning `nil` if there is no error, but something like `status.isErr()` being true, maybe like Rust's [result](https://doc.rust-lang.org/std/result/). Or `error` overriding all other return values like an exception: `io.Read` returns either `n` or throws `error` like `errable io.Read() n` or [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html)
-- (compile time) `enum` and `union`
+- (compile time) explicit `enum` and `union`
 - Make slice append more predictable
 - Tuples as an assignable type
 - Native string and slice operations like `==` and `"".contains`
-- Run other functions besides main
+- Run other functions besides main / package control
 
 ### See the list below for other several other more unlikely features:
 <details>
