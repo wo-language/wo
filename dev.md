@@ -41,6 +41,10 @@ todo:
 cd src
 ./make.bat
 ```
+
+current output is an error about "KeyElem in struct"
+
+
 creation of the compiler runs:
 go test -run=Generate -write=all
 to create custom types
