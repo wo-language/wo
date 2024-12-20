@@ -4,6 +4,7 @@
 
 // Copied from map.go
 // The comments are not unreliable
+// wo:linkname is not real, it just lacks the linked counterparts
 
 package runtime
 
@@ -282,7 +283,7 @@ func makeset64(t *settype, hint int64, h *hset) *hset {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname makeset_small
+//wo:linkname makeset_small
 func makeset_small() *hset {
 	h := new(hset)
 	h.hash0 = uint32(rand())
@@ -301,7 +302,7 @@ func makeset_small() *hset {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname makeset
+//wo:linkname makeset
 func makeset(t *settype, hint int, h *hset) *hset {
 	mem, overflow := math.MulUintptr(uintptr(hint), t.Bucket.Size_)
 	if overflow || mem > maxAlloc {
@@ -472,7 +473,7 @@ func setaccess1(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
 //
 // returns whether it contains the key
 //
-//go:linkname setaccess2
+//wo:linkname setaccess2
 func setaccess2(t *settype, h *hset, key unsafe.Pointer) bool {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
@@ -604,7 +605,7 @@ bucketloop:
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setassign
+//wo:linkname setassign
 func setassign(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
 	if h == nil {
 		panic(plainError("assignment to entry in nil map"))
@@ -728,7 +729,7 @@ done:
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setdelete
+//wo:linkname setdelete
 func setdelete(t *settype, h *hset, key unsafe.Pointer) {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
@@ -856,7 +857,7 @@ search:
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setiterinit
+//wo:linkname setiterinit
 func setiterinit(t *settype, h *hset, it *hiterset) {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
@@ -909,7 +910,7 @@ func setiterinit(t *settype, h *hset, it *hiterset) {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setiternext
+//wo:linkname setiternext
 func setiternext(it *hiterset) {
 	h := it.h
 	if raceenabled {
@@ -1040,7 +1041,7 @@ next:
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setclear
+//wo:linkname setclear
 func setclear(t *settype, h *hset) {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
@@ -1158,7 +1159,7 @@ func (h *hset) sameSizeGrow() bool {
 	return h.flags&sameSizeGrow != 0
 }
 
-//go:linkname sameSizeGrowForIssue69110TestSet
+//wo:linkname sameSizeGrowForIssue69110TestSet
 func sameSizeGrowForIssue69110TestSet(h *hset) bool {
 	return h.sameSizeGrow()
 }
@@ -1347,7 +1348,7 @@ func advanceEvacuationMarkSet(h *hset, t *settype, newbit uintptr) {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_makeset reflect.makemap
+//wo:linkname reflect_makeset reflect.makemap
 func reflect_makeset(t *settype, cap int) *hset {
 	// Check invariants and reflects math.
 	if t.Key.Equal == nil {
@@ -1392,12 +1393,12 @@ func reflect_makeset(t *settype, cap int) *hset {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setaccess reflect.setaccess
+//wo:linkname reflect_setaccess reflect.setaccess
 func reflect_setaccess(t *settype, h *hset, key unsafe.Pointer) bool {
 	return setaccess2(t, h, key)
 }
 
-//go:linkname reflect_setaccess_faststr reflect.setaccess_faststr
+//wo:linkname reflect_setaccess_faststr reflect.setaccess_faststr
 func reflect_setaccess_faststr(t *settype, h *hset, key string) bool {
 	return setaccess2_faststr(t, h, key)
 }
@@ -1407,24 +1408,24 @@ func reflect_setaccess_faststr(t *settype, h *hset, key string) bool {
 
 // Do not remove or change the type signature.
 //
-//go:linkname reflect_setassign reflect.setassign0
+//wo:linkname reflect_setassign reflect.setassign0
 func reflect_setassign(t *settype, h *hset, key unsafe.Pointer, elem unsafe.Pointer) {
 	p := setassign(t, h, key)
 	typedmemmove(t.Elem, p, elem)
 }
 
-//go:linkname reflect_setassign_faststr reflect.setassign_faststr0
+//wo:linkname reflect_setassign_faststr reflect.setassign_faststr0
 func reflect_setassign_faststr(t *settype, h *hset, key string, elem unsafe.Pointer) {
 	p := setassign_faststr(t, h, key)
 	typedmemmove(t.Elem, p, elem)
 }
 
-//go:linkname reflect_setdelete reflect.setdelete
+//wo:linkname reflect_setdelete reflect.setdelete
 func reflect_setdelete(t *settype, h *hset, key unsafe.Pointer) {
 	setdelete(t, h, key)
 }
 
-//go:linkname reflect_setdelete_faststr reflect.setdelete_faststr
+//wo:linkname reflect_setdelete_faststr reflect.setdelete_faststr
 func reflect_setdelete_faststr(t *settype, h *hset, key string) {
 	setdelete_faststr(t, h, key)
 }
@@ -1435,7 +1436,7 @@ func reflect_setdelete_faststr(t *settype, h *hset, key string) {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiterinit reflect.setiterinit
+//wo:linkname reflect_setiterinit reflect.setiterinit
 func reflect_setiterinit(t *settype, h *hset, it *hiterset) {
 	setiterinit(t, h, it)
 }
@@ -1446,7 +1447,7 @@ func reflect_setiterinit(t *settype, h *hset, it *hiterset) {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiternext reflect.setiternext
+//wo:linkname reflect_setiternext reflect.setiternext
 func reflect_setiternext(it *hiterset) {
 	setiternext(it)
 }
@@ -1457,7 +1458,7 @@ func reflect_setiternext(it *hiterset) {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiterkey reflect.setiterkey
+//wo:linkname reflect_setiterkey reflect.setiterkey
 func reflect_setiterkey(it *hiterset) unsafe.Pointer {
 	return it.key
 }
@@ -1468,7 +1469,7 @@ func reflect_setiterkey(it *hiterset) unsafe.Pointer {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiterelem reflect.setiterelem
+//wo:linkname reflect_setiterelem reflect.setiterelem
 //func reflect_setiterelem(it *hiterset) unsafe.Pointer {
 //	return it.elem
 //}
@@ -1479,7 +1480,7 @@ func reflect_setiterkey(it *hiterset) unsafe.Pointer {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setlen reflect.setlen
+//wo:linkname reflect_setlen reflect.setlen
 func reflect_setlen(h *hset) int {
 	if h == nil {
 		return 0
@@ -1491,12 +1492,12 @@ func reflect_setlen(h *hset) int {
 	return h.count
 }
 
-//go:linkname reflect_setclear reflect.setclear
+//wo:linkname reflect_setclear reflect.setclear
 func reflect_setclear(t *settype, h *hset) {
 	setclear(t, h)
 }
 
-//go:linkname reflectlite_setlen internal/reflectlite.maplen
+//wo:linkname reflectlite_setlen internal/reflectlite.maplen
 func reflectlite_setlen(h *hset) int {
 	if h == nil {
 		return 0
@@ -1517,7 +1518,7 @@ func setinitnoop()
 
 // setclone for implementing maps.Clone
 //
-//go:linkname setclone maps.clone
+//wo:linkname setclone maps.clone
 func setclone(m any) any {
 	e := efaceOf(&m)
 	e.data = unsafe.Pointer(setclone2((*settype)(unsafe.Pointer(e._type)), (*hset)(e.data)))
@@ -1688,7 +1689,7 @@ func setclone2(t *settype, src *hset) *hset {
 
 // keysSet for implementing maps.keysSet
 //
-//go:linkname keysSet maps.keysSet
+//wo:linkname keysSet maps.keysSet
 func keysSet(m any, p unsafe.Pointer) {
 	e := efaceOf(&m)
 	t := (*settype)(unsafe.Pointer(e._type))
@@ -1752,7 +1753,7 @@ func copyKeysSet(t *settype, h *hset, b *bset, s *slice, offset uint8) {
 
 // valuesSet for implementing maps.valuesSet
 //
-//go:linkname valuesSet maps.valuesSet
+//wo:linkname valuesSet maps.valuesSet
 func valuesSet(m any, p unsafe.Pointer) {
 	e := efaceOf(&m)
 	t := (*settype)(unsafe.Pointer(e._type))

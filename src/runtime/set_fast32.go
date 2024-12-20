@@ -58,7 +58,7 @@ import (
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setaccess2_fast32
+//wo:linkname setaccess2_fast32
 func setaccess2_fast32(t *settype, h *hset, key uint32) bool {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
@@ -105,7 +105,7 @@ func setaccess2_fast32(t *settype, h *hset, key uint32) bool {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setassign_fast32
+//wo:linkname setassign_fast32
 func setassign_fast32(t *settype, h *hset, key uint32) unsafe.Pointer {
 	if h == nil {
 		panic(plainError("assignment to entry in nil set"))
@@ -202,7 +202,7 @@ done:
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setassign_fast32ptr
+//wo:linkname setassign_fast32ptr
 func setassign_fast32ptr(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
 	if h == nil {
 		panic(plainError("assignment to entry in nil set"))

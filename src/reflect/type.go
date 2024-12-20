@@ -292,6 +292,7 @@ const (
 	Func
 	Interface
 	Map
+	Set
 	Pointer
 	Slice
 	String
@@ -393,6 +394,11 @@ type mapType struct {
 	abi.MapType
 }
 
+// setType represents a set type. #wo
+type setType struct {
+	abi.SetType
+}
+
 // ptrType represents a pointer type.
 type ptrType struct {
 	abi.PtrType
@@ -491,6 +497,7 @@ var kindNames = []string{
 	Func:          "func",
 	Interface:     "interface",
 	Map:           "map",
+	Set:           "set",
 	Pointer:       "ptr",
 	Slice:         "slice",
 	String:        "string",
@@ -883,7 +890,7 @@ func (t *rtype) OverflowUint(x uint64) bool {
 
 func (t *rtype) CanSeq() bool {
 	switch t.Kind() {
-	case Int8, Int16, Int32, Int64, Int, Uint8, Uint16, Uint32, Uint64, Uint, Uintptr, Array, Slice, Chan, String, Map:
+	case Int8, Int16, Int32, Int64, Int, Uint8, Uint16, Uint32, Uint64, Uint, Uintptr, Array, Slice, Chan, String, Map, Set:
 		return true
 	case Func:
 		return canRangeFunc(&t.t)
@@ -911,7 +918,7 @@ func canRangeFunc(t *abi.Type) bool {
 
 func (t *rtype) CanSeq2() bool {
 	switch t.Kind() {
-	case Array, Slice, String, Map:
+	case Array, Slice, String, Map, Set:
 		return true
 	case Func:
 		return canRangeFunc2(&t.t)
@@ -1593,6 +1600,9 @@ func haveIdenticalUnderlyingType(T, V *abi.Type, cmpTags bool) bool {
 
 	case Map:
 		return haveIdenticalType(T.Key(), V.Key(), cmpTags) && haveIdenticalType(T.Elem(), V.Elem(), cmpTags)
+
+	case Set:
+		return haveIdenticalType(T.Elem(), V.Elem(), cmpTags)
 
 	case Pointer, Slice:
 		return haveIdenticalType(T.Elem(), V.Elem(), cmpTags)
@@ -3044,7 +3054,7 @@ func addTypeBits(bv *bitVector, offset uintptr, t *abi.Type) {
 	}
 
 	switch Kind(t.Kind_ & abi.KindMask) {
-	case Chan, Func, Map, Pointer, Slice, String, UnsafePointer:
+	case Chan, Func, Map, Set, Pointer, Slice, String, UnsafePointer:
 		// 1 pointer at start of representation
 		for bv.n < uint32(offset/goarch.PtrSize) {
 			bv.append(0)

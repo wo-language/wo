@@ -116,7 +116,7 @@ import (
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setaccess2_faststr
+//wo:linkname setaccess2_faststr
 func setaccess2_faststr(t *settype, h *hset, ky string) bool {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
@@ -218,7 +218,7 @@ dohash:
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname setassign_faststr
+//wo:linkname setassign_faststr
 func setassign_faststr(t *settype, h *hset, s string) unsafe.Pointer {
 	if h == nil {
 		panic(plainError("assignment to entry in nil set"))

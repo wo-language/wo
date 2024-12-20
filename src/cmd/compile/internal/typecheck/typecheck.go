@@ -122,6 +122,7 @@ var _typekind = []string{
 	types.TINTER:      "interface",
 	types.TCHAN:       "chan",
 	types.TMAP:        "map",
+	types.TSET:        "set",
 	types.TARRAY:      "array",
 	types.TSLICE:      "slice",
 	types.TFUNC:       "func",

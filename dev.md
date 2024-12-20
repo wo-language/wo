@@ -72,7 +72,7 @@ delete(m, k)  // mapdelete(m, k)
 
 s := set[eType] // init
 ---            // setaccess1 - disabled
-ok := s[e]     // setaccess2(s, e, &ok)
+ok := s[e]     // setaccess2(s, e, &ok) - similar signature of mapaccess1
 s.insert(9001) // setinsert(s, e, 9001)
 delete(s, e)   // setdelete(s, e)
 
