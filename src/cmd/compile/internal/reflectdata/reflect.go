@@ -293,7 +293,7 @@ func SetType() *types.Type {
 	return hset
 }
 
-var hiterType *types.Type
+var hiterType *types.Type // for Map
 
 // MapIterType returns a type interchangeable with runtime.hiter.
 // Make sure this stays in sync with runtime/map.go.
@@ -308,7 +308,7 @@ func MapIterType() *types.Type {
 	// type hiter struct {
 	//    key         unsafe.Pointer // *Key
 	//    elem        unsafe.Pointer // *Elem
-	//    t           unsafe.Pointer // *SetType
+	//    t           unsafe.Pointer // *MapType
 	//    h           *hmap
 	//    buckets     unsafe.Pointer
 	//    bptr        unsafe.Pointer // *bmap
@@ -342,7 +342,7 @@ func MapIterType() *types.Type {
 	}
 
 	// build iterator struct holding the above fields
-	n := ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hiterset"))
+	n := ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hiter"))
 	hiter := types.NewNamed(n)
 	n.SetType(hiter)
 	n.SetTypecheck(1)
@@ -372,7 +372,7 @@ func SetIterType() *types.Type {
 	// type hiterset struct {
 	//    key         unsafe.Pointer // *Key
 	//    elem        unsafe.Pointer // *Elem
-	//    t           unsafe.Pointer // *MapType
+	//    t           unsafe.Pointer // *SetType
 	//    h           *hset
 	//    buckets     unsafe.Pointer
 	//    bptr        unsafe.Pointer // *bset
@@ -1155,19 +1155,19 @@ func writeType(t *types.Type) *obj.LSym {
 		s1 := writeType(t.Elem())
 		t2 := types.NewSlice(t.Elem())
 		s2 := writeType(t2)
-		c.Field("KeyElem").WritePtr(s1)
+		c.Field("Elem").WritePtr(s1)
 		c.Field("Slice").WritePtr(s2)
 		c.Field("Len").WriteUintptr(uint64(t.NumElem()))
 
 	case types.TSLICE:
 		// internal/abi.SliceType
 		s1 := writeType(t.Elem())
-		c.Field("KeyElem").WritePtr(s1)
+		c.Field("Elem").WritePtr(s1)
 
 	case types.TCHAN:
 		// internal/abi.ChanType
 		s1 := writeType(t.Elem())
-		c.Field("KeyElem").WritePtr(s1)
+		c.Field("Elem").WritePtr(s1)
 		c.Field("Dir").WriteInt(int64(t.ChanDir()))
 
 	case types.TFUNC:
@@ -1228,7 +1228,7 @@ func writeType(t *types.Type) *obj.LSym {
 		hasher := genhash(t.Key())
 
 		c.Field("Key").WritePtr(s1)
-		c.Field("KeyElem").WritePtr(s2)
+		c.Field("Elem").WritePtr(s2)
 		c.Field("Bucket").WritePtr(s3)
 		c.Field("Hasher").WritePtr(hasher)
 		var flags uint32
@@ -1276,7 +1276,7 @@ func writeType(t *types.Type) *obj.LSym {
 		}
 
 		s1 := writeType(t.Elem())
-		c.Field("KeyElem").WritePtr(s1)
+		c.Field("Elem").WritePtr(s1)
 
 	case types.TSTRUCT:
 		// internal/abi.StructType

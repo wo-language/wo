@@ -42,8 +42,7 @@ cd src
 ./make.bat
 ```
 
-current output is an error about "KeyElem in struct"
-
+current expected output: linkname must refer to declared function or variable (I haven't set it up)
 
 creation of the compiler runs:
 go test -run=Generate -write=all
