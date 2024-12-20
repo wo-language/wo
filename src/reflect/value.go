@@ -3862,6 +3862,7 @@ func chansend(ch unsafe.Pointer, val unsafe.Pointer, nb bool) bool {
 }
 
 func makechan(typ *abi.Type, size int) (ch unsafe.Pointer)
+
 func makemap(t *abi.Type, cap int) (m unsafe.Pointer)
 
 //go:noescape
@@ -3920,6 +3921,64 @@ func mapiternext(it *hiter)
 func maplen(m unsafe.Pointer) int
 
 func mapclear(t *abi.Type, m unsafe.Pointer)
+
+// #wo
+
+func makeset(t *abi.Type, cap int) (m unsafe.Pointer)
+
+//go:noescape
+func setaccess(t *abi.Type, m unsafe.Pointer, key unsafe.Pointer) (val unsafe.Pointer)
+
+//go:noescape
+func setaccess_faststr(t *abi.Type, m unsafe.Pointer, key string) (val unsafe.Pointer)
+
+//go:noescape
+func setassign0(t *abi.Type, m unsafe.Pointer, key, val unsafe.Pointer)
+
+// setassign should be an internal detail.
+// Do not use it as a linkname.
+//
+// Do not remove or change the type signature.
+// See go.dev/issue/67401.
+//
+//go:linkname setassign
+func setassign(t *abi.Type, m unsafe.Pointer, key, val unsafe.Pointer) {
+	contentEscapes(key)
+	contentEscapes(val)
+	setassign0(t, m, key, val)
+}
+
+//go:noescape
+func setassign_faststr0(t *abi.Type, m unsafe.Pointer, key string, val unsafe.Pointer)
+
+func setassign_faststr(t *abi.Type, m unsafe.Pointer, key string, val unsafe.Pointer) {
+	contentEscapes((*unsafeheader.String)(unsafe.Pointer(&key)).Data)
+	contentEscapes(val)
+	setassign_faststr0(t, m, key, val)
+}
+
+//go:noescape
+func setdelete(t *abi.Type, m unsafe.Pointer, key unsafe.Pointer)
+
+//go:noescape
+func setdelete_faststr(t *abi.Type, m unsafe.Pointer, key string)
+
+//go:noescape
+func setiterinit(t *abi.Type, m unsafe.Pointer, it *hiter)
+
+//go:noescape
+func setiterkey(it *hiter) (key unsafe.Pointer)
+
+//go:noescape
+func setiterelem(it *hiter) (elem unsafe.Pointer)
+
+//go:noescape
+func setiternext(it *hiter)
+
+//go:noescape
+func setlen(m unsafe.Pointer) int
+
+func setclear(t *abi.Type, m unsafe.Pointer)
 
 // call calls fn with "stackArgsSize" bytes of stack arguments laid out
 // at stackArgs and register arguments laid out in regArgs. frameSize is

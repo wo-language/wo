@@ -3,15 +3,15 @@
 // license that can be found in the LICENSE file.
 
 // Copied from map.go
-// The comments are extremely unreliable
+// The comments are not unreliable
 
 package runtime
 
-// This file contains the implementation of Go's map type.
+// This file contains the implementation of Wo's set type.
 //
-// A map is just a hash table. The data is arranged
+// A set is just a hash table. The data is arranged
 // into an array of buckets. Each bucket contains up to
-// 8 key/elem pairs. The low-order bits of the hash are
+// 8 elements. The low-order bits of the hash are
 // used to select a bucket. Each bucket contains a few
 // high-order bits of each hash to distinguish the entries
 // within a single bucket.
@@ -23,7 +23,7 @@ package runtime
 // of buckets twice as big. Buckets are incrementally
 // copied from the old bucket array to the new bucket array.
 //
-// Map iterators walk through the array of buckets and
+// Set iterators walk through the array of buckets and
 // return the keysSet in walk order (bucket #, then overflow
 // chain order, then bucket index).  To maintain iteration
 // semantics, we never move keysSet within their bucket (if
@@ -38,15 +38,8 @@ package runtime
 // a simple program to check some stats for different loads:
 // (64-bit, 8 byte keysSet and elems)
 //  loadFactor    %overflow  bytes/entry     hitprobe    missprobe
-//        4.00         2.13        20.77         3.00         4.00
-//        4.50         4.05        17.30         3.25         4.50
-//        5.00         6.85        14.77         3.50         5.00
-//        5.50        10.55        12.94         3.75         5.50
-//        6.00        15.27        11.67         4.00         6.00
-//        6.50        20.90        10.79         4.25         6.50
-//        7.00        27.14        10.15         4.50         7.00
-//        7.50        34.03         9.73         4.75         7.50
-//        8.00        41.10         9.40         5.00         8.00
+//
+
 //
 // %overflow   = percentage of buckets which have an overflow bucket
 // bytes/entry = overhead bytes used per key/elem pair
@@ -64,12 +57,29 @@ import (
 	"unsafe"
 )
 
-const ()
+const (
+//bucketCntBits  = abi.MapBucketCountBits
+//loadFactorDen  = 2
+//loadFactorNum  = loadFactorDen * abi.MapBucketCount * 13 / 16
+//emptyRest      = 0
+//emptyOne       = 1
+//evacuatedX     = 2
+//evacuatedY     = 3
+//evacuatedEmpty = 4
+//minTopHash     = 5
 
-// A header for a Go map.
+// iterator       = 1
+// oldIterator    = 2
+// hashWriting    = 4
+// sameSizeGrow   = 8
+// noCheck		 = 1<<(8*goarch.PtrSize) - 1
+)
+
+// A header for a Wo set.
 type hset struct {
-	// Note: the format of the hset is also encoded in cmd/compile/internal/reflectdata/reflect.go.
-	// Make sure this stays in sync with the compiler's definition.
+	// #wo Note: the format of the hset is also encoded in cmd/compile/internal/reflectdata/reflect.go in SetType.
+	// #wo Make sure this stays in sync with the compiler's definition.
+	// "SetType returns a type interchangeable with runtime.hset."
 	count     int // # live cells == size of map.  Must be first (used by len() builtin)
 	flags     uint8
 	B         uint8  // log_2 of # of buckets (can hold up to loadFactor * 2^B items)
@@ -100,14 +110,14 @@ type setextra struct {
 	nextOverflow *bset
 }
 
-// A bucket for a Go map.
+// A bucket for a Wo set.
 type bset struct {
 	// tophash generally contains the top byte of the hash value
 	// for each key in this bucket. If tophash[0] < minTopHash,
 	// tophash[0] is a bucket evacuation state instead.
-	tophash [abi.MapBucketCount]uint8
-	// Followed by bucketCnt keysSet and then bucketCnt elems.
-	// NOTE: packing all the keysSet together and then all the elems together makes the
+	tophash [abi.MapBucketCount]uint8 // [8]uint8
+	// Followed by bucketCnt keys and then bucketCnt elems.
+	// NOTE: packing all the keys together and then all the elems together makes the
 	// code a bit more complicated than alternating key/elem/key/elem/... but it allows
 	// us to eliminate padding which would be needed for, e.g., map[int64]int8.
 	// Followed by an overflow pointer.
@@ -118,7 +128,6 @@ type bset struct {
 // and reflect/value.go to match the layout of this structure.
 type hiterset struct {
 	key         unsafe.Pointer // Must be in first position.  Write nil to indicate iteration end (see cmd/compile/internal/walk/range.go).
-	elem        unsafe.Pointer // Must be in second position (see cmd/compile/internal/walk/range.go).
 	t           *settype
 	h           *hset
 	buckets     unsafe.Pointer // bucket ptr at hash_iter initialization time
@@ -133,6 +142,48 @@ type hiterset struct {
 	bucket      uintptr
 	checkBucket uintptr
 }
+
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
+// (gap for row alignment for debugging)
 
 func evacuatedSet(b *bset) bool {
 	h := b.tophash[0]
@@ -225,10 +276,8 @@ func makeset64(t *settype, hint int64, h *hset) *hset {
 // make(map[k]v, hint) when hint is known to be at most bucketCnt
 // at compile time and the map needs to be allocated on the heap.
 //
-// makeset_small should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/bytedance/sonic
+// makeset_small should be an internal detail.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -240,17 +289,14 @@ func makeset_small() *hset {
 	return h
 }
 
-// makeset implements Go map creation for make(map[k]v, hint).
+// makeset implements a set creation for make(set[e], hint).
 // If the compiler has determined that the map or the first bucket
 // can be created on the stack, h and/or bucket may be non-nil.
 // If h != nil, the map can be created directly in h.
 // If h.buckets != nil, bucket pointed to can be used as the first bucket.
 //
-// makeset should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/cloudwego/frugal
-//   - github.com/ugorji/go/codec
+// makeset should be an internal detail.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -342,82 +388,92 @@ func makeSetBucketArray(t *settype, b uint8, dirtyalloc unsafe.Pointer) (buckets
 	return buckets, nextOverflow
 }
 
-// setaccess1 returns a pointer to h[key].  Never returns nil, instead
+// setaccess1 returns a pointer to h[key], which does not make sense
+// for sets, so it and its predecessors are removed.
+//
+// v := &h[key]
+// var v *ValueType = h[key]
+//
+// Never returns nil, instead
 // it will return a reference to the zero object for the elem type if
 // the key is not in the map.
 // NOTE: The returned pointer may keep the whole map live, so don't
 // hold onto it for very long.
 func setaccess1(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
-	if raceenabled && h != nil {
-		callerpc := getcallerpc()
-		pc := abi.FuncPCABIInternal(setaccess1)
-		racereadpc(unsafe.Pointer(h), callerpc, pc)
-		raceReadObjectPC(t.Key, key, callerpc, pc)
-	}
-	if msanenabled && h != nil {
-		msanread(key, t.Key.Size_)
-	}
-	if asanenabled && h != nil {
-		asanread(key, t.Key.Size_)
-	}
-	if h == nil || h.count == 0 {
-		if err := setKeyError(t, key); err != nil {
-			panic(err) // see issue 23734
-		}
-		return unsafe.Pointer(&zeroVal[0])
-	}
-	if h.flags&hashWriting != 0 {
-		fatal("concurrent map read and map write")
-	}
-	hash := t.Hasher(key, uintptr(h.hash0))
-	m := bucketMask(h.B)
-	b := (*bset)(add(h.buckets, (hash&m)*uintptr(t.BucketSize)))
-	if c := h.oldbuckets; c != nil {
-		if !h.sameSizeGrow() {
-			// There used to be half as many buckets; mask down one more power of two.
-			m >>= 1
-		}
-		oldb := (*bset)(add(c, (hash&m)*uintptr(t.BucketSize)))
-		if !evacuatedSet(oldb) {
-			b = oldb
-		}
-	}
-	top := tophash(hash)
-bucketloop:
-	for ; b != nil; b = b.overflow(t) {
-		for i := uintptr(0); i < abi.MapBucketCount; i++ {
-			if b.tophash[i] != top {
-				if b.tophash[i] == emptyRest {
-					break bucketloop
-				}
-				continue
-			}
-			k := add(unsafe.Pointer(b), dataOffset+i*uintptr(t.KeySize))
-			if t.IndirectKey() {
-				k = *((*unsafe.Pointer)(k))
-			}
-			if t.Key.Equal(key, k) {
-				e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
-				if t.IndirectElem() {
-					e = *((*unsafe.Pointer)(e))
-				}
-				return e
-			}
-		}
-	}
-	return unsafe.Pointer(&zeroVal[0])
+	return nil
+	//	if raceenabled && h != nil {
+	//		callerpc := getcallerpc()
+	//		pc := abi.FuncPCABIInternal(setaccess1)
+	//		racereadpc(unsafe.Pointer(h), callerpc, pc)
+	//		raceReadObjectPC(t.Key, key, callerpc, pc)
+	//	}
+	//	if msanenabled && h != nil {
+	//		msanread(key, t.Key.Size_)
+	//	}
+	//	if asanenabled && h != nil {
+	//		asanread(key, t.Key.Size_)
+	//	}
+	//	if h == nil || h.count == 0 {
+	//		if err := setKeyError(t, key); err != nil {
+	//			panic(err) // see issue 23734
+	//		}
+	//		return unsafe.Pointer(&zeroVal[0])
+	//	}
+	//	if h.flags&hashWriting != 0 {
+	//		fatal("concurrent map read and map write")
+	//	}
+	//	// shift to the respective bucket
+	//	hash := t.Hasher(key, uintptr(h.hash0))
+	//	m := bucketMask(h.B)
+	//	b := (*bset)(add(h.buckets, (hash&m)*uintptr(t.BucketSize)))
+	//	if c := h.oldbuckets; c != nil {
+	//		if !h.sameSizeGrow() {
+	//			// There used to be half as many buckets; mask down one more power of two.
+	//			m >>= 1
+	//		}
+	//		oldb := (*bset)(add(c, (hash&m)*uintptr(t.BucketSize)))
+	//		if !evacuatedSet(oldb) {
+	//			b = oldb
+	//		}
+	//	}
+	//	top := tophash(hash)
+	//bucketloop:
+	//	for ; b != nil; b = b.overflow(t) {
+	//		for i := uintptr(0); i < abi.MapBucketCount; i++ {
+	//			if b.tophash[i] != top {
+	//				if b.tophash[i] == emptyRest {
+	//					break bucketloop
+	//				}
+	//				continue
+	//			}
+	//			k := add(unsafe.Pointer(b), dataOffset+i*uintptr(t.KeySize))
+	//			if t.IndirectKey() {
+	//				k = *((*unsafe.Pointer)(k))
+	//			}
+	//			if t.Key.Equal(key, k) {
+	//				e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
+	//				if t.IndirectElem() {
+	//					e = *((*unsafe.Pointer)(e))
+	//				}
+	//				return e
+	//			}
+	//		}
+	//	}
+	//	return unsafe.Pointer(&zeroVal[0])
 }
 
-// setaccess2 should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/ugorji/go/codec
+// setaccess2 should be an internal detail.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
+// ok := h[key]
+//
+// returns whether it contains the key
+//
 //go:linkname setaccess2
-func setaccess2(t *settype, h *hset, key unsafe.Pointer) (unsafe.Pointer, bool) {
+func setaccess2(t *settype, h *hset, key unsafe.Pointer) bool {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
 		pc := abi.FuncPCABIInternal(setaccess2)
@@ -434,10 +490,10 @@ func setaccess2(t *settype, h *hset, key unsafe.Pointer) (unsafe.Pointer, bool) 
 		if err := setKeyError(t, key); err != nil {
 			panic(err) // see issue 23734
 		}
-		return unsafe.Pointer(&zeroVal[0]), false
+		return false
 	}
 	if h.flags&hashWriting != 0 {
-		fatal("concurrent map read and map write")
+		fatal("concurrent set read and set write")
 	}
 	hash := t.Hasher(key, uintptr(h.hash0))
 	m := bucketMask(h.B)
@@ -467,21 +523,21 @@ bucketloop:
 				k = *((*unsafe.Pointer)(k))
 			}
 			if t.Key.Equal(key, k) {
-				e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
-				if t.IndirectElem() {
-					e = *((*unsafe.Pointer)(e))
-				}
-				return e, true
+				//e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
+				//if t.IndirectElem() {
+				//	e = *((*unsafe.Pointer)(e))
+				//}
+				return true
 			}
 		}
 	}
-	return unsafe.Pointer(&zeroVal[0]), false
+	return false
 }
 
-// returns both key and elem. Used by map iterator.
-func setaccessK(t *settype, h *hset, key unsafe.Pointer) (unsafe.Pointer, unsafe.Pointer) {
+// returns the "key". Used by set iterator.
+func setaccessK(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
 	if h == nil || h.count == 0 {
-		return nil, nil
+		return nil
 	}
 	hash := t.Hasher(key, uintptr(h.hash0))
 	m := bucketMask(h.B)
@@ -511,43 +567,39 @@ bucketloop:
 				k = *((*unsafe.Pointer)(k))
 			}
 			if t.Key.Equal(key, k) {
-				e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
-				if t.IndirectElem() {
-					e = *((*unsafe.Pointer)(e))
-				}
-				return k, e
+				//e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
+				//if t.IndirectElem() {
+				//	e = *((*unsafe.Pointer)(e))
+				//}
+				return k
 			}
 		}
 	}
-	return nil, nil
+	return nil
 }
 
-func setaccess1_fat(t *settype, h *hset, key, zero unsafe.Pointer) unsafe.Pointer {
-	e := setaccess1(t, h, key)
-	if e == unsafe.Pointer(&zeroVal[0]) {
-		return zero
-	}
-	return e
-}
+//func setaccess1_fat(t *settype, h *hset, key, zero unsafe.Pointer) unsafe.Pointer {
+//	e := setaccess1(t, h, key)
+//	if e == unsafe.Pointer(&zeroVal[0]) {
+//		return zero
+//	}
+//	return e
+//}
 
-func setaccess2_fat(t *settype, h *hset, key, zero unsafe.Pointer) (unsafe.Pointer, bool) {
-	e := setaccess1(t, h, key)
-	if e == unsafe.Pointer(&zeroVal[0]) {
-		return zero, false
-	}
-	return e, true
-}
+//func setaccess2_fat(t *settype, h *hset, key, zero unsafe.Pointer) (unsafe.Pointer, bool) {
+//	e := setaccess1(t, h, key)
+//	if e == unsafe.Pointer(&zeroVal[0]) {
+//		return zero, false
+//	}
+//	return e, true
+//}
 
-// Like mapaccess, but allocates a slot for the key if it is not present in the map.
+// Like setaccess, but allocates a slot for the key if it is not present in the map.
 //
-// setassign should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/bytedance/sonic
-//   - github.com/cloudwego/frugal
-//   - github.com/RomiChan/protobuf
-//   - github.com/segmentio/encoding
-//   - github.com/ugorji/go/codec
+// m[k] =
+//
+// setassign should be an internal detail.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -671,9 +723,7 @@ done:
 }
 
 // setdelete should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/ugorji/go/codec
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -699,7 +749,7 @@ func setdelete(t *settype, h *hset, key unsafe.Pointer) {
 		return
 	}
 	if h.flags&hashWriting != 0 {
-		fatal("concurrent map writes")
+		fatal("concurrent set writes")
 	}
 
 	hash := t.Hasher(key, uintptr(h.hash0))
@@ -790,7 +840,7 @@ search:
 	}
 
 	if h.flags&hashWriting == 0 {
-		fatal("concurrent map writes")
+		fatal("concurrent set writes")
 	}
 	h.flags &^= hashWriting
 }
@@ -801,15 +851,7 @@ search:
 // Both need to have zeroed hiterset since the struct contains pointers.
 //
 // setiterinit should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/bytedance/sonic
-//   - github.com/cloudwego/frugal
-//   - github.com/goccy/go-json
-//   - github.com/RomiChan/protobuf
-//   - github.com/segmentio/encoding
-//   - github.com/ugorji/go/codec
-//   - github.com/wI2L/jettison
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -862,14 +904,7 @@ func setiterinit(t *settype, h *hset, it *hiterset) {
 }
 
 // setiternext should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/bytedance/sonic
-//   - github.com/cloudwego/frugal
-//   - github.com/RomiChan/protobuf
-//   - github.com/segmentio/encoding
-//   - github.com/ugorji/go/codec
-//   - gonum.org/v1/gonum
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -895,7 +930,7 @@ next:
 		if bucket == it.startBucket && it.wrapped {
 			// end of iteration
 			it.key = nil
-			it.elem = nil
+			//it.elem = nil
 			return
 		}
 		if h.growing() && it.B == h.B {
@@ -933,7 +968,7 @@ next:
 		if t.IndirectKey() {
 			k = *((*unsafe.Pointer)(k))
 		}
-		e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+uintptr(offi)*uintptr(t.ValueSize))
+		// #wo  e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+uintptr(offi)*uintptr(t.ValueSize))
 		if checkBucket != noCheck && !h.sameSizeGrow() {
 			// Special case: iterator was started during a grow to a larger size
 			// and the grow is not done yet. We're working on a bucket whose
@@ -969,10 +1004,6 @@ next:
 			// key!=key, so the entry can't be deleted or updated, so we can just return it.
 			// That's lucky for us because when key!=key we can't look it up successfully.
 			it.key = k
-			if t.IndirectElem() {
-				e = *((*unsafe.Pointer)(e))
-			}
-			it.elem = e
 		} else {
 			// The hash table has grown since the iterator was started.
 			// The golden data for this key is now somewhere else.
@@ -981,12 +1012,11 @@ next:
 			// has been deleted, updated, or deleted and reinserted.
 			// NOTE: we need to regrab the key as it has potentially been
 			// updated to an equal() but not identical key (e.g. +0.0 vs -0.0).
-			rk, re := setaccessK(t, h, k)
+			rk := setaccessK(t, h, k)
 			if rk == nil {
 				continue // key has been deleted
 			}
 			it.key = rk
-			it.elem = re
 		}
 		it.bucket = bucket
 		if it.bptr != b { // avoid unnecessary write barrier; see issue 14921
@@ -1005,9 +1035,7 @@ next:
 // It is called by the compiler.
 //
 // setclear should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/cloudwego/frugal
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -1313,15 +1341,8 @@ func advanceEvacuationMarkSet(h *hset, t *settype, newbit uintptr) {
 
 // Reflect stubs. Called from ../reflect/asm_*.s
 
-// reflect_makeset is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - gitee.com/quant1x/gox
-//   - github.com/modern-go/reflect2
-//   - github.com/goccy/go-json
-//   - github.com/RomiChan/protobuf
-//   - github.com/segmentio/encoding
-//   - github.com/v2pro/plz
+// reflect_makeset is for package reflect.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -1365,137 +1386,100 @@ func reflect_makeset(t *settype, cap int) *hset {
 	return makeset(t, cap, nil)
 }
 
-// reflect_setaccess is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - gitee.com/quant1x/gox
-//   - github.com/modern-go/reflect2
-//   - github.com/v2pro/plz
+// reflect_setaccess is for package reflect.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setaccess reflect.mapaccess
-func reflect_setaccess(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
-	elem, ok := setaccess2(t, h, key)
-	if !ok {
-		// reflect wants nil for a missing element
-		elem = nil
-	}
-	return elem
+//go:linkname reflect_setaccess reflect.setaccess
+func reflect_setaccess(t *settype, h *hset, key unsafe.Pointer) bool {
+	return setaccess2(t, h, key)
 }
 
-//go:linkname reflect_setaccess_faststr reflect.mapaccess_faststr
-func reflect_setaccess_faststr(t *settype, h *hset, key string) unsafe.Pointer {
-	elem, ok := setaccess2_faststr(t, h, key)
-	if !ok {
-		// reflect wants nil for a missing element
-		elem = nil
-	}
-	return elem
+//go:linkname reflect_setaccess_faststr reflect.setaccess_faststr
+func reflect_setaccess_faststr(t *settype, h *hset, key string) bool {
+	return setaccess2_faststr(t, h, key)
 }
 
 // reflect_setassign is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - gitee.com/quant1x/gox
-//   - github.com/v2pro/plz
-//
+// Do not access it using linkname.
+
 // Do not remove or change the type signature.
 //
-//go:linkname reflect_setassign reflect.mapassign0
+//go:linkname reflect_setassign reflect.setassign0
 func reflect_setassign(t *settype, h *hset, key unsafe.Pointer, elem unsafe.Pointer) {
 	p := setassign(t, h, key)
 	typedmemmove(t.Elem, p, elem)
 }
 
-//go:linkname reflect_setassign_faststr reflect.mapassign_faststr0
+//go:linkname reflect_setassign_faststr reflect.setassign_faststr0
 func reflect_setassign_faststr(t *settype, h *hset, key string, elem unsafe.Pointer) {
 	p := setassign_faststr(t, h, key)
 	typedmemmove(t.Elem, p, elem)
 }
 
-//go:linkname reflect_setdelete reflect.mapdelete
+//go:linkname reflect_setdelete reflect.setdelete
 func reflect_setdelete(t *settype, h *hset, key unsafe.Pointer) {
 	setdelete(t, h, key)
 }
 
-//go:linkname reflect_setdelete_faststr reflect.mapdelete_faststr
+//go:linkname reflect_setdelete_faststr reflect.setdelete_faststr
 func reflect_setdelete_faststr(t *settype, h *hset, key string) {
 	setdelete_faststr(t, h, key)
 }
 
-// reflect_setiterinit is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/modern-go/reflect2
-//   - gitee.com/quant1x/gox
-//   - github.com/v2pro/plz
-//   - github.com/wI2L/jettison
+// reflect_setiterinit is for package reflect.
+// Do not use it as a linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiterinit reflect.mapiterinit
+//go:linkname reflect_setiterinit reflect.setiterinit
 func reflect_setiterinit(t *settype, h *hset, it *hiterset) {
 	setiterinit(t, h, it)
 }
 
-// reflect_setiternext is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - gitee.com/quant1x/gox
-//   - github.com/modern-go/reflect2
-//   - github.com/goccy/go-json
-//   - github.com/v2pro/plz
-//   - github.com/wI2L/jettison
+// reflect_setiternext is for package reflect.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiternext reflect.mapiternext
+//go:linkname reflect_setiternext reflect.setiternext
 func reflect_setiternext(it *hiterset) {
 	setiternext(it)
 }
 
-// reflect_setiterkey is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/goccy/go-json
-//   - gonum.org/v1/gonum
-//
+// reflect_setiterkey is for package reflect.
+// Do not access it using linkname.
+
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiterkey reflect.mapiterkey
+//go:linkname reflect_setiterkey reflect.setiterkey
 func reflect_setiterkey(it *hiterset) unsafe.Pointer {
 	return it.key
 }
 
-// reflect_setiterelem is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/goccy/go-json
-//   - gonum.org/v1/gonum
+// reflect_setiterelem is for package reflect.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiterelem reflect.mapiterelem
-func reflect_setiterelem(it *hiterset) unsafe.Pointer {
-	return it.elem
-}
+//go:linkname reflect_setiterelem reflect.setiterelem
+//func reflect_setiterelem(it *hiterset) unsafe.Pointer {
+//	return it.elem
+//}
 
-// reflect_setlen is for package reflect,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/goccy/go-json
-//   - github.com/wI2L/jettison
+// reflect_setlen is for package reflect.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setlen reflect.maplen
+//go:linkname reflect_setlen reflect.setlen
 func reflect_setlen(h *hset) int {
 	if h == nil {
 		return 0
@@ -1507,7 +1491,7 @@ func reflect_setlen(h *hset) int {
 	return h.count
 }
 
-//go:linkname reflect_setclear reflect.mapclear
+//go:linkname reflect_setclear reflect.setclear
 func reflect_setclear(t *settype, h *hset) {
 	setclear(t, h)
 }

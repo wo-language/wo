@@ -151,6 +151,11 @@ cont:
 		if !identical(t1.Key(), t2.Key(), flags, assumedEqual) {
 			return false
 		}
+
+	case TSET:
+		if !identical(t1.Elem(), t2.Elem(), flags, assumedEqual) {
+			return false
+		}
 	}
 
 	return identical(t1.Elem(), t2.Elem(), flags, assumedEqual)

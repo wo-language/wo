@@ -10,45 +10,45 @@ import (
 	"unsafe"
 )
 
-func setaccess1_fast32(t *settype, h *hset, key uint32) unsafe.Pointer {
-	if raceenabled && h != nil {
-		callerpc := getcallerpc()
-		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setaccess1_fast32))
-	}
-	if h == nil || h.count == 0 {
-		return unsafe.Pointer(&zeroVal[0])
-	}
-	if h.flags&hashWriting != 0 {
-		fatal("concurrent set read and set write")
-	}
-	var b *bset
-	if h.B == 0 {
-		// One-bucket table. No need to hash.
-		b = (*bset)(h.buckets)
-	} else {
-		hash := t.Hasher(noescape(unsafe.Pointer(&key)), uintptr(h.hash0))
-		m := bucketMask(h.B)
-		b = (*bset)(add(h.buckets, (hash&m)*uintptr(t.BucketSize)))
-		if c := h.oldbuckets; c != nil {
-			if !h.sameSizeGrow() {
-				// There used to be half as many buckets; mask down one more power of two.
-				m >>= 1
-			}
-			oldb := (*bset)(add(c, (hash&m)*uintptr(t.BucketSize)))
-			if !evacuatedSet(oldb) {
-				b = oldb
-			}
-		}
-	}
-	for ; b != nil; b = b.overflow(t) {
-		for i, k := uintptr(0), b.keys(); i < abi.MapBucketCount; i, k = i+1, add(k, 4) {
-			if *(*uint32)(k) == key && !isEmpty(b.tophash[i]) {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*4+i*uintptr(t.ValueSize))
-			}
-		}
-	}
-	return unsafe.Pointer(&zeroVal[0])
-}
+//func setaccess1_fast32(t *settype, h *hset, key uint32) unsafe.Pointer {
+//	if raceenabled && h != nil {
+//		callerpc := getcallerpc()
+//		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setaccess1_fast32))
+//	}
+//	if h == nil || h.count == 0 {
+//		return unsafe.Pointer(&zeroVal[0])
+//	}
+//	if h.flags&hashWriting != 0 {
+//		fatal("concurrent set read and set write")
+//	}
+//	var b *bset
+//	if h.B == 0 {
+//		// One-bucket table. No need to hash.
+//		b = (*bset)(h.buckets)
+//	} else {
+//		hash := t.Hasher(noescape(unsafe.Pointer(&key)), uintptr(h.hash0))
+//		m := bucketMask(h.B)
+//		b = (*bset)(add(h.buckets, (hash&m)*uintptr(t.BucketSize)))
+//		if c := h.oldbuckets; c != nil {
+//			if !h.sameSizeGrow() {
+//				// There used to be half as many buckets; mask down one more power of two.
+//				m >>= 1
+//			}
+//			oldb := (*bset)(add(c, (hash&m)*uintptr(t.BucketSize)))
+//			if !evacuatedSet(oldb) {
+//				b = oldb
+//			}
+//		}
+//	}
+//	for ; b != nil; b = b.overflow(t) {
+//		for i, k := uintptr(0), b.keys(); i < abi.MapBucketCount; i, k = i+1, add(k, 4) {
+//			if *(*uint32)(k) == key && !isEmpty(b.tophash[i]) {
+//				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*4+i*uintptr(t.ValueSize))
+//			}
+//		}
+//	}
+//	return unsafe.Pointer(&zeroVal[0])
+//}
 
 // setaccess2_fast32 should be an internal detail,
 // but widely used packages access it using linkname.
@@ -59,13 +59,13 @@ func setaccess1_fast32(t *settype, h *hset, key uint32) unsafe.Pointer {
 // See go.dev/issue/67401.
 //
 //go:linkname setaccess2_fast32
-func setaccess2_fast32(t *settype, h *hset, key uint32) (unsafe.Pointer, bool) {
+func setaccess2_fast32(t *settype, h *hset, key uint32) bool {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
 		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setaccess2_fast32))
 	}
 	if h == nil || h.count == 0 {
-		return unsafe.Pointer(&zeroVal[0]), false
+		return false
 	}
 	if h.flags&hashWriting != 0 {
 		fatal("concurrent set read and set write")
@@ -92,19 +92,15 @@ func setaccess2_fast32(t *settype, h *hset, key uint32) (unsafe.Pointer, bool) {
 	for ; b != nil; b = b.overflow(t) {
 		for i, k := uintptr(0), b.keys(); i < abi.MapBucketCount; i, k = i+1, add(k, 4) {
 			if *(*uint32)(k) == key && !isEmpty(b.tophash[i]) {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*4+i*uintptr(t.ValueSize)), true
+				return true
 			}
 		}
 	}
-	return unsafe.Pointer(&zeroVal[0]), false
+	return false
 }
 
-// setassign_fast32 should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/bytedance/sonic
-//   - github.com/cloudwego/frugal
-//   - github.com/ugorji/go/codec
+// setassign_fast32 should be an internal detail.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
@@ -200,10 +196,8 @@ done:
 	return elem
 }
 
-// setassign_fast32ptr should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/ugorji/go/codec
+// setassign_fast32ptr should be an internal detail.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.

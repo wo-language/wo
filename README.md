@@ -76,7 +76,7 @@ Potential Features
 - Use the arrow return style in `func`s, and for function types: `var f func(func(float64) int) string` for `(float64 -> int) -> string f`
 - *Undecided* whether to switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types like `int i`, `struct s`, `string proc(float32 f)`
 - *MAYBE* don't use `type` from `type A interface {}`
-- *MAYBE* Make it more obvious that map and slice are pointers like `*map[string, string]`
+- *MAYBE* Make it more obvious that map and slice are pointers? https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it
 - *MAYBE* (probably won't) allow methods to be in their struct like
 - *MAYBE* not allowing **mixing shadowed** and initialized variable declarations
 

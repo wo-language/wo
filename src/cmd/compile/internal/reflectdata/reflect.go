@@ -223,10 +223,10 @@ func MapType() *types.Type {
 		makefield("extra", types.Types[types.TUNSAFEPTR]),
 	}
 
-	n := ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hmap"))
-	hmap := types.NewNamed(n)
-	n.SetType(hmap)
-	n.SetTypecheck(1)
+	name := ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hmap"))
+	hmap := types.NewNamed(name)
+	name.SetType(hmap)
+	name.SetTypecheck(1)
 
 	hmap.SetUnderlying(types.NewStruct(fields))
 	types.CalcSize(hmap)
@@ -239,6 +239,58 @@ func MapType() *types.Type {
 
 	hmapType = hmap
 	return hmap
+}
+
+var hsetType *types.Type
+
+// SetType returns a type interchangeable with runtime.hset.
+// Make sure this stays in sync with runtime/set.go.
+func SetType() *types.Type {
+	if hsetType != nil {
+		return hsetType
+	}
+
+	// build a struct:
+	// type hset struct {
+	//    count      int
+	//    flags      uint8
+	//    B          uint8
+	//    noverflow  uint16
+	//    hash0      uint32
+	//    buckets    unsafe.Pointer
+	//    oldbuckets unsafe.Pointer
+	//    nevacuate  uintptr
+	//    extra      unsafe.Pointer // *setextra
+	// }
+	// must match runtime/set.go:hset.
+	fields := []*types.Field{
+		makefield("count", types.Types[types.TINT]),
+		makefield("flags", types.Types[types.TUINT8]),
+		makefield("B", types.Types[types.TUINT8]),
+		makefield("noverflow", types.Types[types.TUINT16]),
+		makefield("hash0", types.Types[types.TUINT32]),      // Used in walk.go for OMAKEMAP.
+		makefield("buckets", types.Types[types.TUNSAFEPTR]), // Used in walk.go for OMAKEMAP.
+		makefield("oldbuckets", types.Types[types.TUNSAFEPTR]),
+		makefield("nevacuate", types.Types[types.TUINTPTR]),
+		makefield("extra", types.Types[types.TUNSAFEPTR]),
+	}
+
+	var name *ir.Name = ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hset"))
+	var hset *types.Type = types.NewNamed(name) // SetType?
+	name.SetType(hset)
+	name.SetTypecheck(1)
+
+	hset.SetUnderlying(types.NewStruct(fields))
+	types.CalcSize(hset)
+
+	// The size of hset should be 48 bytes on 64 bit
+	// and 28 bytes on 32 bit platforms.
+	if size := int64(8 + 5*types.PtrSize); hset.Size() != size {
+		base.Fatalf("hset size not correct: got %d, want %d", hset.Size(), size)
+	}
+
+	hsetType = hset
+	return hset
 }
 
 var hiterType *types.Type
@@ -256,7 +308,7 @@ func MapIterType() *types.Type {
 	// type hiter struct {
 	//    key         unsafe.Pointer // *Key
 	//    elem        unsafe.Pointer // *Elem
-	//    t           unsafe.Pointer // *MapType
+	//    t           unsafe.Pointer // *SetType
 	//    h           *hmap
 	//    buckets     unsafe.Pointer
 	//    bptr        unsafe.Pointer // *bmap
@@ -290,7 +342,7 @@ func MapIterType() *types.Type {
 	}
 
 	// build iterator struct holding the above fields
-	n := ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hiter"))
+	n := ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hiterset"))
 	hiter := types.NewNamed(n)
 	n.SetType(hiter)
 	n.SetTypecheck(1)
@@ -303,6 +355,70 @@ func MapIterType() *types.Type {
 
 	hiterType = hiter
 	return hiter
+}
+
+var hitersetType *types.Type
+
+// SetIterType returns a type interchangeable with runtime.hiterset.
+// Make sure this stays in sync with runtime/set.go.
+func SetIterType() *types.Type {
+	if hitersetType != nil {
+		return hitersetType
+	}
+
+	hset := SetType()
+
+	// build a struct:
+	// type hiterset struct {
+	//    key         unsafe.Pointer // *Key
+	//    elem        unsafe.Pointer // *Elem
+	//    t           unsafe.Pointer // *MapType
+	//    h           *hset
+	//    buckets     unsafe.Pointer
+	//    bptr        unsafe.Pointer // *bset
+	//    overflow    unsafe.Pointer // *[]*bset
+	//    oldoverflow unsafe.Pointer // *[]*bset
+	//    startBucket uintptr
+	//    offset      uint8
+	//    wrapped     bool
+	//    B           uint8
+	//    i           uint8
+	//    bucket      uintptr
+	//    checkBucket uintptr
+	// }
+	// must match runtime/set.go:hiterset.
+	fields := []*types.Field{
+		makefield("key", types.Types[types.TUNSAFEPTR]),  // Used in range.go for TMAP.
+		makefield("elem", types.Types[types.TUNSAFEPTR]), // Used in range.go for TMAP.
+		makefield("t", types.Types[types.TUNSAFEPTR]),
+		makefield("h", types.NewPtr(hset)),
+		makefield("buckets", types.Types[types.TUNSAFEPTR]),
+		makefield("bptr", types.Types[types.TUNSAFEPTR]),
+		makefield("overflow", types.Types[types.TUNSAFEPTR]),
+		makefield("oldoverflow", types.Types[types.TUNSAFEPTR]),
+		makefield("startBucket", types.Types[types.TUINTPTR]),
+		makefield("offset", types.Types[types.TUINT8]),
+		makefield("wrapped", types.Types[types.TBOOL]),
+		makefield("B", types.Types[types.TUINT8]),
+		makefield("i", types.Types[types.TUINT8]),
+		makefield("bucket", types.Types[types.TUINTPTR]),
+		makefield("checkBucket", types.Types[types.TUINTPTR]),
+	}
+
+	// build iterator struct holding the above fields
+	n := ir.NewDeclNameAt(src.NoXPos, ir.OTYPE, ir.Pkgs.Runtime.Lookup("hiterset"))
+	hiterset := types.NewNamed(n)
+	n.SetType(hiterset)
+	n.SetTypecheck(1)
+
+	hiterset.SetUnderlying(types.NewStruct(fields))
+	types.CalcSize(hiterset)
+	if hiterset.Size() != int64(12*types.PtrSize) {
+		base.Fatalf("hash_iter size not correct %d %d", hiterset.Size(), 12*types.PtrSize)
+	}
+
+	hiterType = hiterset
+	return hiterset
 }
 
 // methods returns the methods of the non-interface type t, sorted by name.
@@ -1039,19 +1155,19 @@ func writeType(t *types.Type) *obj.LSym {
 		s1 := writeType(t.Elem())
 		t2 := types.NewSlice(t.Elem())
 		s2 := writeType(t2)
-		c.Field("Elem").WritePtr(s1)
+		c.Field("KeyElem").WritePtr(s1)
 		c.Field("Slice").WritePtr(s2)
 		c.Field("Len").WriteUintptr(uint64(t.NumElem()))
 
 	case types.TSLICE:
 		// internal/abi.SliceType
 		s1 := writeType(t.Elem())
-		c.Field("Elem").WritePtr(s1)
+		c.Field("KeyElem").WritePtr(s1)
 
 	case types.TCHAN:
 		// internal/abi.ChanType
 		s1 := writeType(t.Elem())
-		c.Field("Elem").WritePtr(s1)
+		c.Field("KeyElem").WritePtr(s1)
 		c.Field("Dir").WriteInt(int64(t.ChanDir()))
 
 	case types.TFUNC:
@@ -1112,7 +1228,7 @@ func writeType(t *types.Type) *obj.LSym {
 		hasher := genhash(t.Key())
 
 		c.Field("Key").WritePtr(s1)
-		c.Field("Elem").WritePtr(s2)
+		c.Field("KeyElem").WritePtr(s2)
 		c.Field("Bucket").WritePtr(s3)
 		c.Field("Hasher").WritePtr(hasher)
 		var flags uint32
@@ -1160,7 +1276,7 @@ func writeType(t *types.Type) *obj.LSym {
 		}
 
 		s1 := writeType(t.Elem())
-		c.Field("Elem").WritePtr(s1)
+		c.Field("KeyElem").WritePtr(s1)
 
 	case types.TSTRUCT:
 		// internal/abi.StructType

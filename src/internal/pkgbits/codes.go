@@ -51,6 +51,7 @@ const (
 	TypeArray
 	TypeChan
 	TypeMap
+	TypeSet
 	TypeSignature
 	TypeStruct
 	TypeInterface

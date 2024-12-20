@@ -1305,6 +1305,19 @@ func (p *parser) parseMapType() *ast.MapType {
 	return &ast.MapType{Map: pos, Key: key, Value: value}
 }
 
+func (p *parser) parseSetType() *ast.SetType { // #wo
+	if p.trace {
+		defer un(trace(p, "SetType"))
+	}
+
+	pos := p.expect(token.MAP)
+	p.expect(token.LBRACK)
+	elem := p.parseType()
+	p.expect(token.RBRACK)
+
+	return &ast.SetType{Set: pos, Elem: elem}
+}
+
 func (p *parser) parseChanType() *ast.ChanType {
 	if p.trace {
 		defer un(trace(p, "ChanType"))
@@ -1385,6 +1398,8 @@ func (p *parser) tryIdentOrType() ast.Expr {
 		return p.parseInterfaceType()
 	case token.MAP:
 		return p.parseMapType()
+	case token.SET:
+		return p.parseSetType()
 	case token.CHAN, token.ARROW:
 		return p.parseChanType()
 	case token.LPAREN:

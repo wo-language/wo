@@ -49,66 +49,66 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 
 	// variable name conventions:
 	//	ohv1, hv1, hv2: hidden (old) val 1, 2
-	//	ha, hit: hidden aggregate, iterator
+	//	ha, iterator: hidden aggregate, iterator
 	//	hn, hp: hidden len, pointer
 	//	hb: hidden bool
-	//	a, v1, v2: not hidden aggregate, val 1, 2
+	//	iterable, rangeKey, rangeValue: not hidden aggregate, val 1, 2
 
-	a := nrange.X
-	t := a.Type()
-	lno := ir.SetPos(a)
+	iterable := nrange.X
+	iterableType := iterable.Type()
+	lno := ir.SetPos(iterable)
 
-	v1, v2 := nrange.Key, nrange.Value
+	rangeKey, rangeValue := nrange.Key, nrange.Value
 
-	if ir.IsBlank(v2) {
-		v2 = nil
+	if ir.IsBlank(rangeValue) {
+		rangeValue = nil
 	}
 
-	if ir.IsBlank(v1) && v2 == nil {
-		v1 = nil
+	if ir.IsBlank(rangeKey) && rangeValue == nil {
+		rangeKey = nil
 	}
 
-	if v1 == nil && v2 != nil {
+	if rangeKey == nil && rangeValue != nil {
 		base.Fatalf("walkRange: v2 != nil while v1 == nil")
 	}
 
 	var body []ir.Node
 	var init []ir.Node
-	switch k := t.Kind(); {
+	switch k := iterableType.Kind(); {
 	default:
 		base.Fatalf("walkRange")
 
 	case types.IsInt[k]:
-		hv1 := typecheck.TempAt(base.Pos, ir.CurFunc, t)
-		hn := typecheck.TempAt(base.Pos, ir.CurFunc, t)
+		hv1 := typecheck.TempAt(base.Pos, ir.CurFunc, iterableType)
+		hn := typecheck.TempAt(base.Pos, ir.CurFunc, iterableType)
 
 		init = append(init, ir.NewAssignStmt(base.Pos, hv1, nil))
-		init = append(init, ir.NewAssignStmt(base.Pos, hn, a))
+		init = append(init, ir.NewAssignStmt(base.Pos, hn, iterable))
 
 		nfor.Cond = ir.NewBinaryExpr(base.Pos, ir.OLT, hv1, hn)
 		nfor.Post = ir.NewAssignStmt(base.Pos, hv1, ir.NewBinaryExpr(base.Pos, ir.OADD, hv1, ir.NewInt(base.Pos, 1)))
 
-		if v1 != nil {
+		if rangeKey != nil {
 			body = []ir.Node{rangeAssign(nrange, hv1)}
 		}
 
 	case k == types.TARRAY, k == types.TSLICE, k == types.TPTR: // TPTR is pointer-to-array
-		if nn := arrayRangeClear(nrange, v1, v2, a); nn != nil {
+		if nn := arrayRangeClear(nrange, rangeKey, rangeValue, iterable); nn != nil {
 			base.Pos = lno
 			return nn
 		}
 
 		// Element type of the iteration
 		var elem *types.Type
-		switch t.Kind() {
+		switch iterableType.Kind() {
 		case types.TSLICE, types.TARRAY:
-			elem = t.Elem()
+			elem = iterableType.Elem()
 		case types.TPTR:
-			elem = t.Elem().Elem()
+			elem = iterableType.Elem().Elem()
 		}
 
 		// order.stmt arranged for a copy of the array/slice variable if needed.
-		ha := a
+		ha := iterable
 
 		hv1 := typecheck.TempAt(base.Pos, ir.CurFunc, types.Types[types.TINT])
 		hn := typecheck.TempAt(base.Pos, ir.CurFunc, types.Types[types.TINT])
@@ -120,19 +120,19 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 		nfor.Post = ir.NewAssignStmt(base.Pos, hv1, ir.NewBinaryExpr(base.Pos, ir.OADD, hv1, ir.NewInt(base.Pos, 1)))
 
 		// for range ha { body }
-		if v1 == nil {
+		if rangeKey == nil {
 			break
 		}
 
-		// for v1 := range ha { body }
-		if v2 == nil {
+		// for rangeKey := range ha { body }
+		if rangeValue == nil {
 			body = []ir.Node{rangeAssign(nrange, hv1)}
 			break
 		}
 
-		// for v1, v2 := range ha { body }
+		// for rangeKey, rangeValue := range ha { body }
 		if cheapComputableIndex(elem.Size()) {
-			// v1, v2 = hv1, ha[hv1]
+			// rangeKey, rangeValue = hv1, ha[hv1]
 			tmp := ir.NewIndexExpr(base.Pos, ha, hv1)
 			tmp.SetBounded(true)
 			body = []ir.Node{rangeAssign2(nrange, hv1, tmp)}
@@ -141,15 +141,15 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 
 		// Slice to iterate over
 		var hs ir.Node
-		if t.IsSlice() {
+		if iterableType.IsSlice() {
 			hs = ha
 		} else {
 			var arr ir.Node
-			if t.IsPtr() {
+			if iterableType.IsPtr() {
 				arr = ha
 			} else {
 				arr = typecheck.NodAddr(ha)
-				arr.SetType(t.PtrTo())
+				arr.SetType(iterableType.PtrTo())
 				arr.SetTypecheck(1)
 			}
 			hs = ir.NewSliceExpr(base.Pos, ir.OSLICEARR, arr, nil, nil, nil)
@@ -196,7 +196,7 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 		//   hu = uintptr(unsafe.Pointer(hs.ptr))
 		//   for i := 0; i < hs.len; i++ {
 		//     hp = (*T)(unsafe.Pointer(hu))
-		//     v1, v2 = i, *hp
+		//     rangeKey, rangeValue = i, *hp
 		//     ... body of loop ...
 		//     hu = uintptr(unsafe.Pointer(hp)) + elemsize
 		//   }
@@ -235,40 +235,69 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 
 	case k == types.TMAP:
 		// order.stmt allocated the iterator for us.
-		// we only use a once, so no copy needed.
-		ha := a
+		// we only use iterable once, so no copy needed.
+		hiddenAggregate := iterable
 
-		hit := nrange.Prealloc
-		th := hit.Type()
+		iterator := nrange.Prealloc
+		iteratorType := iterator.Type()
 		// depends on layout of iterator struct.
 		// See cmd/compile/internal/reflectdata/reflect.go:MapIterType
-		keysym := th.Field(0).Sym
-		elemsym := th.Field(1).Sym // ditto
+		keysym := iteratorType.Field(0).Sym
+		elemsym := iteratorType.Field(1).Sym // ditto
 
-		fn := typecheck.LookupRuntime("mapiterinit", t.Key(), t.Elem(), th)
-		init = append(init, mkcallstmt1(fn, reflectdata.RangeMapRType(base.Pos, nrange), ha, typecheck.NodAddr(hit)))
-		nfor.Cond = ir.NewBinaryExpr(base.Pos, ir.ONE, ir.NewSelectorExpr(base.Pos, ir.ODOT, hit, keysym), typecheck.NodNil())
+		fn := typecheck.LookupRuntime("mapiterinit", iterableType.Key(), iterableType.Elem(), iteratorType)
+		init = append(init, mkcallstmt1(fn, reflectdata.RangeMapRType(base.Pos, nrange), hiddenAggregate, typecheck.NodAddr(iterator)))
+		nfor.Cond = ir.NewBinaryExpr(base.Pos, ir.ONE, ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), typecheck.NodNil())
 
-		fn = typecheck.LookupRuntime("mapiternext", th)
-		nfor.Post = mkcallstmt1(fn, typecheck.NodAddr(hit))
+		fn = typecheck.LookupRuntime("mapiternext", iteratorType)
+		nfor.Post = mkcallstmt1(fn, typecheck.NodAddr(iterator))
 
-		key := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, hit, keysym), types.NewPtr(t.Key())))
-		if v1 == nil {
+		key := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), types.NewPtr(iterableType.Key())))
+		if rangeKey == nil {
 			body = nil
-		} else if v2 == nil {
+		} else if rangeValue == nil {
 			body = []ir.Node{rangeAssign(nrange, key)}
 		} else {
-			elem := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, hit, elemsym), types.NewPtr(t.Elem())))
+			elem := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, elemsym), types.NewPtr(iterableType.Elem())))
+			body = []ir.Node{rangeAssign2(nrange, key, elem)}
+		}
+
+	case k == types.TSET:
+		// order.stmt allocated the iterator for us.
+		// we only use iterable once, so no copy needed.
+		hiddenAggregate := iterable
+
+		iterator := nrange.Prealloc
+		iteratorType := iterator.Type()
+		// depends on layout of iterator struct.
+		// See cmd/compile/internal/reflectdata/reflect.go:MapIterType
+		keysym := iteratorType.Field(0).Sym
+
+		setIterInitFunc := typecheck.LookupRuntime("setiterinit", iterableType.Key(), iterableType.Elem(), iteratorType)
+		init = append(init, mkcallstmt1(setIterInitFunc, reflectdata.RangeMapRType(base.Pos, nrange), hiddenAggregate, typecheck.NodAddr(iterator)))
+		nfor.Cond = ir.NewBinaryExpr(base.Pos, ir.ONE, ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), typecheck.NodNil())
+
+		setIterInitFunc = typecheck.LookupRuntime("setiternext", iteratorType)
+		nfor.Post = mkcallstmt1(setIterInitFunc, typecheck.NodAddr(iterator))
+
+		key := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), types.NewPtr(iterableType.Key())))
+		if rangeKey == nil {
+			body = nil
+		} else if rangeValue == nil {
+			body = []ir.Node{rangeAssign(nrange, key)}
+		} else {
+			// TODO what is the meaning of for _, v := range set {} ?
+			elem := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), types.NewPtr(iterableType.Elem())))
 			body = []ir.Node{rangeAssign2(nrange, key, elem)}
 		}
 
 	case k == types.TCHAN:
 		// order.stmt arranged for a copy of the channel variable.
-		ha := a
+		ha := iterable
 
-		hv1 := typecheck.TempAt(base.Pos, ir.CurFunc, t.Elem())
+		hv1 := typecheck.TempAt(base.Pos, ir.CurFunc, iterableType.Elem())
 		hv1.SetTypecheck(1)
-		if t.Elem().HasPointers() {
+		if iterableType.Elem().HasPointers() {
 			init = append(init, ir.NewAssignStmt(base.Pos, hv1, nil))
 		}
 		hb := typecheck.TempAt(base.Pos, ir.CurFunc, types.Types[types.TBOOL])
@@ -279,7 +308,7 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 		a := ir.NewAssignListStmt(base.Pos, ir.OAS2RECV, lhs, rhs)
 		a.SetTypecheck(1)
 		nfor.Cond = ir.InitExpr([]ir.Node{a}, nfor.Cond)
-		if v1 == nil {
+		if rangeKey == nil {
 			body = nil
 		} else {
 			body = []ir.Node{rangeAssign(nrange, hv1)}
@@ -290,9 +319,9 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 		body = append(body, ir.NewAssignStmt(base.Pos, hv1, nil))
 
 	case k == types.TSTRING:
-		// Transform string range statements like "for v1, v2 = range a" into
+		// Transform string range statements like "for rangeKey, rangeValue = range iterable" into
 		//
-		// ha := a
+		// ha := iterable
 		// for hv1 := 0; hv1 < len(ha); {
 		//   hv1t := hv1
 		//   hv2 := rune(ha[hv1])
@@ -301,12 +330,12 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 		//   } else {
 		//      hv2, hv1 = decoderune(ha, hv1)
 		//   }
-		//   v1, v2 = hv1t, hv2
+		//   rangeKey, rangeValue = hv1t, hv2
 		//   // original body
 		// }
 
 		// order.stmt arranged for a copy of the string variable.
-		ha := a
+		ha := iterable
 
 		hv1 := typecheck.TempAt(base.Pos, ir.CurFunc, types.Types[types.TINT])
 		hv1t := typecheck.TempAt(base.Pos, ir.CurFunc, types.Types[types.TINT])
@@ -318,7 +347,7 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 		// hv1 < len(ha)
 		nfor.Cond = ir.NewBinaryExpr(base.Pos, ir.OLT, hv1, ir.NewUnaryExpr(base.Pos, ir.OLEN, ha))
 
-		if v1 != nil {
+		if rangeKey != nil {
 			// hv1t = hv1
 			body = append(body, ir.NewAssignStmt(base.Pos, hv1t, hv1))
 		}
@@ -344,12 +373,12 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 
 		body = append(body, nif)
 
-		if v1 != nil {
-			if v2 != nil {
-				// v1, v2 = hv1t, hv2
+		if rangeKey != nil {
+			if rangeValue != nil {
+				// rangeKey, rangeValue = hv1t, hv2
 				body = append(body, rangeAssign2(nrange, hv1t, hv2))
 			} else {
-				// v1 = hv1t
+				// rangeKey = hv1t
 				body = append(body, rangeAssign(nrange, hv1t))
 			}
 		}

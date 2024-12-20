@@ -27,7 +27,7 @@ a transpiler that converts them between each other
 
 ---
 
-sometimes I get "function main is undeclared in the main package" until I added a println in main, then ran it, then removed it, then it worked like normal
+running go on a .wo file seems to give "function main is undeclared in the main package"
 
 todo:
 
@@ -57,5 +57,54 @@ current commit syntax attempt to add:
 recognizes `->` - fails bc doesn't belong anywhere
 
 ### `set`
-- fails bc doesn't belong anywhere (no set type file)
-- refactored
+- no syntax for it
+- also impl's `setiter`, set_faststr, set_fast64, set_fast32, sets, sets/iter
+https://dave.cheney.net/2018/05/29/how-the-go-runtime-implements-maps-efficiently-without-generics
+```go
+m := map[kType]vType // init
+v := m[k]     // mapaccess1(m, k, &v)
+v, ok := m[k] // mapaccess2(m, k, &v, &ok)
+m[k] = 9001   // mapinsert(m, k, 9001)
+delete(m, k)  // mapdelete(m, k)
+
+s := set[eType] // init
+---            // setaccess1 - disabled
+ok := s[e]     // setaccess2(s, e, &ok)
+s.insert(9001) // setinsert(s, e, 9001)
+delete(s, e)   // setdelete(s, e)
+
+```
+meaning:
+remove mapaccess1,
+modify signature of mapaccess2,
+change the parser's syntax
+
+- it should really barely be much faster than map[type]struct{}
+  - since I only removed the element field and any calculations for it (which were constant time ones)
+  - the overall time complexity should be the same
+
+
+after adding/removing any fundamental types, you have to run
+
+go get -u golang.org/x/tools/cmd/stringer
+go install stringer
+cmd\compile\internal\types $ stringer -type Kind -trimprefix T type.go
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

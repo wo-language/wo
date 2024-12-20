@@ -94,6 +94,11 @@ And it's hard to do something about the inconsistent capitalization in functions
 
 I chose `<T>` for `interface{T}` because it can still wrap around some T, and it's a symbol associated with types. I was also considering something like `#{}`, but the shortness of `<>` was more attractive.
 
+```go
+func f(a <>) {
+}
+```
+
 As for
 
 ```go
@@ -108,7 +113,7 @@ type I <
     bool
 >
 ```
-which is just unnecessary. Using `interface` in the type declaration doesn't feel exasperating anyway.
+which is a bit weird unless you really like C++. Using `interface` in the type declaration doesn't feel exasperating anyway.
 
 ### Unused variables
 
@@ -437,3 +442,12 @@ type point union {
 
 `struct S {}`
 `interface I {}`
+
+---
+
+## Scope control
+
+There are over 100 "halls of shame" in Go's source code, which is a comment point to a repo that used a function that it "shouldn't have".
+
+It's not really a laughing matter at that point, programs should be able to represent who gets access to what.
+

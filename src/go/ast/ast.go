@@ -472,6 +472,12 @@ type (
 		Value Expr
 	}
 
+	// A SetType node represents a set type.
+	SetType struct {
+		Set  token.Pos // position of "set" keyword
+		Elem Expr
+	}
+
 	// A ChanType node represents a channel type.
 	ChanType struct {
 		Begin token.Pos // position of "chan" keyword or "<-" (whichever comes first)
@@ -516,6 +522,7 @@ func (x *FuncType) Pos() token.Pos {
 }
 func (x *InterfaceType) Pos() token.Pos { return x.Interface }
 func (x *MapType) Pos() token.Pos       { return x.Map }
+func (x *SetType) Pos() token.Pos       { return x.Set }
 func (x *ChanType) Pos() token.Pos      { return x.Begin }
 
 func (x *BadExpr) End() token.Pos { return x.To }
@@ -551,6 +558,7 @@ func (x *FuncType) End() token.Pos {
 }
 func (x *InterfaceType) End() token.Pos { return x.Methods.End() }
 func (x *MapType) End() token.Pos       { return x.Value.End() }
+func (x *SetType) End() token.Pos       { return x.Elem.End() }
 func (x *ChanType) End() token.Pos      { return x.Value.End() }
 
 // exprNode() ensures that only expression/type nodes can be
@@ -579,6 +587,7 @@ func (*StructType) exprNode()    {}
 func (*FuncType) exprNode()      {}
 func (*InterfaceType) exprNode() {}
 func (*MapType) exprNode()       {}
+func (*SetType) exprNode()       {}
 func (*ChanType) exprNode()      {}
 
 // ----------------------------------------------------------------------------

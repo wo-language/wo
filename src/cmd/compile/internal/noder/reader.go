@@ -514,6 +514,8 @@ func (r *reader) doTyp() *types.Type {
 		return types.NewChan(r.typ(), dir)
 	case pkgbits.TypeMap:
 		return types.NewMap(r.typ(), r.typ())
+	case pkgbits.TypeSet:
+		return types.NewSet(r.typ())
 	case pkgbits.TypePointer:
 		return types.NewPtr(r.typ())
 	case pkgbits.TypeSignature:
@@ -1825,6 +1827,9 @@ func (r *reader) forStmt(label *types.Sym) ir.Node {
 		if rang.X.Type().IsMap() {
 			rang.RType = r.rtype(pos)
 		}
+		if rang.X.Type().IsSet() {
+			rang.RType = r.rtype(pos)
+		}
 		if rang.Key != nil && !ir.IsBlank(rang.Key) {
 			rang.KeyTypeWord, rang.KeySrcRType = r.convRTTI(pos)
 		}
@@ -2986,6 +2991,9 @@ func (r *reader) compLit() ir.Node {
 	}
 	var rtype ir.Node
 	if typ.IsMap() {
+		rtype = r.rtype(pos)
+	}
+	if typ.IsSet() {
 		rtype = r.rtype(pos)
 	}
 	isStruct := typ.Kind() == types.TSTRUCT

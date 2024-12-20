@@ -266,7 +266,7 @@ func (c Cursor) Field(name string) Cursor {
 
 func (c Cursor) Elem(i int64) Cursor {
 	if c.typ.Kind() != types.TARRAY {
-		base.Fatalf("can't call Elem on non-array %v", c.typ)
+		base.Fatalf("can't call KeyElem on non-array %v", c.typ)
 	}
 	if i < 0 || i >= c.typ.NumElem() {
 		base.Fatalf("element access out of bounds [%d] in [0:%d]", i, c.typ.NumElem())

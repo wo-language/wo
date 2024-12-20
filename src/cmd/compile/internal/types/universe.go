@@ -121,6 +121,7 @@ func InitTypes(defTypeName func(sym *Sym, typ *Type) Object) {
 
 	// simple aliases
 	SimType[TMAP] = TPTR
+	SimType[TSET] = TPTR
 	SimType[TCHAN] = TPTR
 	SimType[TFUNC] = TPTR
 	SimType[TUNSAFEPTR] = TPTR

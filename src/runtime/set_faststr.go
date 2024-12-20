@@ -13,100 +13,100 @@ import (
 	"unsafe"
 )
 
-func setaccess1_faststr(t *settype, h *hset, ky string) unsafe.Pointer {
-	if raceenabled && h != nil {
-		callerpc := getcallerpc()
-		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setaccess1_faststr))
-	}
-	if h == nil || h.count == 0 {
-		return unsafe.Pointer(&zeroVal[0])
-	}
-	if h.flags&hashWriting != 0 {
-		fatal("concurrent set read and set write")
-	}
-	key := stringStructOf(&ky)
-	if h.B == 0 {
-		// One-bucket table.
-		b := (*bset)(h.buckets)
-		if key.len < 32 {
-			// short key, doing lots of comparisons is ok
-			for i, kptr := uintptr(0), b.keys(); i < abi.MapBucketCount; i, kptr = i+1, add(kptr, 2*goarch.PtrSize) {
-				k := (*stringStruct)(kptr)
-				if k.len != key.len || isEmpty(b.tophash[i]) {
-					if b.tophash[i] == emptyRest {
-						break
-					}
-					continue
-				}
-				if k.str == key.str || memequal(k.str, key.str, uintptr(key.len)) {
-					return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize))
-				}
-			}
-			return unsafe.Pointer(&zeroVal[0])
-		}
-		// long key, try not to do more comparisons than necessary
-		keymaybe := uintptr(abi.MapBucketCount)
-		for i, kptr := uintptr(0), b.keys(); i < abi.MapBucketCount; i, kptr = i+1, add(kptr, 2*goarch.PtrSize) {
-			k := (*stringStruct)(kptr)
-			if k.len != key.len || isEmpty(b.tophash[i]) {
-				if b.tophash[i] == emptyRest {
-					break
-				}
-				continue
-			}
-			if k.str == key.str {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize))
-			}
-			// check first 4 bytes
-			if *((*[4]byte)(key.str)) != *((*[4]byte)(k.str)) {
-				continue
-			}
-			// check last 4 bytes
-			if *((*[4]byte)(add(key.str, uintptr(key.len)-4))) != *((*[4]byte)(add(k.str, uintptr(key.len)-4))) {
-				continue
-			}
-			if keymaybe != abi.MapBucketCount {
-				// Two keys are potential matches. Use hash to distinguish them.
-				goto dohash
-			}
-			keymaybe = i
-		}
-		if keymaybe != abi.MapBucketCount {
-			k := (*stringStruct)(add(unsafe.Pointer(b), dataOffset+keymaybe*2*goarch.PtrSize))
-			if memequal(k.str, key.str, uintptr(key.len)) {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+keymaybe*uintptr(t.ValueSize))
-			}
-		}
-		return unsafe.Pointer(&zeroVal[0])
-	}
-dohash:
-	hash := t.Hasher(noescape(unsafe.Pointer(&ky)), uintptr(h.hash0))
-	m := bucketMask(h.B)
-	b := (*bset)(add(h.buckets, (hash&m)*uintptr(t.BucketSize)))
-	if c := h.oldbuckets; c != nil {
-		if !h.sameSizeGrow() {
-			// There used to be half as many buckets; mask down one more power of two.
-			m >>= 1
-		}
-		oldb := (*bset)(add(c, (hash&m)*uintptr(t.BucketSize)))
-		if !evacuatedSet(oldb) {
-			b = oldb
-		}
-	}
-	top := tophash(hash)
-	for ; b != nil; b = b.overflow(t) {
-		for i, kptr := uintptr(0), b.keys(); i < abi.MapBucketCount; i, kptr = i+1, add(kptr, 2*goarch.PtrSize) {
-			k := (*stringStruct)(kptr)
-			if k.len != key.len || b.tophash[i] != top {
-				continue
-			}
-			if k.str == key.str || memequal(k.str, key.str, uintptr(key.len)) {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize))
-			}
-		}
-	}
-	return unsafe.Pointer(&zeroVal[0])
-}
+//func setaccess1_faststr(t *settype, h *hset, ky string) unsafe.Pointer {
+//	if raceenabled && h != nil {
+//		callerpc := getcallerpc()
+//		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setaccess1_faststr))
+//	}
+//	if h == nil || h.count == 0 {
+//		return unsafe.Pointer(&zeroVal[0])
+//	}
+//	if h.flags&hashWriting != 0 {
+//		fatal("concurrent set read and set write")
+//	}
+//	key := stringStructOf(&ky)
+//	if h.B == 0 {
+//		// One-bucket table.
+//		b := (*bset)(h.buckets)
+//		if key.len < 32 {
+//			// short key, doing lots of comparisons is ok
+//			for i, kptr := uintptr(0), b.keys(); i < abi.MapBucketCount; i, kptr = i+1, add(kptr, 2*goarch.PtrSize) {
+//				k := (*stringStruct)(kptr)
+//				if k.len != key.len || isEmpty(b.tophash[i]) {
+//					if b.tophash[i] == emptyRest {
+//						break
+//					}
+//					continue
+//				}
+//				if k.str == key.str || memequal(k.str, key.str, uintptr(key.len)) {
+//					return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize))
+//				}
+//			}
+//			return unsafe.Pointer(&zeroVal[0])
+//		}
+//		// long key, try not to do more comparisons than necessary
+//		keymaybe := uintptr(abi.MapBucketCount)
+//		for i, kptr := uintptr(0), b.keys(); i < abi.MapBucketCount; i, kptr = i+1, add(kptr, 2*goarch.PtrSize) {
+//			k := (*stringStruct)(kptr)
+//			if k.len != key.len || isEmpty(b.tophash[i]) {
+//				if b.tophash[i] == emptyRest {
+//					break
+//				}
+//				continue
+//			}
+//			if k.str == key.str {
+//				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize))
+//			}
+//			// check first 4 bytes
+//			if *((*[4]byte)(key.str)) != *((*[4]byte)(k.str)) {
+//				continue
+//			}
+//			// check last 4 bytes
+//			if *((*[4]byte)(add(key.str, uintptr(key.len)-4))) != *((*[4]byte)(add(k.str, uintptr(key.len)-4))) {
+//				continue
+//			}
+//			if keymaybe != abi.MapBucketCount {
+//				// Two keys are potential matches. Use hash to distinguish them.
+//				goto dohash
+//			}
+//			keymaybe = i
+//		}
+//		if keymaybe != abi.MapBucketCount {
+//			k := (*stringStruct)(add(unsafe.Pointer(b), dataOffset+keymaybe*2*goarch.PtrSize))
+//			if memequal(k.str, key.str, uintptr(key.len)) {
+//				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+keymaybe*uintptr(t.ValueSize))
+//			}
+//		}
+//		return unsafe.Pointer(&zeroVal[0])
+//	}
+//dohash:
+//	hash := t.Hasher(noescape(unsafe.Pointer(&ky)), uintptr(h.hash0))
+//	m := bucketMask(h.B)
+//	b := (*bset)(add(h.buckets, (hash&m)*uintptr(t.BucketSize)))
+//	if c := h.oldbuckets; c != nil {
+//		if !h.sameSizeGrow() {
+//			// There used to be half as many buckets; mask down one more power of two.
+//			m >>= 1
+//		}
+//		oldb := (*bset)(add(c, (hash&m)*uintptr(t.BucketSize)))
+//		if !evacuatedSet(oldb) {
+//			b = oldb
+//		}
+//	}
+//	top := tophash(hash)
+//	for ; b != nil; b = b.overflow(t) {
+//		for i, kptr := uintptr(0), b.keys(); i < abi.MapBucketCount; i, kptr = i+1, add(kptr, 2*goarch.PtrSize) {
+//			k := (*stringStruct)(kptr)
+//			if k.len != key.len || b.tophash[i] != top {
+//				continue
+//			}
+//			if k.str == key.str || memequal(k.str, key.str, uintptr(key.len)) {
+//				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize))
+//			}
+//		}
+//	}
+//	return unsafe.Pointer(&zeroVal[0])
+//}
 
 // setaccess2_faststr should be an internal detail,
 // but widely used packages access it using linkname.
@@ -117,13 +117,13 @@ dohash:
 // See go.dev/issue/67401.
 //
 //go:linkname setaccess2_faststr
-func setaccess2_faststr(t *settype, h *hset, ky string) (unsafe.Pointer, bool) {
+func setaccess2_faststr(t *settype, h *hset, ky string) bool {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
 		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setaccess2_faststr))
 	}
 	if h == nil || h.count == 0 {
-		return unsafe.Pointer(&zeroVal[0]), false
+		return false
 	}
 	if h.flags&hashWriting != 0 {
 		fatal("concurrent set read and set write")
@@ -143,10 +143,10 @@ func setaccess2_faststr(t *settype, h *hset, ky string) (unsafe.Pointer, bool) {
 					continue
 				}
 				if k.str == key.str || memequal(k.str, key.str, uintptr(key.len)) {
-					return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize)), true
+					return true
 				}
 			}
-			return unsafe.Pointer(&zeroVal[0]), false
+			return false
 		}
 		// long key, try not to do more comparisons than necessary
 		keymaybe := uintptr(abi.MapBucketCount)
@@ -159,7 +159,7 @@ func setaccess2_faststr(t *settype, h *hset, ky string) (unsafe.Pointer, bool) {
 				continue
 			}
 			if k.str == key.str {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize)), true
+				return true
 			}
 			// check first 4 bytes
 			if *((*[4]byte)(key.str)) != *((*[4]byte)(k.str)) {
@@ -178,10 +178,10 @@ func setaccess2_faststr(t *settype, h *hset, ky string) (unsafe.Pointer, bool) {
 		if keymaybe != abi.MapBucketCount {
 			k := (*stringStruct)(add(unsafe.Pointer(b), dataOffset+keymaybe*2*goarch.PtrSize))
 			if memequal(k.str, key.str, uintptr(key.len)) {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+keymaybe*uintptr(t.ValueSize)), true
+				return true
 			}
 		}
-		return unsafe.Pointer(&zeroVal[0]), false
+		return false
 	}
 dohash:
 	hash := t.Hasher(noescape(unsafe.Pointer(&ky)), uintptr(h.hash0))
@@ -205,19 +205,15 @@ dohash:
 				continue
 			}
 			if k.str == key.str || memequal(k.str, key.str, uintptr(key.len)) {
-				return add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize)), true
+				return true
 			}
 		}
 	}
-	return unsafe.Pointer(&zeroVal[0]), false
+	return false
 }
 
-// setassign_faststr should be an internal detail,
-// but widely used packages access it using linkname.
-// Notable members of the hall of shame include:
-//   - github.com/bytedance/sonic
-//   - github.com/cloudwego/frugal
-//   - github.com/ugorji/go/codec
+// setassign_faststr should be an internal detail.
+// Do not access it using linkname.
 //
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.

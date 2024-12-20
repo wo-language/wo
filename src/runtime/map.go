@@ -1551,7 +1551,7 @@ func reflect_mapiterkey(it *hiter) unsafe.Pointer {
 	return it.key
 }
 
-// reflect_setiterelem is for package reflect,
+// reflect_mapiterelem is for package reflect,
 // but widely used packages access it using linkname.
 // Notable members of the hall of shame include:
 //   - github.com/goccy/go-json
@@ -1560,7 +1560,7 @@ func reflect_mapiterkey(it *hiter) unsafe.Pointer {
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//go:linkname reflect_setiterelem reflect.mapiterelem
+//go:linkname reflect_mapiterelem reflect.mapiterelem
 func reflect_mapiterelem(it *hiter) unsafe.Pointer {
 	return it.elem
 }

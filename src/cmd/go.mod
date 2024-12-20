@@ -6,12 +6,12 @@ require (
 	github.com/google/pprof v0.0.0-20240528025155-186aa0362fba
 	golang.org/x/arch v0.8.0
 	golang.org/x/build v0.0.0-20240603162849-5dfbda438323
-	golang.org/x/mod v0.19.0
-	golang.org/x/sync v0.7.0
-	golang.org/x/sys v0.22.0
+	golang.org/x/mod v0.22.0
+	golang.org/x/sync v0.10.0
+	golang.org/x/sys v0.28.0
 	golang.org/x/telemetry v0.0.0-20240828213427-40b6b7fe7147
 	golang.org/x/term v0.20.0
-	golang.org/x/tools v0.22.1-0.20240618181713-f2d2ebe43e72
+	golang.org/x/tools v0.28.0
 )
 
 require (

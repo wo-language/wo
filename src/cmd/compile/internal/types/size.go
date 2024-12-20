@@ -255,7 +255,7 @@ func CalcSize(t *Type) {
 
 	et := t.Kind()
 	switch et {
-	case TFUNC, TCHAN, TMAP, TSTRING:
+	case TFUNC, TCHAN, TMAP, TSET, TSTRING:
 		break
 
 	// SimType == 0 during bootstrap
@@ -365,6 +365,13 @@ func CalcSize(t *Type) {
 		t.intRegs = 1
 		CheckSize(t.Elem())
 		CheckSize(t.Key())
+		t.setAlg(ANOEQ)
+		t.ptrBytes = int64(PtrSize)
+
+	case TSET: // implemented as pointer
+		w = int64(PtrSize)
+		t.intRegs = 1
+		CheckSize(t.Elem())
 		t.setAlg(ANOEQ)
 		t.ptrBytes = int64(PtrSize)
 

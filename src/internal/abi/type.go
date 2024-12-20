@@ -160,6 +160,7 @@ var kindNames = []string{
 	Func:          "func",
 	Interface:     "interface",
 	Map:           "map",
+	Set:           "set",
 	Pointer:       "ptr",
 	Slice:         "slice",
 	String:        "string",
@@ -355,6 +356,12 @@ func (t *Type) Uncommon() *UncommonType {
 			u UncommonType
 		}
 		return &(*u)(unsafe.Pointer(t)).u
+	case Set:
+		type u struct {
+			SetType
+			u UncommonType
+		}
+		return &(*u)(unsafe.Pointer(t)).u
 	case Interface:
 		type u struct {
 			InterfaceType
@@ -370,7 +377,7 @@ func (t *Type) Uncommon() *UncommonType {
 	}
 }
 
-// Elem returns the element type for t if t is an array, channel, map, pointer, or slice, otherwise nil.
+// Elem returns the element type for t if t is an array, channel, map, set, pointer, or slice, otherwise nil.
 func (t *Type) Elem() *Type {
 	switch t.Kind() {
 	case Array:
@@ -381,6 +388,9 @@ func (t *Type) Elem() *Type {
 		return tt.Elem
 	case Map:
 		tt := (*MapType)(unsafe.Pointer(t))
+		return tt.Elem
+	case Set:
+		tt := (*SetType)(unsafe.Pointer(t))
 		return tt.Elem
 	case Pointer:
 		tt := (*PtrType)(unsafe.Pointer(t))
@@ -406,6 +416,14 @@ func (t *Type) MapType() *MapType {
 		return nil
 	}
 	return (*MapType)(unsafe.Pointer(t))
+}
+
+// SetType returns t cast to a *SetType, or nil if its tag does not match.
+func (t *Type) SetType() *SetType {
+	if t.Kind() != Set {
+		return nil
+	}
+	return (*SetType)(unsafe.Pointer(t))
 }
 
 // ArrayType returns t cast to a *ArrayType, or nil if its tag does not match.

@@ -58,6 +58,7 @@ const (
 	TSTRUCT
 	TCHAN
 	TMAP
+	TSET
 	TINTER
 	TFORW
 	TANY
@@ -163,6 +164,7 @@ type Type struct {
 	// one pointer-shaped field are stored as values rather than pointers when possible.
 	//
 	// TMAP: *Map
+	// TSET: *Set
 	// TFORW: *Forward
 	// TFUNC: *Func
 	// TSTRUCT: *Struct
@@ -320,6 +322,19 @@ type Map struct {
 func (t *Type) MapType() *Map {
 	t.wantEtype(TMAP)
 	return t.extra.(*Map)
+}
+
+// Set contains Type fields specific to maps. #wo
+type Set struct {
+	Elem *Type // Val (elem) type
+
+	Bucket *Type // internal struct type representing a hash bucket
+}
+
+// SetType returns t's extra set-specific fields.
+func (t *Type) SetType() *Set {
+	t.wantEtype(TSET)
+	return t.extra.(*Set)
 }
 
 // Forward contains Type fields specific to forward types.
@@ -520,6 +535,8 @@ func newType(et Kind) *Type {
 	switch t.kind {
 	case TMAP:
 		t.extra = new(Map)
+	case TSET:
+		t.extra = new(Set)
 	case TFORW:
 		t.extra = new(Forward)
 	case TFUNC:
@@ -629,6 +646,17 @@ func NewMap(k, v *Type) *Type {
 	mt.Key = k
 	mt.Elem = v
 	if k.HasShape() || v.HasShape() {
+		t.SetHasShape(true)
+	}
+	return t
+}
+
+// NewSet returns a new set Type with key type k and element (aka value) type v.
+func NewSet(k *Type) *Type {
+	t := newType(TSET)
+	mt := t.SetType()
+	mt.Elem = k
+	if k.HasShape() {
 		t.SetHasShape(true)
 	}
 	return t
@@ -759,6 +787,13 @@ func SubstAny(t *Type, types *[]*Type) *Type {
 			t.extra.(*Map).Elem = elem
 		}
 
+	case TSET:
+		key := SubstAny(t.Elem(), types)
+		if key != t.Elem() {
+			t = t.copy()
+			t.extra.(*Set).Elem = key
+		}
+
 	case TFUNC:
 		ft := t.funcType()
 		allParams := substFields(ft.allParams, types)
@@ -804,6 +839,9 @@ func (t *Type) copy() *Type {
 	switch t.kind {
 	case TMAP:
 		x := *t.extra.(*Map)
+		nt.extra = &x
+	case TSET:
+		x := *t.extra.(*Set)
 		nt.extra = &x
 	case TFORW:
 		x := *t.extra.(*Forward)
@@ -902,7 +940,8 @@ func (t *Type) Key() *Type {
 }
 
 // Elem returns the type of elements of t.
-// Usable with pointers, channels, arrays, slices, and maps.
+// Usable with pointers, channels, arrays, slices, maps, and sets.
+// set is implemented with "keys", but called "Elements" conventionally
 func (t *Type) Elem() *Type {
 	switch t.kind {
 	case TPTR:
@@ -915,8 +954,10 @@ func (t *Type) Elem() *Type {
 		return t.extra.(*Chan).Elem
 	case TMAP:
 		return t.extra.(*Map).Elem
+	case TSET:
+		return t.extra.(*Set).Elem
 	}
-	base.Fatalf("Type.Elem %s", t.kind)
+	base.Fatalf("Type.KeyElem %s", t.kind)
 	return nil
 }
 
@@ -1201,6 +1242,9 @@ func (t *Type) cmp(x *Type) Cmp {
 		}
 		return t.Elem().cmp(x.Elem())
 
+	case TSET:
+		return t.Elem().cmp(x.Elem())
+
 	case TPTR, TSLICE:
 		// No special cases for these, they are handled
 		// by the general code after the switch.
@@ -1396,13 +1440,13 @@ func (t *Type) IsUintptr() bool {
 // TODO(mdempsky): Should it? See golang.org/issue/15028.
 func (t *Type) IsPtrShaped() bool {
 	return t.kind == TPTR || t.kind == TUNSAFEPTR ||
-		t.kind == TMAP || t.kind == TCHAN || t.kind == TFUNC
+		t.kind == TMAP || t.kind == TSET || t.kind == TCHAN || t.kind == TFUNC
 }
 
 // HasNil reports whether the set of values determined by t includes nil.
 func (t *Type) HasNil() bool {
 	switch t.kind {
-	case TCHAN, TFUNC, TINTER, TMAP, TNIL, TPTR, TSLICE, TUNSAFEPTR:
+	case TCHAN, TFUNC, TINTER, TMAP, TSET, TNIL, TPTR, TSLICE, TUNSAFEPTR:
 		return true
 	}
 	return false
@@ -1414,6 +1458,10 @@ func (t *Type) IsString() bool {
 
 func (t *Type) IsMap() bool {
 	return t.kind == TMAP
+}
+
+func (t *Type) IsSet() bool {
+	return t.kind == TSET
 }
 
 func (t *Type) IsChan() bool {
@@ -1866,6 +1914,7 @@ func IsDirectIface(t *Type) bool {
 		return !t.Elem().NotInHeap()
 	case TCHAN,
 		TMAP,
+		TSET,
 		TFUNC,
 		TUNSAFEPTR:
 		return true
@@ -1961,7 +2010,7 @@ func ReceiverBaseType(t *Type) *Type {
 		return t
 	}
 	switch t.Kind() {
-	case TARRAY, TCHAN, TFUNC, TMAP, TSLICE, TSTRING, TSTRUCT:
+	case TARRAY, TCHAN, TFUNC, TMAP, TSET, TSTRING, TSTRUCT:
 		return t
 	}
 	return nil

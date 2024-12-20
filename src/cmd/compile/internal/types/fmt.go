@@ -411,6 +411,11 @@ func tconv2(b *bytes.Buffer, t *Type, verb rune, mode fmtMode, visited map[*Type
 		b.WriteByte(']')
 		tconv2(b, t.Elem(), 0, mode, visited)
 
+	case TSET:
+		b.WriteString("set[")
+		tconv2(b, t.Elem(), 0, mode, visited)
+		b.WriteByte(']')
+
 	case TINTER:
 		if t.IsEmptyInterface() {
 			b.WriteString("interface {}")
