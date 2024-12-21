@@ -273,14 +273,14 @@ func walkRange(nrange *ir.RangeStmt) ir.Node {
 		// See cmd/compile/internal/reflectdata/reflect.go:MapIterType
 		keysym := iteratorType.Field(0).Sym
 
-		setIterInitFunc := typecheck.LookupRuntime("setiterinit", iterableType.Key(), iterableType.Elem(), iteratorType)
+		setIterInitFunc := typecheck.LookupRuntime("setiterinit", iterableType.Elem(), iteratorType)
 		init = append(init, mkcallstmt1(setIterInitFunc, reflectdata.RangeMapRType(base.Pos, nrange), hiddenAggregate, typecheck.NodAddr(iterator)))
 		nfor.Cond = ir.NewBinaryExpr(base.Pos, ir.ONE, ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), typecheck.NodNil())
 
 		setIterInitFunc = typecheck.LookupRuntime("setiternext", iteratorType)
 		nfor.Post = mkcallstmt1(setIterInitFunc, typecheck.NodAddr(iterator))
 
-		key := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), types.NewPtr(iterableType.Key())))
+		key := ir.NewStarExpr(base.Pos, typecheck.ConvNop(ir.NewSelectorExpr(base.Pos, ir.ODOT, iterator, keysym), types.NewPtr(iterableType.Elem()))) // TODO the elem is the key
 		if rangeKey == nil {
 			body = nil
 		} else if rangeValue == nil {

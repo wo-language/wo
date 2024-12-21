@@ -440,10 +440,14 @@ func typesEqual(t, v *_type, seen map[_typePair]struct{}) bool {
 			}
 		}
 		return true
-	case abi.Map:
+	case abi.Map: // TODO
 		mt := (*maptype)(unsafe.Pointer(t))
 		mv := (*maptype)(unsafe.Pointer(v))
 		return typesEqual(mt.Key, mv.Key, seen) && typesEqual(mt.Elem, mv.Elem, seen)
+	case abi.Set:
+		st := (*settype)(unsafe.Pointer(t))
+		sv := (*settype)(unsafe.Pointer(v))
+		return typesEqual(st.Elem, sv.Elem, seen)
 	case abi.Pointer:
 		pt := (*ptrtype)(unsafe.Pointer(t))
 		pv := (*ptrtype)(unsafe.Pointer(v))

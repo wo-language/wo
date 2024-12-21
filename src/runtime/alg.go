@@ -275,7 +275,7 @@ func setKeyError(t *settype, p unsafe.Pointer) error {
 	if !t.HashMightPanic() {
 		return nil
 	}
-	return mapKeyError2(t.Key, p)
+	return mapKeyError2(t.Elem, p)
 }
 
 func mapKeyError(t *maptype, p unsafe.Pointer) error {

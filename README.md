@@ -1,26 +1,26 @@
 ### Wo is a fork of Go
 
-The Wo language is an interoperable successor to Go by offering an alternative syntax and language features.
+The Wo language is an interoperable successor to Go. It offers alternative syntax and language features aimed at readability.
 
 For example,
+
 ```go
 f, err := os.Open("hi.wo")
 if err != nil {
-    return err
+    return nil, err
 }
 ```
 
 would be done like this in Wo:
 
 ```go
-var file = os.Open!("hi.wo") // pending decisions here; it's a WIP
+file var = os.Open!("hi.wo") // pending decisions here; it's a WIP
 ```
 
-And it would return with any other return values filled in as their zero value.
+Some other ways to handle errors in Wo:
 
-Some other ways to deal with error handling:
 ```go
-var file = os.Open!!("hi.wo") // panic
+file var = os.Open!!("hi.wo") // panic
 file, log("Error:", err)   var = os.Open("hi.wo")
 file, handle(err)          var = os!Open("hi.wo") // handle and throw
 file, return(none, 3, err) var = os.Open("hi.wo") // with other return values
@@ -30,16 +30,16 @@ file, if(err)              var = os.Open("hi.wo") { handle(err) } // similar to 
 The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options, but it is a **proof of concept** and I have not necessarily got any of these working yet.
 
 
-| Rule                                                                            | Usage                                                                                                                                          |
-|---------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| Uses `<>`, not `interface{}` in type parameters                                 | `f(a interface{})` -> `f(a <>)` or `interface{Length() int}` to `<Length() int>`                                                               |
-| Allows **function overloading**                                                 | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`                                                          |
+| Rule                                                                            | Usage                                                                                                                                            |
+|---------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| Uses `<>`, not `interface{}` in type parameters                                 | `f(a interface{})` -> `f(a <>)` or `interface{Length() int}` to `<Length() int>`                                                                 |
+| Allows **function overloading**                                                 | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`                                                            |
 | ...but does **allow** **default arguments** in functions anyway                 | `print(stdout = console,`<br/>&emsp;`formatter = defaultFormatter,`<br/>&emsp;`string)`<br/>like how `[:]` already does: `slice(start=0, end=0)` |
-| **Doesn't** allow import overloading or **keyword overloading**                 | `var int int = 1` and `rune := 'W'` give compile error                                                                                         |
-| **Doens't** use "`range`" in **enhanced for** loops `for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                                                             |
-| **Doesn't** prefer name shortenings                                             | `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)                                                            |
-| Has the **ternary operator** for<br/>`if a, cond := call(); cond {}`            | `a, if(cond) = call() {} else {}`<br/>or maybe `?:` and  `a, cond? = call() {} : {}`                                                           
-| Uses `[]` after the type for arrays to reflect `map[key]`                         | **`int[]`** and `int[...][3]`                                                                                                                  |
+| **Doesn't** allow import overloading or **keyword overloading**                 | `var int int = 1` and `rune := 'W'` give compile error                                                                                           |
+| **Doens't** use "`range`" in **enhanced for** loops `for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                                                               |
+| **Doesn't** prefer name shortenings                                             | `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)                                                              |
+| Has the **ternary operator** for<br/>`if a, cond := call(); cond {}`            | `a, if(cond) = call() {} else {}`<br/>or maybe `?:` and  `a, cond? = call() {} : {}`                                                             |
+| Uses `[]` after the type for arrays to reflect `map[key]`                       | **`int[]`** and `int[...][3]`                                                                                                                    |
 
 (In the future) Wo also...
 - Reworks variables by
@@ -55,8 +55,10 @@ The point of these features is to drop the bantering about the theories of how m
 - Is a **WIP**, but will always accept change and criticism
 - Makes you say **"woah"**
 
+Wo is open source and free. Yes, the mascot is a **wo**mbat.
+
 Besides syntactical and formatting difference, Wo also offers functional differences such as
-- A native `set`
+- A native implementation of `set`
 - Could address **null checking** somehow (e.g. `nonnull` or `option`) and pointer/value receivers
 - Error values: a few potential options: not returning `nil` if there is no error, but something like `status.isErr()` being true, maybe like Rust's [result](https://doc.rust-lang.org/std/result/). Or `error` overriding all other return values like an exception: `io.Read` returns either `n` or throws `error` like `errable io.Read() n` or [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html)
 - (compile time) explicit `enum` and `union`
@@ -193,7 +195,6 @@ FilePath interface {
 |<pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>| <pre>&emsp;defer reader.Close!()<br><br><br><br><br></pre>                                                                                                               |
 |<pre>type Program struct {<br>&emsp;executable [...]byte<br>}<br>func (p Program*) output() string {<br>&emsp;return p.executable[:strings.LastIndex(p.executable, ".exe"))<br>}</pre>| <pre>struct Program {<br>&emsp;byte[...] executable<br>&emsp;string outputPath() {<br>&emsp;&emsp;return executable[:executable.LastIndex(".exe")]<br>&emsp;}<br>}</pre> |
 
-Yes, the mascot is a **wo**mbat.
 
 ### Trademark disclaimer
 

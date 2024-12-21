@@ -1,55 +1,58 @@
-This project is a fork of the "go" repo, which is the source for the Go compiler, library, and testing. This means that this repo can get compiled into a modified version of the Go compiler. If you were to follow the [full instructions for a source install](https://go.dev/doc/install/source#bootstrapFromCrosscompiledSource) with this repo, your computer would have this repo's compiler as your Go compiler in many targets of your choosing. That is how you can install Wo. Since it is a modification, it's not safe to rely on it as a Go builder. This is because, although it is meant to run .go files, it modifies those exact same files with extra logic (by checking if the current file is .wo), but that could fail, and then `go` could fail.
+This project is a fork of the "go" repo, which is the source for the Go compiler, library, and testing.
+This means that this repo can get compiled into a modified version of the Go compiler.
+If you were to follow the [full instructions for a source install](https://go.dev/doc/install/source#bootstrapFromCrosscompiledSource) with this repo, your computer would have this
+repo's compiler as your Go compiler in many targets of your choosing.
+That is how you can install Wo. Since it is a modification, it's not safe to rely on it as a Go builder.
+This is because, although it is meant to run .go files, it modifies those exact same files with extra logic
+(by checking if the current file is .wo), but that could fail, and then `go` could fail.
 
-For linking, it will depend on your IDE, but it wasn't hard to add ".wo" as a file type association in goland
+This file is meant to be changed per commit, associated with details that apply to that specific commit e.g. current outputs.
+
+For syntax linking in a code editor, it will depend on your IDE, but it wasn't hard to add ".wo" as a file type association in goland
 
 Development steps:
 
 - running and testing this default repo [✅]
-
 - run a modified compiler [✅]
     - run a .wo file (in a separate project) [✅]
-
 - modifying the compiler code to support each kind of syntax [Doing...]
   - doing it for just one and test running it
   - make code formatter detect it
+- modifying the runner to support that transformation
+- possibly making the `wo` command separate, or at least instructing on how to make it an alias.
+- checking if it still reaches all the targets
+- setting up the website in Go then Wo
+- dealing with versions and downloadable executable installations for other users to test, perhaps offering an online playground
+- a transpiler that converts them between each other
 
-modifying the runner to support that transformation
 
-possibly making the `wo` command separate, or at least instructing on how to make it an alias.
-
-checking if it still reaches all the targets
-
-setting up the website in Go then Wo
-
-dealing with versions and downloadable executable installations for other users to test, perhaps offering an online playground
-
-a transpiler that converts them between each other
-
----
-
-running go on a .wo file seems to give "function main is undeclared in the main package"
-
-todo:
+### todo
 
 1. refactor test/wo/*.wo -> test/wo_*.wo if they don't get ran, also need to change some bat file to include it in the tests maybe
 2. add automated tests in my own run_wo.bat
 
 
+### run without tests
 
-### run without tests:
 ```
 cd src
 ./make.bat
 ```
 
+### current state
+
+running go on a .wo file seems to give "function main is undeclared in the main package"
+
 current expected output: linkname must refer to declared function or variable (I haven't set it up)
 
-creation of the compiler runs:
-go test -run=Generate -write=all
-to create custom types
-
+---
 I think the compiler runs in this order:
 build serialize scanner parser resolver walk
+creation of the compiler runs:
+
+`go test -run=Generate -write=all`
+to create custom types
+which I probably must run too
 
 current commit syntax attempt to add:
 
@@ -93,16 +96,39 @@ go get -u golang.org/x/tools/cmd/stringer
 go install stringer
 cmd\compile\internal\types $ stringer -type Kind -trimprefix T type.go
 
+### how I added another reserved word steps
+
+the locations of, say, "int8" and "interface" for compiling reasons don't really have a universal location.
+
+Those types, per the many steps and parts of the compiler, show up in many, many places that need to be accounted for.
+
+Some of them deal with errors, some deal with representing the structure of the syntax in the code, some deal with
+comparisons, and some deal with the actual functionality behind it.
+
+All of these should be updated, and it's not as simple as adding it to each list, as you'd have to implement it as how
+it is within that file.
+
+According to my current specifications,
+
+I want to add these tokens:
+`set`, `some`, `none`, `->`.
+maybe `enum`, `union`.
+
+and modify the meaning of:
+`:`, `!`, `<`, `>`, `:=`
+maybe `?`.
+
+and possibly remove (ignore):
+`iota`, `range`
+
+however, I would actually keep these, as it should compile both Go and Wo, and they share the same type specifications.
+This would also allow errors like "Wo doesn't use the range syntax, try : " for example.
 
 
 
+other:
 
-
-
-
-
-
-
+https://github.com/golang/go/blob/e6626dafa8de8a0efae351e85cf96f0c683e0a4f/doc/go_lang.txt
 
 
 

@@ -1,4 +1,17 @@
 
+### Index
+
+- [Theory](#Theory)
+  1. The goals of code
+  2. To restrict or to follow
+  3. Conventions
+- Conventions
+  1. Variable naming
+- Features
+  1. variable
+  2. interface{}
+  2. set
+
 ## Theory
 
 When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language and it's based on C so it's fast.
@@ -10,6 +23,8 @@ I have not seen anything in the programming language landscape like this - a dir
 Ultimately, in practice, certain improvements can be more valuable in different circumstances while it doesn't matter in others. For example, I had a program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
 
 So it is just nice to have the option of an improved design, not a forced grifting replacement for all of Go.
+
+Here's a description of the original goals of Go from 2008: [go/doc/go_lang.txt](https://github.com/golang/go/blob/e6626dafa8de8a0efae351e85cf96f0c683e0a4f/doc/go_lang.txt
 
 ### The goals of code
 
@@ -272,7 +287,7 @@ I made const like a prefix, required the type, only allow var for multi line and
 
 This is 6 possibilities without including `(...)` as before, but 8 otherwise, which takes the original 9, removes 2 redundant ones, then adds 2 restrictive one. It adds conditions so there are not multiple ways to do the same task. Only one assignment, only one const declaration, only one shadow, etc., but does not merge untyped declaration.
 
-Here's every possibility:
+Here's every possibility in Wo according to that grid:
 
 ```go
 x int = 8
@@ -352,7 +367,8 @@ import { "strings" }
 
 func areAnyHairyNosed(wombats Wombat[]) bool {
     strings string[] = {} // error
-    TODO
+    
+    for wombat : wombats // todo
     
     return false
 }
@@ -411,12 +427,34 @@ I vote to keep this since this is cool and kind of funny. It doesn't intersect w
 
 ## ternary
 
+I have to decide between
+
 `? :`
 
 `if cond {} else {}`
+
+Go kind asupports the latter, and the first is known for being hard to read
+
 ## set
 
-`set[E]`
+```go
+primes set[int] = {2, 3, 5, 7}  // declaration
+ok = primes[4]                  // is ok if contains elem
+primes.insert[11]               // insert / add
+primes.delete[7]                // delete / remove
+```
+
+I prefer `add`, but the established naming (from map) uses insert, so I don't want it to get messy.
+
+I also support a `sets` package in the same ways that the `maps` package does.
+
+There are also fast versions of the map for strings, int32, and int64, which I've also implemented.
+
+Because of the way `map` is designed (a hashmap), the keys and values are stored rather insignificantly, and removing the values from its structure was pretty simple to do. There isn't anything special about the difference between key and value besides that one part gets hashed and one part doesn't. So, yes, I copied map and refactored it; I really don't think there is any faster way to do *this map* for *its* intended purposes without also improving hashmap. That wasn't really my intention with Wo, but if someone sees a way of seriously improving the native hashmap when it doesn't have values, or if I spot an obvious one, then go ahead.
+
+So I made `map`'s key as `set`'s element, wiping any functionality with the map values.
+
+This does mean the removal of the `val = m[key]` method, as that doesn't really mean anything for sets. Instead, I modified and kept the `_, ok = m[key]` method, using it like `ok = s[elem]`.
 
 ## enum
 

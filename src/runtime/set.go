@@ -144,48 +144,6 @@ type hiterset struct {
 	checkBucket uintptr
 }
 
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-// (gap for row alignment for debugging)
-
 func evacuatedSet(b *bset) bool {
 	h := b.tophash[0]
 	return h > emptyOne && h < minTopHash
@@ -421,7 +379,7 @@ func setaccess1(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
 	//		return unsafe.Pointer(&zeroVal[0])
 	//	}
 	//	if h.flags&hashWriting != 0 {
-	//		fatal("concurrent map read and map write")
+	//		fatal("concurrent set read and map write")
 	//	}
 	//	// shift to the respective bucket
 	//	hash := t.Hasher(key, uintptr(h.hash0))
@@ -479,13 +437,13 @@ func setaccess2(t *settype, h *hset, key unsafe.Pointer) bool {
 		callerpc := getcallerpc()
 		pc := abi.FuncPCABIInternal(setaccess2)
 		racereadpc(unsafe.Pointer(h), callerpc, pc)
-		raceReadObjectPC(t.Key, key, callerpc, pc)
+		raceReadObjectPC(t.Elem, key, callerpc, pc)
 	}
 	if msanenabled && h != nil {
-		msanread(key, t.Key.Size_)
+		msanread(key, t.Elem.Size_)
 	}
 	if asanenabled && h != nil {
-		asanread(key, t.Key.Size_)
+		asanread(key, t.Elem.Size_)
 	}
 	if h == nil || h.count == 0 {
 		if err := setKeyError(t, key); err != nil {
@@ -523,7 +481,7 @@ bucketloop:
 			if t.IndirectKey() {
 				k = *((*unsafe.Pointer)(k))
 			}
-			if t.Key.Equal(key, k) {
+			if t.Elem.Equal(key, k) {
 				//e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
 				//if t.IndirectElem() {
 				//	e = *((*unsafe.Pointer)(e))
@@ -535,7 +493,7 @@ bucketloop:
 	return false
 }
 
-// returns the "key". Used by set iterator.
+// returns the "key" (usually called elem in sets). Used by set iterator.
 func setaccessK(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
 	if h == nil || h.count == 0 {
 		return nil
@@ -567,7 +525,7 @@ bucketloop:
 			if t.IndirectKey() {
 				k = *((*unsafe.Pointer)(k))
 			}
-			if t.Key.Equal(key, k) {
+			if t.Elem.Equal(key, k) {
 				//e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
 				//if t.IndirectElem() {
 				//	e = *((*unsafe.Pointer)(e))
@@ -606,24 +564,24 @@ bucketloop:
 // See go.dev/issue/67401.
 //
 //wo:linkname setassign
-func setassign(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
+func setassign(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer { // TODO
 	if h == nil {
-		panic(plainError("assignment to entry in nil map"))
+		panic(plainError("assignment to entry in nil set"))
 	}
 	if raceenabled {
 		callerpc := getcallerpc()
 		pc := abi.FuncPCABIInternal(setassign)
 		racewritepc(unsafe.Pointer(h), callerpc, pc)
-		raceReadObjectPC(t.Key, key, callerpc, pc)
+		raceReadObjectPC(t.Elem, key, callerpc, pc)
 	}
 	if msanenabled {
-		msanread(key, t.Key.Size_)
+		msanread(key, t.Elem.Size_)
 	}
 	if asanenabled {
-		asanread(key, t.Key.Size_)
+		asanread(key, t.Elem.Size_)
 	}
 	if h.flags&hashWriting != 0 {
-		fatal("concurrent map writes")
+		fatal("concurrent set writes")
 	}
 	hash := t.Hasher(key, uintptr(h.hash0))
 
@@ -653,7 +611,7 @@ bucketloop:
 				if isEmpty(b.tophash[i]) && inserti == nil {
 					inserti = &b.tophash[i]
 					insertk = add(unsafe.Pointer(b), dataOffset+i*uintptr(t.KeySize))
-					elem = add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
+					elem = add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize))
 				}
 				if b.tophash[i] == emptyRest {
 					break bucketloop
@@ -664,14 +622,14 @@ bucketloop:
 			if t.IndirectKey() {
 				k = *((*unsafe.Pointer)(k))
 			}
-			if !t.Key.Equal(key, k) {
+			if !t.Elem.Equal(key, k) {
 				continue
 			}
 			// already have a mapping for key. Update it.
 			if t.NeedKeyUpdate() {
-				typedmemmove(t.Key, k, key)
+				typedmemmove(t.Elem, k, key)
 			}
-			elem = add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
+			elem = add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize))
 			goto done
 		}
 		ovf := b.overflow(t)
@@ -700,26 +658,26 @@ bucketloop:
 
 	// store new key/elem at insert position
 	if t.IndirectKey() {
-		kmem := newobject(t.Key)
+		kmem := newobject(t.Elem)
 		*(*unsafe.Pointer)(insertk) = kmem
 		insertk = kmem
 	}
-	if t.IndirectElem() {
-		vmem := newobject(t.Elem)
-		*(*unsafe.Pointer)(elem) = vmem
-	}
-	typedmemmove(t.Key, insertk, key)
+	//if t.IndirectElem() {
+	//	vmem := newobject(t.Elem)
+	//	*(*unsafe.Pointer)(elem) = vmem
+	//}
+	typedmemmove(t.Elem, insertk, key)
 	*inserti = top
 	h.count++
 
 done:
 	if h.flags&hashWriting == 0 {
-		fatal("concurrent map writes")
+		fatal("concurrent set writes")
 	}
 	h.flags &^= hashWriting
-	if t.IndirectElem() {
-		elem = *((*unsafe.Pointer)(elem))
-	}
+	//if t.IndirectElem() {
+	//	elem = *((*unsafe.Pointer)(elem))
+	//}
 	return elem
 }
 
@@ -735,13 +693,13 @@ func setdelete(t *settype, h *hset, key unsafe.Pointer) {
 		callerpc := getcallerpc()
 		pc := abi.FuncPCABIInternal(setdelete)
 		racewritepc(unsafe.Pointer(h), callerpc, pc)
-		raceReadObjectPC(t.Key, key, callerpc, pc)
+		raceReadObjectPC(t.Elem, key, callerpc, pc)
 	}
 	if msanenabled && h != nil {
-		msanread(key, t.Key.Size_)
+		msanread(key, t.Elem.Size_)
 	}
 	if asanenabled && h != nil {
-		asanread(key, t.Key.Size_)
+		asanread(key, t.Elem.Size_)
 	}
 	if h == nil || h.count == 0 {
 		if err := setKeyError(t, key); err != nil {
@@ -780,23 +738,23 @@ search:
 			if t.IndirectKey() {
 				k2 = *((*unsafe.Pointer)(k2))
 			}
-			if !t.Key.Equal(key, k2) {
+			if !t.Elem.Equal(key, k2) {
 				continue
 			}
 			// Only clear key if there are pointers in it.
 			if t.IndirectKey() {
 				*(*unsafe.Pointer)(k) = nil
-			} else if t.Key.Pointers() {
-				memclrHasPointers(k, t.Key.Size_)
-			}
-			e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
-			if t.IndirectElem() {
-				*(*unsafe.Pointer)(e) = nil
 			} else if t.Elem.Pointers() {
-				memclrHasPointers(e, t.Elem.Size_)
-			} else {
-				memclrNoHeapPointers(e, t.Elem.Size_)
+				memclrHasPointers(k, t.Elem.Size_)
 			}
+			//e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
+			//if t.IndirectElem() {
+			//	*(*unsafe.Pointer)(e) = nil
+			//} else if t.Elem.Pointers() {
+			//	memclrHasPointers(e, t.Elem.Size_)
+			//} else {
+			//	memclrNoHeapPointers(e, t.Elem.Size_)
+			//}
 			b.tophash[i] = emptyOne
 			// If the bucket now ends in a bunch of emptyOne states,
 			// change those to emptyRest states.
@@ -918,7 +876,7 @@ func setiternext(it *hiterset) {
 		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setiternext))
 	}
 	if h.flags&hashWriting != 0 {
-		fatal("concurrent map iteration and map write")
+		fatal("concurrent set iteration and set write")
 	}
 	t := it.t
 	bucket := it.bucket
@@ -978,7 +936,7 @@ next:
 			// through the oldbucket, skipping any keysSet that will go
 			// to the other new bucket (each oldbucket expands to two
 			// buckets during a grow).
-			if t.ReflexiveKey() || t.Key.Equal(k, k) {
+			if t.ReflexiveKey() || t.Elem.Equal(k, k) {
 				// If the item in the oldbucket is not destined for
 				// the current new bucket in the iteration, skip it.
 				hash := t.Hasher(k, uintptr(h.hash0))
@@ -999,7 +957,7 @@ next:
 			}
 		}
 		if (b.tophash[offi] != evacuatedX && b.tophash[offi] != evacuatedY) ||
-			!(t.ReflexiveKey() || t.Key.Equal(k, k)) {
+			!(t.ReflexiveKey() || t.Elem.Equal(k, k)) {
 			// This is the golden data, we can return it.
 			// OR
 			// key!=key, so the entry can't be deleted or updated, so we can just return it.
@@ -1054,7 +1012,7 @@ func setclear(t *settype, h *hset) {
 	}
 
 	if h.flags&hashWriting != 0 {
-		fatal("concurrent map writes")
+		fatal("concurrent set writes")
 	}
 
 	h.flags ^= hashWriting
@@ -1101,7 +1059,7 @@ func setclear(t *settype, h *hset) {
 	}
 
 	if h.flags&hashWriting == 0 {
-		fatal("concurrent map writes")
+		fatal("concurrent set writes")
 	}
 	h.flags &^= hashWriting
 }
@@ -1197,9 +1155,8 @@ func bucketEvacuatedSet(t *settype, h *hset, bucket uintptr) bool {
 // evacDst is an evacuation destination.
 type evacDstSet struct {
 	b *bset          // current destination bucket
-	i int            // key/elem index into b
+	i int            // elem index into b
 	k unsafe.Pointer // pointer to current key storage
-	e unsafe.Pointer // pointer to current elem storage
 }
 
 func evacuateSet(t *settype, h *hset, oldbucket uintptr) {
@@ -1214,28 +1171,25 @@ func evacuateSet(t *settype, h *hset, oldbucket uintptr) {
 		x := &xy[0]
 		x.b = (*bset)(add(h.buckets, oldbucket*uintptr(t.BucketSize)))
 		x.k = add(unsafe.Pointer(x.b), dataOffset)
-		x.e = add(x.k, abi.MapBucketCount*uintptr(t.KeySize))
 
 		if !h.sameSizeGrow() {
 			// Only calculate y pointers if we're growing bigger.
-			// Otherwise GC can see bad pointers.
+			// Otherwise, GC can see bad pointers.
 			y := &xy[1]
 			y.b = (*bset)(add(h.buckets, (oldbucket+newbit)*uintptr(t.BucketSize)))
 			y.k = add(unsafe.Pointer(y.b), dataOffset)
-			y.e = add(y.k, abi.MapBucketCount*uintptr(t.KeySize))
 		}
 
 		for ; b != nil; b = b.overflow(t) {
 			k := add(unsafe.Pointer(b), dataOffset)
-			e := add(k, abi.MapBucketCount*uintptr(t.KeySize))
-			for i := 0; i < abi.MapBucketCount; i, k, e = i+1, add(k, uintptr(t.KeySize)), add(e, uintptr(t.ValueSize)) {
+			for i := 0; i < abi.MapBucketCount; i, k = i+1, add(k, uintptr(t.KeySize)) {
 				top := b.tophash[i]
 				if isEmpty(top) {
 					b.tophash[i] = evacuatedEmpty
 					continue
 				}
 				if top < minTopHash {
-					throw("bad map state")
+					throw("bad set state")
 				}
 				k2 := k
 				if t.IndirectKey() {
@@ -1246,7 +1200,7 @@ func evacuateSet(t *settype, h *hset, oldbucket uintptr) {
 					// Compute hash to make our evacuation decision (whether we need
 					// to send this key/elem to bucket x or bucket y).
 					hash := t.Hasher(k2, uintptr(h.hash0))
-					if h.flags&iterator != 0 && !t.ReflexiveKey() && !t.Key.Equal(k2, k2) {
+					if h.flags&iterator != 0 && !t.ReflexiveKey() && !t.Elem.Equal(k2, k2) {
 						// If key != key (NaNs), then the hash could be (and probably
 						// will be) entirely different from the old hash. Moreover,
 						// it isn't reproducible. Reproducibility is required in the
@@ -1278,26 +1232,24 @@ func evacuateSet(t *settype, h *hset, oldbucket uintptr) {
 					dst.b = h.newoverflow(t, dst.b)
 					dst.i = 0
 					dst.k = add(unsafe.Pointer(dst.b), dataOffset)
-					dst.e = add(dst.k, abi.MapBucketCount*uintptr(t.KeySize))
 				}
 				dst.b.tophash[dst.i&(abi.MapBucketCount-1)] = top // mask dst.i as an optimization, to avoid a bounds check
 				if t.IndirectKey() {
 					*(*unsafe.Pointer)(dst.k) = k2 // copy pointer
 				} else {
-					typedmemmove(t.Key, dst.k, k) // copy elem
+					typedmemmove(t.Elem, dst.k, k) // copy elem
 				}
-				if t.IndirectElem() {
-					*(*unsafe.Pointer)(dst.e) = *(*unsafe.Pointer)(e)
-				} else {
-					typedmemmove(t.Elem, dst.e, e)
-				}
+				//if t.IndirectElem() {
+				//	*(*unsafe.Pointer)(dst.e) = *(*unsafe.Pointer)(e)
+				//} else {
+				//	typedmemmove(t.Elem, dst.e, e)
+				//}
 				dst.i++
 				// These updates might push these pointers past the end of the
 				// key or elem arrays.  That's ok, as we have the overflow pointer
 				// at the end of the bucket to protect against pointing past the
 				// end of the bucket.
 				dst.k = add(dst.k, uintptr(t.KeySize))
-				dst.e = add(dst.e, uintptr(t.ValueSize))
 			}
 		}
 		// Unlink the overflow buckets & clear key/elem to help GC.
@@ -1351,38 +1303,38 @@ func advanceEvacuationMarkSet(h *hset, t *settype, newbit uintptr) {
 //wo:linkname reflect_makeset reflect.makemap
 func reflect_makeset(t *settype, cap int) *hset {
 	// Check invariants and reflects math.
-	if t.Key.Equal == nil {
-		throw("runtime.reflect_makeset: unsupported map key type")
+	if t.Elem.Equal == nil {
+		throw("runtime.reflect_makeset: unsupported set key type")
 	}
-	if t.Key.Size_ > abi.MapMaxKeyBytes && (!t.IndirectKey() || t.KeySize != uint8(goarch.PtrSize)) ||
-		t.Key.Size_ <= abi.MapMaxKeyBytes && (t.IndirectKey() || t.KeySize != uint8(t.Key.Size_)) {
+	if t.Elem.Size_ > abi.MapMaxKeyBytes && (!t.IndirectKey() || t.KeySize != uint8(goarch.PtrSize)) ||
+		t.Elem.Size_ <= abi.MapMaxKeyBytes && (t.IndirectKey() || t.KeySize != uint8(t.Elem.Size_)) {
 		throw("key size wrong")
 	}
-	if t.Elem.Size_ > abi.MapMaxElemBytes && (!t.IndirectElem() || t.ValueSize != uint8(goarch.PtrSize)) ||
-		t.Elem.Size_ <= abi.MapMaxElemBytes && (t.IndirectElem() || t.ValueSize != uint8(t.Elem.Size_)) {
-		throw("elem size wrong")
-	}
-	if t.Key.Align_ > abi.MapBucketCount {
+	//if t.Elem.Size_ > abi.MapMaxElemBytes && (!t.IndirectElem() || 0 != uint8(goarch.PtrSize)) ||
+	//	t.Elem.Size_ <= abi.MapMaxElemBytes && (t.IndirectElem() || 0 != uint8(t.Elem.Size_)) {
+	//	throw("elem size wrong")
+	//}
+	if t.Elem.Align_ > abi.MapBucketCount {
 		throw("key align too big")
 	}
-	if t.Elem.Align_ > abi.MapBucketCount {
-		throw("elem align too big")
-	}
-	if t.Key.Size_%uintptr(t.Key.Align_) != 0 {
+	//if t.Elem.Align_ > abi.MapBucketCount {
+	//	throw("elem align too big")
+	//}
+	if t.Elem.Size_%uintptr(t.Elem.Align_) != 0 {
 		throw("key size not a multiple of key align")
 	}
-	if t.Elem.Size_%uintptr(t.Elem.Align_) != 0 {
-		throw("elem size not a multiple of elem align")
-	}
+	//if t.Elem.Size_%uintptr(t.Elem.Align_) != 0 {
+	//	throw("elem size not a multiple of elem align")
+	//}
 	if abi.MapBucketCount < 8 {
 		throw("bucketsize too small for proper alignment")
 	}
-	if dataOffset%uintptr(t.Key.Align_) != 0 {
+	if dataOffset%uintptr(t.Elem.Align_) != 0 {
 		throw("need padding in bucket (key)")
 	}
-	if dataOffset%uintptr(t.Elem.Align_) != 0 {
-		throw("need padding in bucket (elem)")
-	}
+	//if dataOffset%uintptr(t.Elem.Align_) != 0 {
+	//	throw("need padding in bucket (elem)")
+	//}
 
 	return makeset(t, cap, nil)
 }
@@ -1545,16 +1497,14 @@ func moveToBset(t *settype, h *hset, dst *bset, pos int, src *bset) (*bset, int)
 		}
 
 		srcK := add(unsafe.Pointer(src), dataOffset+uintptr(i)*uintptr(t.KeySize))
-		srcEle := add(unsafe.Pointer(src), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+uintptr(i)*uintptr(t.ValueSize))
 		dstK := add(unsafe.Pointer(dst), dataOffset+uintptr(pos)*uintptr(t.KeySize))
-		dstEle := add(unsafe.Pointer(dst), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+uintptr(pos)*uintptr(t.ValueSize))
 
 		dst.tophash[pos] = src.tophash[i]
 		if t.IndirectKey() {
 			srcK = *(*unsafe.Pointer)(srcK)
 			if t.NeedKeyUpdate() {
-				kStore := newobject(t.Key)
-				typedmemmove(t.Key, kStore, srcK)
+				kStore := newobject(t.Elem)
+				typedmemmove(t.Elem, kStore, srcK)
 				srcK = kStore
 			}
 			// Note: if NeedKeyUpdate is false, then the memory
@@ -1562,16 +1512,16 @@ func moveToBset(t *settype, h *hset, dst *bset, pos int, src *bset) (*bset, int)
 			// it between the original map and its clone.
 			*(*unsafe.Pointer)(dstK) = srcK
 		} else {
-			typedmemmove(t.Key, dstK, srcK)
+			typedmemmove(t.Elem, dstK, srcK)
 		}
-		if t.IndirectElem() {
-			srcEle = *(*unsafe.Pointer)(srcEle)
-			eStore := newobject(t.Elem)
-			typedmemmove(t.Elem, eStore, srcEle)
-			*(*unsafe.Pointer)(dstEle) = eStore
-		} else {
-			typedmemmove(t.Elem, dstEle, srcEle)
-		}
+		//if t.IndirectElem() {
+		//	srcEle = *(*unsafe.Pointer)(srcEle)
+		//	eStore := newobject(t.Elem)
+		//	typedmemmove(t.Elem, eStore, srcEle)
+		//	*(*unsafe.Pointer)(dstEle) = eStore
+		//} else {
+		//	typedmemmove(t.Elem, dstEle, srcEle)
+		//}
 		pos++
 		h.count++
 	}
@@ -1598,7 +1548,7 @@ func setclone2(t *settype, src *hset) *hset {
 	}
 
 	if src.flags&hashWriting != 0 {
-		fatal("concurrent map clone and map write")
+		fatal("concurrent set clone and set write")
 	}
 
 	if src.B == 0 && !(t.IndirectKey() && t.NeedKeyUpdate()) && !t.IndirectElem() {
@@ -1638,8 +1588,8 @@ func setclone2(t *settype, src *hset) *hset {
 	oldSrcArraySize := int(bucketShift(oldB))
 
 	for i := 0; i < oldSrcArraySize; i++ {
-		srcBmap := (*bset)(add(srcOldbuckets, uintptr(i*int(t.BucketSize))))
-		if evacuatedSet(srcBmap) {
+		srcBset := (*bset)(add(srcOldbuckets, uintptr(i*int(t.BucketSize))))
+		if evacuatedSet(srcBset) {
 			continue
 		}
 
@@ -1649,39 +1599,39 @@ func setclone2(t *settype, src *hset) *hset {
 				dstBmap = dstBmap.overflow(t)
 			}
 			pos := 0
-			for srcBmap != nil {
-				dstBmap, pos = moveToBset(t, dst, dstBmap, pos, srcBmap)
-				srcBmap = srcBmap.overflow(t)
+			for srcBset != nil {
+				dstBmap, pos = moveToBset(t, dst, dstBmap, pos, srcBset)
+				srcBset = srcBset.overflow(t)
 			}
 			continue
 		}
 
 		// oldB < dst.B, so a single source bucket may go to multiple destination buckets.
 		// Process entries one at a time.
-		for srcBmap != nil {
+		for srcBset != nil {
 			// move from oldBlucket to new bucket
 			for i := uintptr(0); i < abi.MapBucketCount; i++ {
-				if isEmpty(srcBmap.tophash[i]) {
+				if isEmpty(srcBset.tophash[i]) {
 					continue
 				}
 
 				if src.flags&hashWriting != 0 {
-					fatal("concurrent map clone and map write")
+					fatal("concurrent set clone and set write")
 				}
 
-				srcK := add(unsafe.Pointer(srcBmap), dataOffset+i*uintptr(t.KeySize))
+				srcK := add(unsafe.Pointer(srcBset), dataOffset+i*uintptr(t.KeySize))
 				if t.IndirectKey() {
 					srcK = *((*unsafe.Pointer)(srcK))
 				}
 
-				srcEle := add(unsafe.Pointer(srcBmap), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
-				if t.IndirectElem() {
-					srcEle = *((*unsafe.Pointer)(srcEle))
-				}
-				dstEle := setassign(t, dst, srcK)
-				typedmemmove(t.Elem, dstEle, srcEle)
+				//srcEle := add(unsafe.Pointer(srcBset), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+i*uintptr(t.ValueSize))
+				//if t.IndirectElem() {
+				//	srcEle = *((*unsafe.Pointer)(srcEle))
+				//}
+				//dstEle := setassign(t, dst, srcK)
+				//typedmemmove(t.Elem, dstEle, srcEle)
 			}
-			srcBmap = srcBmap.overflow(t)
+			srcBset = srcBset.overflow(t)
 		}
 	}
 	return dst
@@ -1735,16 +1685,16 @@ func copyKeysSet(t *settype, h *hset, b *bset, s *slice, offset uint8) {
 				continue
 			}
 			if h.flags&hashWriting != 0 {
-				fatal("concurrent map read and map write")
+				fatal("concurrent set read and set write")
 			}
 			k := add(unsafe.Pointer(b), dataOffset+offi*uintptr(t.KeySize))
 			if t.IndirectKey() {
 				k = *((*unsafe.Pointer)(k))
 			}
 			if s.len >= s.cap {
-				fatal("concurrent map read and map write")
+				fatal("concurrent set read and set write")
 			}
-			typedmemmove(t.Key, add(s.array, uintptr(s.len)*uintptr(t.Key.Size())), k)
+			typedmemmove(t.Elem, add(s.array, uintptr(s.len)*uintptr(t.Elem.Size())), k)
 			s.len++
 		}
 		b = b.overflow(t)
@@ -1755,63 +1705,65 @@ func copyKeysSet(t *settype, h *hset, b *bset, s *slice, offset uint8) {
 //
 //wo:linkname valuesSet maps.valuesSet
 func valuesSet(m any, p unsafe.Pointer) {
-	e := efaceOf(&m)
-	t := (*settype)(unsafe.Pointer(e._type))
-	h := (*hset)(e.data)
-	if h == nil || h.count == 0 {
-		return
-	}
-	s := (*slice)(p)
-	r := int(rand())
-	offset := uint8(r >> h.B & (abi.MapBucketCount - 1))
-	if h.B == 0 {
-		copyValuesSet(t, h, (*bset)(h.buckets), s, offset)
-		return
-	}
-	arraySize := int(bucketShift(h.B))
-	buckets := h.buckets
-	for i := 0; i < arraySize; i++ {
-		bucket := (i + r) & (arraySize - 1)
-		b := (*bset)(add(buckets, uintptr(bucket)*uintptr(t.BucketSize)))
-		copyValuesSet(t, h, b, s, offset)
-	}
-
-	if h.growing() {
-		oldArraySize := int(h.noldbuckets())
-		for i := 0; i < oldArraySize; i++ {
-			bucket := (i + r) & (oldArraySize - 1)
-			b := (*bset)(add(h.oldbuckets, uintptr(bucket)*uintptr(t.BucketSize)))
-			if evacuatedSet(b) {
-				continue
-			}
-			copyValuesSet(t, h, b, s, offset)
-		}
-	}
-	return
+	// TODO ensure this function is removed deeply
+	//e := efaceOf(&m)
+	//t := (*settype)(unsafe.Pointer(e._type))
+	//h := (*hset)(e.data)
+	//if h == nil || h.count == 0 {
+	//	return
+	//}
+	//s := (*slice)(p)
+	//r := int(rand())
+	//offset := uint8(r >> h.B & (abi.MapBucketCount - 1))
+	//if h.B == 0 {
+	//	copyValuesSet(t, h, (*bset)(h.buckets), s, offset)
+	//	return
+	//}
+	//arraySize := int(bucketShift(h.B))
+	//buckets := h.buckets
+	//for i := 0; i < arraySize; i++ {
+	//	bucket := (i + r) & (arraySize - 1)
+	//	b := (*bset)(add(buckets, uintptr(bucket)*uintptr(t.BucketSize)))
+	//	copyValuesSet(t, h, b, s, offset)
+	//}
+	//
+	//if h.growing() {
+	//	oldArraySize := int(h.noldbuckets())
+	//	for i := 0; i < oldArraySize; i++ {
+	//		bucket := (i + r) & (oldArraySize - 1)
+	//		b := (*bset)(add(h.oldbuckets, uintptr(bucket)*uintptr(t.BucketSize)))
+	//		if evacuatedSet(b) {
+	//			continue
+	//		}
+	//		copyValuesSet(t, h, b, s, offset)
+	//	}
+	//}
+	//return
 }
 
 func copyValuesSet(t *settype, h *hset, b *bset, s *slice, offset uint8) {
-	for b != nil {
-		for i := uintptr(0); i < abi.MapBucketCount; i++ {
-			offi := (i + uintptr(offset)) & (abi.MapBucketCount - 1)
-			if isEmpty(b.tophash[offi]) {
-				continue
-			}
-
-			if h.flags&hashWriting != 0 {
-				fatal("concurrent map read and map write")
-			}
-
-			ele := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize)+offi*uintptr(t.ValueSize))
-			if t.IndirectElem() {
-				ele = *((*unsafe.Pointer)(ele))
-			}
-			if s.len >= s.cap {
-				fatal("concurrent map read and map write")
-			}
-			typedmemmove(t.Elem, add(s.array, uintptr(s.len)*uintptr(t.Elem.Size())), ele)
-			s.len++
-		}
-		b = b.overflow(t)
-	}
+	// TODO ensure this function is removed deeply
+	//for b != nil {
+	//	for i := uintptr(0); i < abi.MapBucketCount; i++ {
+	//		offi := (i + uintptr(offset)) & (abi.MapBucketCount - 1)
+	//		if isEmpty(b.tophash[offi]) {
+	//			continue
+	//		}
+	//
+	//		if h.flags&hashWriting != 0 {
+	//			fatal("concurrent set read and map write")
+	//		}
+	//
+	//		//ele := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*uintptr(t.KeySize))
+	//		//if t.IndirectElem() {
+	//		//	ele = *((*unsafe.Pointer)(ele))
+	//		//}
+	//		//if s.len >= s.cap {
+	//		//	fatal("concurrent set read and map write")
+	//		//}
+	//		//typedmemmove(t.Elem, add(s.array, uintptr(s.len)*uintptr(t.Elem.Size())), ele)
+	//		s.len++
+	//	}
+	//	b = b.overflow(t)
+	//}
 }

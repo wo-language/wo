@@ -307,7 +307,6 @@ func MapIterType() *types.Type {
 	// build a struct:
 	// type hiter struct {
 	//    key         unsafe.Pointer // *Key
-	//    elem        unsafe.Pointer // *Elem
 	//    t           unsafe.Pointer // *MapType
 	//    h           *hmap
 	//    buckets     unsafe.Pointer
@@ -371,7 +370,6 @@ func SetIterType() *types.Type {
 	// build a struct:
 	// type hiterset struct {
 	//    key         unsafe.Pointer // *Key
-	//    elem        unsafe.Pointer // *Elem
 	//    t           unsafe.Pointer // *SetType
 	//    h           *hset
 	//    buckets     unsafe.Pointer
@@ -388,8 +386,7 @@ func SetIterType() *types.Type {
 	// }
 	// must match runtime/set.go:hiterset.
 	fields := []*types.Field{
-		makefield("key", types.Types[types.TUNSAFEPTR]),  // Used in range.go for TMAP.
-		makefield("elem", types.Types[types.TUNSAFEPTR]), // Used in range.go for TMAP.
+		makefield("key", types.Types[types.TUNSAFEPTR]), // Used in range.go for TSET.
 		makefield("t", types.Types[types.TUNSAFEPTR]),
 		makefield("h", types.NewPtr(hset)),
 		makefield("buckets", types.Types[types.TUNSAFEPTR]),
@@ -1122,6 +1119,8 @@ func writeType(t *types.Type) *obj.LSym {
 		dataAdd = len(imethods(t)) * int(rttype.IMethod.Size())
 	case types.TMAP:
 		rt = rttype.MapType
+	case types.TSET:
+		rt = rttype.SetType
 	case types.TPTR:
 		rt = rttype.PtrType
 		// TODO: use rttype.Type for Elem() is ANY?
@@ -1265,6 +1264,47 @@ func writeType(t *types.Type) *obj.LSym {
 			// a named map and that same map cast to its underlying type via
 			// reflection, use the same hash function. See issue 37716.
 			r := obj.Addrel(lsym)
+			r.Sym = writeType(u)
+			r.Type = objabi.R_KEEP
+		}
+
+	case types.TSET:
+		// internal/abi.MapType
+		s1 := writeType(t.Key())
+		s3 := writeType(MapBucketType(t))
+		hasher := genhash(t.Key())
+
+		c.Field("Key").WritePtr(s1)
+		c.Field("Bucket").WritePtr(s3)
+		c.Field("Hasher").WritePtr(hasher)
+		var flags uint32
+		// Note: flags must match maptype accessors in ../../../../runtime/type.go
+		// and maptype builder in ../../../../reflect/type.go:MapOf.
+		if t.Key().Size() > abi.MapMaxKeyBytes {
+			c.Field("KeySize").WriteUint8(uint8(types.PtrSize))
+			flags |= 1 // indirect key
+		} else {
+			c.Field("KeySize").WriteUint8(uint8(t.Key().Size()))
+		}
+
+		c.Field("BucketSize").WriteUint16(uint16(MapBucketType(t).Size()))
+		if types.IsReflexive(t.Key()) {
+			flags |= 2 // reflexive key
+		}
+		if needkeyupdate(t.Key()) {
+			flags |= 4 // need key update
+		}
+		if hashMightPanic(t.Key()) {
+			flags |= 8 // hash might panic
+		}
+		c.Field("Flags").WriteUint32(flags)
+
+		if u := t.Underlying(); u != t {
+			// If t is a named map type, also keep the underlying map
+			// type live in the binary. This is important to make sure that
+			// a named map and that same map cast to its underlying type via
+			// reflection, use the same hash function. See issue 37716.
+			r := obj.Addrel(lsym) // TODO
 			r.Sym = writeType(u)
 			r.Type = objabi.R_KEEP
 		}

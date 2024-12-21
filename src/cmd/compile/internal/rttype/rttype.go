@@ -28,6 +28,7 @@ var ChanType *types.Type
 var FuncType *types.Type
 var InterfaceType *types.Type
 var MapType *types.Type
+var SetType *types.Type
 var PtrType *types.Type
 var SliceType *types.Type
 var StructType *types.Type
@@ -54,7 +55,7 @@ func Init() {
 	ChanType = fromReflect(reflect.TypeOf(abi.ChanType{}))
 	FuncType = fromReflect(reflect.TypeOf(abi.FuncType{}))
 	InterfaceType = fromReflect(reflect.TypeOf(abi.InterfaceType{}))
-	MapType = fromReflect(reflect.TypeOf(abi.MapType{}))
+	MapType = fromReflect(reflect.TypeOf(abi.MapType{})) // TODO
 	PtrType = fromReflect(reflect.TypeOf(abi.PtrType{}))
 	SliceType = fromReflect(reflect.TypeOf(abi.SliceType{}))
 	StructType = fromReflect(reflect.TypeOf(abi.StructType{}))

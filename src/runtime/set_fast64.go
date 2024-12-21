@@ -110,95 +110,95 @@ func setaccess2_fast64(t *settype, h *hset, key uint64) bool {
 // See go.dev/issue/67401.
 //
 //wo:linkname setassign_fast64
-func setassign_fast64(t *settype, h *hset, key uint64) unsafe.Pointer {
-	if h == nil {
-		panic(plainError("assignment to entry in nil set"))
-	}
-	if raceenabled {
-		callerpc := getcallerpc()
-		racewritepc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setassign_fast64))
-	}
-	if h.flags&hashWriting != 0 {
-		fatal("concurrent set writes")
-	}
-	hash := t.Hasher(noescape(unsafe.Pointer(&key)), uintptr(h.hash0))
-
-	// Set hashWriting after calling t.hasher for consistency with setassign.
-	h.flags ^= hashWriting
-
-	if h.buckets == nil {
-		h.buckets = newobject(t.Bucket) // newarray(t.bucket, 1)
-	}
-
-again:
-	bucket := hash & bucketMask(h.B)
-	if h.growing() {
-		growWorkSet_fast64(t, h, bucket)
-	}
-	b := (*bset)(add(h.buckets, bucket*uintptr(t.BucketSize)))
-
-	var insertb *bset
-	var inserti uintptr
-	var insertk unsafe.Pointer
-
-bucketloop:
-	for {
-		for i := uintptr(0); i < abi.MapBucketCount; i++ {
-			if isEmpty(b.tophash[i]) {
-				if insertb == nil {
-					insertb = b
-					inserti = i
-				}
-				if b.tophash[i] == emptyRest {
-					break bucketloop
-				}
-				continue
-			}
-			k := *((*uint64)(add(unsafe.Pointer(b), dataOffset+i*8)))
-			if k != key {
-				continue
-			}
-			insertb = b
-			inserti = i
-			goto done
-		}
-		ovf := b.overflow(t)
-		if ovf == nil {
-			break
-		}
-		b = ovf
-	}
-
-	// Did not find mapping for key. Allocate new cell & add entry.
-
-	// If we hit the max load factor or we have too many overflow buckets,
-	// and we're not already in the middle of growing, start growing.
-	if !h.growing() && (overLoadFactor(h.count+1, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) {
-		hashGrowSet(t, h)
-		goto again // Growing the table invalidates everything, so try again
-	}
-
-	if insertb == nil {
-		// The current bucket and all the overflow buckets connected to it are full, allocate a new one.
-		insertb = h.newoverflow(t, b)
-		inserti = 0 // not necessary, but avoids needlessly spilling inserti
-	}
-	insertb.tophash[inserti&(abi.MapBucketCount-1)] = tophash(hash) // mask inserti to avoid bounds checks
-
-	insertk = add(unsafe.Pointer(insertb), dataOffset+inserti*8)
-	// store new key at insert position
-	*(*uint64)(insertk) = key
-
-	h.count++
-
-done:
-	elem := add(unsafe.Pointer(insertb), dataOffset+abi.MapBucketCount*8+inserti*uintptr(t.ValueSize))
-	if h.flags&hashWriting == 0 {
-		fatal("concurrent set writes")
-	}
-	h.flags &^= hashWriting
-	return elem
-}
+//func setassign_fast64(t *settype, h *hset, key uint64) unsafe.Pointer {
+//	if h == nil {
+//		panic(plainError("assignment to entry in nil set"))
+//	}
+//	if raceenabled {
+//		callerpc := getcallerpc()
+//		racewritepc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setassign_fast64))
+//	}
+//	if h.flags&hashWriting != 0 {
+//		fatal("concurrent set writes")
+//	}
+//	hash := t.Hasher(noescape(unsafe.Pointer(&key)), uintptr(h.hash0))
+//
+//	// Set hashWriting after calling t.hasher for consistency with setassign.
+//	h.flags ^= hashWriting
+//
+//	if h.buckets == nil {
+//		h.buckets = newobject(t.Bucket) // newarray(t.bucket, 1)
+//	}
+//
+//again:
+//	bucket := hash & bucketMask(h.B)
+//	if h.growing() {
+//		growWorkSet_fast64(t, h, bucket)
+//	}
+//	b := (*bset)(add(h.buckets, bucket*uintptr(t.BucketSize)))
+//
+//	var insertb *bset
+//	var inserti uintptr
+//	var insertk unsafe.Pointer
+//
+//bucketloop:
+//	for {
+//		for i := uintptr(0); i < abi.MapBucketCount; i++ {
+//			if isEmpty(b.tophash[i]) {
+//				if insertb == nil {
+//					insertb = b
+//					inserti = i
+//				}
+//				if b.tophash[i] == emptyRest {
+//					break bucketloop
+//				}
+//				continue
+//			}
+//			k := *((*uint64)(add(unsafe.Pointer(b), dataOffset+i*8)))
+//			if k != key {
+//				continue
+//			}
+//			insertb = b
+//			inserti = i
+//			goto done
+//		}
+//		ovf := b.overflow(t)
+//		if ovf == nil {
+//			break
+//		}
+//		b = ovf
+//	}
+//
+//	// Did not find mapping for key. Allocate new cell & add entry.
+//
+//	// If we hit the max load factor or we have too many overflow buckets,
+//	// and we're not already in the middle of growing, start growing.
+//	if !h.growing() && (overLoadFactor(h.count+1, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) {
+//		hashGrowSet(t, h)
+//		goto again // Growing the table invalidates everything, so try again
+//	}
+//
+//	if insertb == nil {
+//		// The current bucket and all the overflow buckets connected to it are full, allocate a new one.
+//		insertb = h.newoverflow(t, b)
+//		inserti = 0 // not necessary, but avoids needlessly spilling inserti
+//	}
+//	insertb.tophash[inserti&(abi.MapBucketCount-1)] = tophash(hash) // mask inserti to avoid bounds checks
+//
+//	insertk = add(unsafe.Pointer(insertb), dataOffset+inserti*8)
+//	// store new key at insert position
+//	*(*uint64)(insertk) = key
+//
+//	h.count++
+//
+//done:
+//	elem := add(unsafe.Pointer(insertb), dataOffset+abi.MapBucketCount*8+inserti*uintptr(t.ValueSize))
+//	if h.flags&hashWriting == 0 {
+//		fatal("concurrent set writes")
+//	}
+//	h.flags &^= hashWriting
+//	return elem
+//}
 
 // setassign_fast64ptr should be an internal detail.
 // Do not access it using linkname.
@@ -207,95 +207,95 @@ done:
 // See go.dev/issue/67401.
 //
 //wo:linkname setassign_fast64ptr
-func setassign_fast64ptr(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
-	if h == nil {
-		panic(plainError("assignment to entry in nil set"))
-	}
-	if raceenabled {
-		callerpc := getcallerpc()
-		racewritepc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setassign_fast64))
-	}
-	if h.flags&hashWriting != 0 {
-		fatal("concurrent set writes")
-	}
-	hash := t.Hasher(noescape(unsafe.Pointer(&key)), uintptr(h.hash0))
-
-	// Set hashWriting after calling t.hasher for consistency with setassign.
-	h.flags ^= hashWriting
-
-	if h.buckets == nil {
-		h.buckets = newobject(t.Bucket) // newarray(t.bucket, 1)
-	}
-
-again:
-	bucket := hash & bucketMask(h.B)
-	if h.growing() {
-		growWorkSet_fast64(t, h, bucket)
-	}
-	b := (*bset)(add(h.buckets, bucket*uintptr(t.BucketSize)))
-
-	var insertb *bset
-	var inserti uintptr
-	var insertk unsafe.Pointer
-
-bucketloop:
-	for {
-		for i := uintptr(0); i < abi.MapBucketCount; i++ {
-			if isEmpty(b.tophash[i]) {
-				if insertb == nil {
-					insertb = b
-					inserti = i
-				}
-				if b.tophash[i] == emptyRest {
-					break bucketloop
-				}
-				continue
-			}
-			k := *((*unsafe.Pointer)(add(unsafe.Pointer(b), dataOffset+i*8)))
-			if k != key {
-				continue
-			}
-			insertb = b
-			inserti = i
-			goto done
-		}
-		ovf := b.overflow(t)
-		if ovf == nil {
-			break
-		}
-		b = ovf
-	}
-
-	// Did not find mapping for key. Allocate new cell & add entry.
-
-	// If we hit the max load factor or we have too many overflow buckets,
-	// and we're not already in the middle of growing, start growing.
-	if !h.growing() && (overLoadFactor(h.count+1, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) {
-		hashGrowSet(t, h)
-		goto again // Growing the table invalidates everything, so try again
-	}
-
-	if insertb == nil {
-		// The current bucket and all the overflow buckets connected to it are full, allocate a new one.
-		insertb = h.newoverflow(t, b)
-		inserti = 0 // not necessary, but avoids needlessly spilling inserti
-	}
-	insertb.tophash[inserti&(abi.MapBucketCount-1)] = tophash(hash) // mask inserti to avoid bounds checks
-
-	insertk = add(unsafe.Pointer(insertb), dataOffset+inserti*8)
-	// store new key at insert position
-	*(*unsafe.Pointer)(insertk) = key
-
-	h.count++
-
-done:
-	elem := add(unsafe.Pointer(insertb), dataOffset+abi.MapBucketCount*8+inserti*uintptr(t.ValueSize))
-	if h.flags&hashWriting == 0 {
-		fatal("concurrent set writes")
-	}
-	h.flags &^= hashWriting
-	return elem
-}
+//func setassign_fast64ptr(t *settype, h *hset, key unsafe.Pointer) unsafe.Pointer {
+//	if h == nil {
+//		panic(plainError("assignment to entry in nil set"))
+//	}
+//	if raceenabled {
+//		callerpc := getcallerpc()
+//		racewritepc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setassign_fast64))
+//	}
+//	if h.flags&hashWriting != 0 {
+//		fatal("concurrent set writes")
+//	}
+//	hash := t.Hasher(noescape(unsafe.Pointer(&key)), uintptr(h.hash0))
+//
+//	// Set hashWriting after calling t.hasher for consistency with setassign.
+//	h.flags ^= hashWriting
+//
+//	if h.buckets == nil {
+//		h.buckets = newobject(t.Bucket) // newarray(t.bucket, 1)
+//	}
+//
+//again:
+//	bucket := hash & bucketMask(h.B)
+//	if h.growing() {
+//		growWorkSet_fast64(t, h, bucket)
+//	}
+//	b := (*bset)(add(h.buckets, bucket*uintptr(t.BucketSize)))
+//
+//	var insertb *bset
+//	var inserti uintptr
+//	var insertk unsafe.Pointer
+//
+//bucketloop:
+//	for {
+//		for i := uintptr(0); i < abi.MapBucketCount; i++ {
+//			if isEmpty(b.tophash[i]) {
+//				if insertb == nil {
+//					insertb = b
+//					inserti = i
+//				}
+//				if b.tophash[i] == emptyRest {
+//					break bucketloop
+//				}
+//				continue
+//			}
+//			k := *((*unsafe.Pointer)(add(unsafe.Pointer(b), dataOffset+i*8)))
+//			if k != key {
+//				continue
+//			}
+//			insertb = b
+//			inserti = i
+//			goto done
+//		}
+//		ovf := b.overflow(t)
+//		if ovf == nil {
+//			break
+//		}
+//		b = ovf
+//	}
+//
+//	// Did not find mapping for key. Allocate new cell & add entry.
+//
+//	// If we hit the max load factor or we have too many overflow buckets,
+//	// and we're not already in the middle of growing, start growing.
+//	if !h.growing() && (overLoadFactor(h.count+1, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) {
+//		hashGrowSet(t, h)
+//		goto again // Growing the table invalidates everything, so try again
+//	}
+//
+//	if insertb == nil {
+//		// The current bucket and all the overflow buckets connected to it are full, allocate a new one.
+//		insertb = h.newoverflow(t, b)
+//		inserti = 0 // not necessary, but avoids needlessly spilling inserti
+//	}
+//	insertb.tophash[inserti&(abi.MapBucketCount-1)] = tophash(hash) // mask inserti to avoid bounds checks
+//
+//	insertk = add(unsafe.Pointer(insertb), dataOffset+inserti*8)
+//	// store new key at insert position
+//	*(*unsafe.Pointer)(insertk) = key
+//
+//	h.count++
+//
+//done:
+//	elem := add(unsafe.Pointer(insertb), dataOffset+abi.MapBucketCount*8+inserti*uintptr(t.ValueSize))
+//	if h.flags&hashWriting == 0 {
+//		fatal("concurrent set writes")
+//	}
+//	h.flags &^= hashWriting
+//	return elem
+//}
 
 func setdelete_fast64(t *settype, h *hset, key uint64) {
 	if raceenabled && h != nil {
@@ -327,7 +327,7 @@ search:
 				continue
 			}
 			// Only clear key if there are pointers in it.
-			if t.Key.Pointers() {
+			if t.Elem.Pointers() {
 				if goarch.PtrSize == 8 {
 					*(*unsafe.Pointer)(k) = nil
 				} else {
@@ -336,12 +336,12 @@ search:
 					memclrHasPointers(k, 8)
 				}
 			}
-			e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*8+i*uintptr(t.ValueSize))
-			if t.Elem.Pointers() {
-				memclrHasPointers(e, t.Elem.Size_)
-			} else {
-				memclrNoHeapPointers(e, t.Elem.Size_)
-			}
+			//e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*8+i*uintptr(t.ValueSize))
+			//if t.Elem.Pointers() {
+			//	memclrHasPointers(e, t.Elem.Size_)
+			//} else {
+			//	memclrNoHeapPointers(e, t.Elem.Size_)
+			//}
 			b.tophash[i] = emptyOne
 			// If the bucket now ends in a bunch of emptyOne states,
 			// change those to emptyRest states.
@@ -412,7 +412,7 @@ func evacuateSet_fast64(t *settype, h *hset, oldbucket uintptr) {
 		x := &xy[0]
 		x.b = (*bset)(add(h.buckets, oldbucket*uintptr(t.BucketSize)))
 		x.k = add(unsafe.Pointer(x.b), dataOffset)
-		x.e = add(x.k, abi.MapBucketCount*8)
+		//x.e = add(x.k, abi.MapBucketCount*8)
 
 		if !h.sameSizeGrow() {
 			// Only calculate y pointers if we're growing bigger.
@@ -420,13 +420,11 @@ func evacuateSet_fast64(t *settype, h *hset, oldbucket uintptr) {
 			y := &xy[1]
 			y.b = (*bset)(add(h.buckets, (oldbucket+newbit)*uintptr(t.BucketSize)))
 			y.k = add(unsafe.Pointer(y.b), dataOffset)
-			y.e = add(y.k, abi.MapBucketCount*8)
 		}
 
 		for ; b != nil; b = b.overflow(t) {
 			k := add(unsafe.Pointer(b), dataOffset)
-			e := add(k, abi.MapBucketCount*8)
-			for i := 0; i < abi.MapBucketCount; i, k, e = i+1, add(k, 8), add(e, uintptr(t.ValueSize)) {
+			for i := 0; i < abi.MapBucketCount; i, k = i+1, add(k, 8) {
 				top := b.tophash[i]
 				if isEmpty(top) {
 					b.tophash[i] = evacuatedEmpty
@@ -452,32 +450,29 @@ func evacuateSet_fast64(t *settype, h *hset, oldbucket uintptr) {
 					dst.b = h.newoverflow(t, dst.b)
 					dst.i = 0
 					dst.k = add(unsafe.Pointer(dst.b), dataOffset)
-					dst.e = add(dst.k, abi.MapBucketCount*8)
 				}
 				dst.b.tophash[dst.i&(abi.MapBucketCount-1)] = top // mask dst.i as an optimization, to avoid a bounds check
 
 				// Copy key.
-				if t.Key.Pointers() && writeBarrier.enabled {
+				if t.Elem.Pointers() && writeBarrier.enabled {
 					if goarch.PtrSize == 8 {
 						// Write with a write barrier.
 						*(*unsafe.Pointer)(dst.k) = *(*unsafe.Pointer)(k)
 					} else {
 						// There are three ways to squeeze at least one 32 bit pointer into 64 bits.
 						// Give up and call typedmemmove.
-						typedmemmove(t.Key, dst.k, k)
+						typedmemmove(t.Elem, dst.k, k)
 					}
 				} else {
 					*(*uint64)(dst.k) = *(*uint64)(k)
 				}
 
-				typedmemmove(t.Elem, dst.e, e)
 				dst.i++
 				// These updates might push these pointers past the end of the
 				// key or elem arrays.  That's ok, as we have the overflow pointer
 				// at the end of the bucket to protect against pointing past the
 				// end of the bucket.
 				dst.k = add(dst.k, 8)
-				dst.e = add(dst.e, uintptr(t.ValueSize))
 			}
 		}
 		// Unlink the overflow buckets & clear key/elem to help GC.

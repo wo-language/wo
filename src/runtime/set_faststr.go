@@ -219,103 +219,103 @@ dohash:
 // See go.dev/issue/67401.
 //
 //wo:linkname setassign_faststr
-func setassign_faststr(t *settype, h *hset, s string) unsafe.Pointer {
-	if h == nil {
-		panic(plainError("assignment to entry in nil set"))
-	}
-	if raceenabled {
-		callerpc := getcallerpc()
-		racewritepc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setassign_faststr))
-	}
-	if h.flags&hashWriting != 0 {
-		fatal("concurrent set writes")
-	}
-	key := stringStructOf(&s)
-	hash := t.Hasher(noescape(unsafe.Pointer(&s)), uintptr(h.hash0))
-
-	// Set hashWriting after calling t.hasher for consistency with setassign.
-	h.flags ^= hashWriting
-
-	if h.buckets == nil {
-		h.buckets = newobject(t.Bucket) // newarray(t.bucket, 1)
-	}
-
-again:
-	bucket := hash & bucketMask(h.B)
-	if h.growing() {
-		growWorkSet_faststr(t, h, bucket)
-	}
-	b := (*bset)(add(h.buckets, bucket*uintptr(t.BucketSize)))
-	top := tophash(hash)
-
-	var insertb *bset
-	var inserti uintptr
-	var insertk unsafe.Pointer
-
-bucketloop:
-	for {
-		for i := uintptr(0); i < abi.MapBucketCount; i++ {
-			if b.tophash[i] != top {
-				if isEmpty(b.tophash[i]) && insertb == nil {
-					insertb = b
-					inserti = i
-				}
-				if b.tophash[i] == emptyRest {
-					break bucketloop
-				}
-				continue
-			}
-			k := (*stringStruct)(add(unsafe.Pointer(b), dataOffset+i*2*goarch.PtrSize))
-			if k.len != key.len {
-				continue
-			}
-			if k.str != key.str && !memequal(k.str, key.str, uintptr(key.len)) {
-				continue
-			}
-			// already have a mapping for key. Update it.
-			inserti = i
-			insertb = b
-			// Overwrite existing key, so it can be garbage collected.
-			// The size is already guaranteed to be set correctly.
-			k.str = key.str
-			goto done
-		}
-		ovf := b.overflow(t)
-		if ovf == nil {
-			break
-		}
-		b = ovf
-	}
-
-	// Did not find mapping for key. Allocate new cell & add entry.
-
-	// If we hit the max load factor or we have too many overflow buckets,
-	// and we're not already in the middle of growing, start growing.
-	if !h.growing() && (overLoadFactor(h.count+1, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) {
-		hashGrowSet(t, h)
-		goto again // Growing the table invalidates everything, so try again
-	}
-
-	if insertb == nil {
-		// The current bucket and all the overflow buckets connected to it are full, allocate a new one.
-		insertb = h.newoverflow(t, b)
-		inserti = 0 // not necessary, but avoids needlessly spilling inserti
-	}
-	insertb.tophash[inserti&(abi.MapBucketCount-1)] = top // mask inserti to avoid bounds checks
-
-	insertk = add(unsafe.Pointer(insertb), dataOffset+inserti*2*goarch.PtrSize)
-	// store new key at insert position
-	*((*stringStruct)(insertk)) = *key
-	h.count++
-
-done:
-	elem := add(unsafe.Pointer(insertb), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+inserti*uintptr(t.ValueSize))
-	if h.flags&hashWriting == 0 {
-		fatal("concurrent set writes")
-	}
-	h.flags &^= hashWriting
-	return elem
-}
+//func setassign_faststr(t *settype, h *hset, s string) unsafe.Pointer {
+//	if h == nil {
+//		panic(plainError("assignment to entry in nil set"))
+//	}
+//	if raceenabled {
+//		callerpc := getcallerpc()
+//		racewritepc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setassign_faststr))
+//	}
+//	if h.flags&hashWriting != 0 {
+//		fatal("concurrent set writes")
+//	}
+//	key := stringStructOf(&s)
+//	hash := t.Hasher(noescape(unsafe.Pointer(&s)), uintptr(h.hash0))
+//
+//	// Set hashWriting after calling t.hasher for consistency with setassign.
+//	h.flags ^= hashWriting
+//
+//	if h.buckets == nil {
+//		h.buckets = newobject(t.Bucket) // newarray(t.bucket, 1)
+//	}
+//
+//again:
+//	bucket := hash & bucketMask(h.B)
+//	if h.growing() {
+//		growWorkSet_faststr(t, h, bucket)
+//	}
+//	b := (*bset)(add(h.buckets, bucket*uintptr(t.BucketSize)))
+//	top := tophash(hash)
+//
+//	var insertb *bset
+//	var inserti uintptr
+//	var insertk unsafe.Pointer
+//
+//bucketloop:
+//	for {
+//		for i := uintptr(0); i < abi.MapBucketCount; i++ {
+//			if b.tophash[i] != top {
+//				if isEmpty(b.tophash[i]) && insertb == nil {
+//					insertb = b
+//					inserti = i
+//				}
+//				if b.tophash[i] == emptyRest {
+//					break bucketloop
+//				}
+//				continue
+//			}
+//			k := (*stringStruct)(add(unsafe.Pointer(b), dataOffset+i*2*goarch.PtrSize))
+//			if k.len != key.len {
+//				continue
+//			}
+//			if k.str != key.str && !memequal(k.str, key.str, uintptr(key.len)) {
+//				continue
+//			}
+//			// already have a mapping for key. Update it.
+//			inserti = i
+//			insertb = b
+//			// Overwrite existing key, so it can be garbage collected.
+//			// The size is already guaranteed to be set correctly.
+//			k.str = key.str
+//			goto done
+//		}
+//		ovf := b.overflow(t)
+//		if ovf == nil {
+//			break
+//		}
+//		b = ovf
+//	}
+//
+//	// Did not find mapping for key. Allocate new cell & add entry.
+//
+//	// If we hit the max load factor or we have too many overflow buckets,
+//	// and we're not already in the middle of growing, start growing.
+//	if !h.growing() && (overLoadFactor(h.count+1, h.B) || tooManyOverflowBuckets(h.noverflow, h.B)) {
+//		hashGrowSet(t, h)
+//		goto again // Growing the table invalidates everything, so try again
+//	}
+//
+//	if insertb == nil {
+//		// The current bucket and all the overflow buckets connected to it are full, allocate a new one.
+//		insertb = h.newoverflow(t, b)
+//		inserti = 0 // not necessary, but avoids needlessly spilling inserti
+//	}
+//	insertb.tophash[inserti&(abi.MapBucketCount-1)] = top // mask inserti to avoid bounds checks
+//
+//	insertk = add(unsafe.Pointer(insertb), dataOffset+inserti*2*goarch.PtrSize)
+//	// store new key at insert position
+//	*((*stringStruct)(insertk)) = *key
+//	h.count++
+//
+//done:
+//	elem := add(unsafe.Pointer(insertb), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+inserti*uintptr(t.ValueSize))
+//	if h.flags&hashWriting == 0 {
+//		fatal("concurrent set writes")
+//	}
+//	h.flags &^= hashWriting
+//	return elem
+//}
 
 func setdelete_faststr(t *settype, h *hset, ky string) {
 	if raceenabled && h != nil {
@@ -354,12 +354,6 @@ search:
 			}
 			// Clear key's pointer.
 			k.str = nil
-			e := add(unsafe.Pointer(b), dataOffset+abi.MapBucketCount*2*goarch.PtrSize+i*uintptr(t.ValueSize))
-			if t.Elem.Pointers() {
-				memclrHasPointers(e, t.Elem.Size_)
-			} else {
-				memclrNoHeapPointers(e, t.Elem.Size_)
-			}
 			b.tophash[i] = emptyOne
 			// If the bucket now ends in a bunch of emptyOne states,
 			// change those to emptyRest states.
@@ -430,21 +424,18 @@ func evacuateSet_faststr(t *settype, h *hset, oldbucket uintptr) {
 		x := &xy[0]
 		x.b = (*bset)(add(h.buckets, oldbucket*uintptr(t.BucketSize)))
 		x.k = add(unsafe.Pointer(x.b), dataOffset)
-		x.e = add(x.k, abi.MapBucketCount*2*goarch.PtrSize)
 
 		if !h.sameSizeGrow() {
 			// Only calculate y pointers if we're growing bigger.
-			// Otherwise GC can see bad pointers.
+			// Otherwise, GC can see bad pointers.
 			y := &xy[1]
 			y.b = (*bset)(add(h.buckets, (oldbucket+newbit)*uintptr(t.BucketSize)))
 			y.k = add(unsafe.Pointer(y.b), dataOffset)
-			y.e = add(y.k, abi.MapBucketCount*2*goarch.PtrSize)
 		}
 
 		for ; b != nil; b = b.overflow(t) {
 			k := add(unsafe.Pointer(b), dataOffset)
-			e := add(k, abi.MapBucketCount*2*goarch.PtrSize)
-			for i := 0; i < abi.MapBucketCount; i, k, e = i+1, add(k, 2*goarch.PtrSize), add(e, uintptr(t.ValueSize)) {
+			for i := 0; i < abi.MapBucketCount; i, k = i+1, add(k, 2*goarch.PtrSize) {
 				top := b.tophash[i]
 				if isEmpty(top) {
 					b.tophash[i] = evacuatedEmpty
@@ -470,21 +461,18 @@ func evacuateSet_faststr(t *settype, h *hset, oldbucket uintptr) {
 					dst.b = h.newoverflow(t, dst.b)
 					dst.i = 0
 					dst.k = add(unsafe.Pointer(dst.b), dataOffset)
-					dst.e = add(dst.k, abi.MapBucketCount*2*goarch.PtrSize)
 				}
 				dst.b.tophash[dst.i&(abi.MapBucketCount-1)] = top // mask dst.i as an optimization, to avoid a bounds check
 
 				// Copy key.
 				*(*string)(dst.k) = *(*string)(k)
 
-				typedmemmove(t.Elem, dst.e, e)
 				dst.i++
 				// These updates might push these pointers past the end of the
 				// key or elem arrays.  That's ok, as we have the overflow pointer
 				// at the end of the bucket to protect against pointing past the
 				// end of the bucket.
 				dst.k = add(dst.k, 2*goarch.PtrSize)
-				dst.e = add(dst.e, uintptr(t.ValueSize))
 			}
 		}
 		// Unlink the overflow buckets & clear key/elem to help GC.
