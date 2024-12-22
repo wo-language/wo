@@ -14,20 +14,24 @@ if err != nil {
 would be done like this in Wo:
 
 ```go
-file var = os.Open!("hi.wo") // pending decisions here; it's a WIP
+var file = os.Open!("hi.wo") // pending decisions here; it's a WIP
 ```
 
 Some other ways to handle errors in Wo:
 
 ```go
-file var = os.Open!!("hi.wo") // panic
-file, log("Error:", err)   var = os.Open("hi.wo")
-file, handle(err)          var = os!Open("hi.wo") // handle and throw
-file, return(none, 3, err) var = os.Open("hi.wo") // with other return values
-file, if(err)              var = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
+var file = os.Open!!("hi.wo") // panic
+var file, log("Error:", err)   = os.Open("hi.wo")
+var file, handle(err)          = os!Open("hi.wo") // handle and throw
+var file, return(none, 3, err) = os.Open("hi.wo") // with other return values
+var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
 ```
 
-The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options, but it is a **proof of concept** and I have not necessarily got any of these working yet.
+Not only that, I am considering making different language features **modular**. If someone just likes only the interface syntax, and that's all they want, then I could allow either compiler flags or special headers in the file to indicate which ones to have turned off. All of them except experimental or "indifferent" ones would be enabled by default.
+
+The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options
+
+Currently, this s a **proof of concept** and I have not necessarily got any of these working yet.
 
 
 | Rule                                                                            | Usage                                                                                                                                            |

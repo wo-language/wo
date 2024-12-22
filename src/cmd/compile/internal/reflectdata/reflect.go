@@ -268,7 +268,7 @@ func SetType() *types.Type {
 		makefield("flags", types.Types[types.TUINT8]),
 		makefield("B", types.Types[types.TUINT8]),
 		makefield("noverflow", types.Types[types.TUINT16]),
-		makefield("hash0", types.Types[types.TUINT32]),      // Used in walk.go for OMAKEMAP.
+		makefield("hash0", types.Types[types.TUINT32]),      // Used in walk.go for OMAKEMAP. // TODO(bran)
 		makefield("buckets", types.Types[types.TUNSAFEPTR]), // Used in walk.go for OMAKEMAP.
 		makefield("oldbuckets", types.Types[types.TUNSAFEPTR]),
 		makefield("nevacuate", types.Types[types.TUINTPTR]),
@@ -758,6 +758,7 @@ var kinds = []abi.Kind{
 	types.TINTER:      abi.Interface,
 	types.TCHAN:       abi.Chan,
 	types.TMAP:        abi.Map,
+	types.TSET:        abi.Set,
 	types.TARRAY:      abi.Array,
 	types.TSLICE:      abi.Slice,
 	types.TFUNC:       abi.Func,
@@ -964,9 +965,9 @@ func ITabAddrAt(pos src.XPos, typ, iface *types.Type) *ir.AddrExpr {
 	return typecheck.LinksymAddr(pos, lsym, types.Types[types.TUINT8])
 }
 
-// needkeyupdate reports whether map updates with t as a key
+// needkeyupdate reports whether a map or set updates with t as a key
 // need the key to be updated.
-func needkeyupdate(t *types.Type) bool {
+func needkeyupdate(t *types.Type, isSet bool) bool {
 	switch t.Kind() {
 	case types.TBOOL, types.TINT, types.TUINT, types.TINT8, types.TUINT8, types.TINT16, types.TUINT16, types.TINT32, types.TUINT32,
 		types.TINT64, types.TUINT64, types.TUINTPTR, types.TPTR, types.TUNSAFEPTR, types.TCHAN:
@@ -978,18 +979,24 @@ func needkeyupdate(t *types.Type) bool {
 		return true
 
 	case types.TARRAY:
-		return needkeyupdate(t.Elem())
+		return needkeyupdate(t.Elem(), isSet)
 
 	case types.TSTRUCT:
 		for _, t1 := range t.Fields() {
-			if needkeyupdate(t1.Type) {
+			if needkeyupdate(t1.Type, isSet) {
 				return true
 			}
 		}
 		return false
 
 	default:
-		base.Fatalf("bad type for map key: %v", t)
+		var keyHolder string
+		if isSet {
+			keyHolder = "set"
+		} else {
+			keyHolder = "map"
+		}
+		base.Fatalf("bad type for %s key: %v", keyHolder, t)
 		return true
 	}
 }
@@ -1250,7 +1257,7 @@ func writeType(t *types.Type) *obj.LSym {
 		if types.IsReflexive(t.Key()) {
 			flags |= 4 // reflexive key
 		}
-		if needkeyupdate(t.Key()) {
+		if needkeyupdate(t.Key(), false) {
 			flags |= 8 // need key update
 		}
 		if hashMightPanic(t.Key()) {
@@ -1269,7 +1276,7 @@ func writeType(t *types.Type) *obj.LSym {
 		}
 
 	case types.TSET:
-		// internal/abi.MapType
+		// internal/abi.SetType
 		s1 := writeType(t.Key())
 		s3 := writeType(MapBucketType(t))
 		hasher := genhash(t.Key())
@@ -1278,8 +1285,8 @@ func writeType(t *types.Type) *obj.LSym {
 		c.Field("Bucket").WritePtr(s3)
 		c.Field("Hasher").WritePtr(hasher)
 		var flags uint32
-		// Note: flags must match maptype accessors in ../../../../runtime/type.go
-		// and maptype builder in ../../../../reflect/type.go:MapOf.
+		// Note: flags must match settype accessors in ../../../../runtime/type.go
+		// and settype builder in ../../../../reflect/type.go:SetOf.
 		if t.Key().Size() > abi.MapMaxKeyBytes {
 			c.Field("KeySize").WriteUint8(uint8(types.PtrSize))
 			flags |= 1 // indirect key
@@ -1287,31 +1294,31 @@ func writeType(t *types.Type) *obj.LSym {
 			c.Field("KeySize").WriteUint8(uint8(t.Key().Size()))
 		}
 
-		c.Field("BucketSize").WriteUint16(uint16(MapBucketType(t).Size()))
+		c.Field("BucketSize").WriteUint16(uint16(MapBucketType(t).Size())) // TODO(bran) should replace MapBucketType?
 		if types.IsReflexive(t.Key()) {
-			flags |= 2 // reflexive key
+			flags |= 4 // reflexive key
 		}
-		if needkeyupdate(t.Key()) {
-			flags |= 4 // need key update
+		if needkeyupdate(t.Key(), true) {
+			flags |= 8 // need key update
 		}
 		if hashMightPanic(t.Key()) {
-			flags |= 8 // hash might panic
+			flags |= 16 // hash might panic
 		}
 		c.Field("Flags").WriteUint32(flags)
 
 		if u := t.Underlying(); u != t {
-			// If t is a named map type, also keep the underlying map
+			// If t is a named set type, also keep the underlying set
 			// type live in the binary. This is important to make sure that
-			// a named map and that same map cast to its underlying type via
+			// a named set and that same set cast to its underlying type via
 			// reflection, use the same hash function. See issue 37716.
-			r := obj.Addrel(lsym) // TODO
+			r := obj.Addrel(lsym) // TODO(bran)
 			r.Sym = writeType(u)
 			r.Type = objabi.R_KEEP
 		}
 
 	case types.TPTR:
 		// internal/abi.PtrType
-		if t.Elem().Kind() == types.TANY {
+		if t.Elem().Kind() == types.TANY { // TODO(bran) why can't they not prevent this
 			base.Fatalf("bad pointer base type")
 		}
 
@@ -1379,7 +1386,8 @@ func writeType(t *types.Type) *obj.LSym {
 		// functions must return the existing type structure rather
 		// than creating a new one.
 		switch t.Kind() {
-		case types.TPTR, types.TARRAY, types.TCHAN, types.TFUNC, types.TMAP, types.TSLICE, types.TSTRUCT:
+		case types.TPTR, types.TARRAY, types.TCHAN, types.TFUNC,
+			types.TMAP, types.TSET, types.TSLICE, types.TSTRUCT:
 			keep = true
 		}
 	}

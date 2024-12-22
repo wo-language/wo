@@ -466,7 +466,7 @@ type (
 	}
 
 	// A MapType node represents a map type.
-	MapType struct {
+	MapType struct { // TODO(bran) find usages
 		Map   token.Pos // position of "map" keyword
 		Key   Expr
 		Value Expr

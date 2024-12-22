@@ -537,17 +537,16 @@ type SetType struct {
 func (mt *SetType) IndirectKey() bool { // store ptr to elem instead of elem itself
 	return mt.Flags&1 != 0
 }
-func (mt *SetType) IndirectElem() bool { // store ptr to elem instead of elem itself
-	return false
-}
+
+// Note: IndirectElem is absent for set, flag&2 is unused / should always be 0
 func (mt *SetType) ReflexiveKey() bool { // true if k==k for all elems
-	return mt.Flags&2 != 0
-}
-func (mt *SetType) NeedKeyUpdate() bool { // true if we need to update elem on an overwrite
 	return mt.Flags&4 != 0
 }
-func (mt *SetType) HashMightPanic() bool { // true if hash function might panic
+func (mt *SetType) NeedKeyUpdate() bool { // true if we need to update elem on an overwrite
 	return mt.Flags&8 != 0
+}
+func (mt *SetType) HashMightPanic() bool { // true if hash function might panic
+	return mt.Flags&16 != 0
 }
 
 //func (t *Type) Elem() *Type {

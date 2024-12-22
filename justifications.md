@@ -24,7 +24,16 @@ Ultimately, in practice, certain improvements can be more valuable in different 
 
 So it is just nice to have the option of an improved design, not a forced grifting replacement for all of Go.
 
-Here's a description of the original goals of Go from 2008: [go/doc/go_lang.txt](https://github.com/golang/go/blob/e6626dafa8de8a0efae351e85cf96f0c683e0a4f/doc/go_lang.txt
+Here's a description of the original goals of Go from 2008: [go/doc/go_lang.txt](https://github.com/golang/go/blob/e6626dafa8de8a0efae351e85cf96f0c683e0a4f/doc/go_lang.txt)
+
+> The syntax is specified using Extended
+> Backus-Naur Form (EBNF).  In particular:
+> 
+> - ''  encloses lexical symbols
+> - |  separates alternatives
+> - ()  used for grouping
+> - []  specifies option (0 or 1 times)
+> - {}  specifies repetition (0 to n times)
 
 ### The goals of code
 
@@ -48,12 +57,21 @@ For example, Learning Go 2nd edition says:
 
 > Note: The Go compiler won’t stop you from creating unread package-level variables. This is one more reason you should avoid creating package-level variables.
 
+### Why modularity
+
+I am considering making different language features **modular**. That is, they can be enabled or disabled either through a compiler flag, in the module file, or with some header.
+
+This isn't the newest idea, as languages all have versions one can choose of their liking. Rust has that capability with something like `#![allow(unused)]` which allows unused variables in the entire file.
+
+If someone just likes only the interface syntax, and that's all they want, then they can still use Wo in that way without dealing with the parts they don't like.
+
+For example, enforcing the type before the variable name is universally disagreed on, so this could just be an additional option, not the Wo default. If a feature isn't restrictive, then it doesn't need a flag.
 
 ## Conventions
 
 ### Variable naming
 
-One of the very first things I realized when I first started programming is that using 1 or 2 length variable names in most situations was incredibly bad practice that leads to misunderstanding. You probably already know why, but in case you don't, I will explain below.
+One of the very first things I realized when I first started programming is that using 1 or 2 length variable names in most situations was incredibly bad practice that leads to misunderstandings. You probably already know why, but in case you don't, I will explain below.
 
 Let's say you came across this, 40 lines deep into a function:
 
@@ -71,19 +89,21 @@ t := roleHierarchy()
 
 What?
 
-You check the source code for `roleHierarchy` and find out it returns a `Node`. And you check the `Node` struct, which contains a `val Role` a `left Node` and a `right Node`.
+You check the docs or source code for `roleHierarchy` and find out it returns a `Node`. And you check the `Node` struct, which contains a `val Role` a `left Node` and a `right Node`.
 
 It turns out, the `t` in `t.leftBranch().cut()` was just a tree.
 
-If the code used `tree`, none or almost none of this would have been necessary - even with better documentation. We would have read the single word, and moved on to the next thing, rather than being disrupted.
+Why should I have to analyze any of this when 3 characters would have explained enough. If the code used `tree` as the variable name, none or almost none of this would have been necessary - even with better documentation. We would have read that single word, and moved on to the next thing, rather than being disrupted.
 
-```go
-tree.leftBranch().cut()
-```
+> Good code is not vague.
 
 `t` is more objectively more vague than `tree`.
 
 `t` does not declare intent.
+
+```go
+tree.leftBranch().cut()
+```
 
 `tree` is already technically vague, as I could be referring to a literal tree or a programmatic tree, but `t` has much less meaning.
 
@@ -91,9 +111,13 @@ Go code is exactly that situation except over and over again.
 
 This part of the "Go philosophy" is not anything more than (what most philosophy actually is) circular reasoning and non sequiturs bundled up to seem logically conclusive.
 
-It claims both "use longer code for more meaning" and "use shorter code for more meaning".
+It claims both "use longer code for more meaning" and "use shorter code for more meaning" at the same time.
 
-Code either extends vertically (less functional abstraction) or horizontally (more function calls, longer names). Shortening names and using loads of null checking both go in the direction of vertical. Please, take your hand off the scroll wheel. In between these two directions is a more square shaped code. And the other extreme is some overly clever and lengthy Java streams solution. I find that more readable than shortened variable names and repeated 3-4 line null checking, because at least you can usually read it without checking definitions, so I chose to make Wo more towards a square.
+Code either extends vertically (less functional abstraction) or horizontally (more function calls, longer names). Shortening names and using loads of null checking both go in the direction of vertical. Please, take your hand off the scroll wheel (or the   `hjkl`). In between these two directions is a more square shaped code. And the other extreme typically happens with nested function calling, like some overly clever and lengthy Java streams solution. I find that more readable than shortened variable names and repeated 3-4 line null checking, because at least you can usually read it without checking definitions, so I chose to make Wo more towards a square.
+
+![Image of 3 code editors of code that's tall, square, and wide](https://raw.githubusercontent.com/wo-language/wo-info/refs/heads/main/wo%20resources/code_rectangles_whiteborder.png)
+
+As you can see, the first code editor has 8 lines and reaches the first line, then compressed to 6 lines and reaches the second line, then to just 4 lines. I tried to make them each have the exact same volume of "code".
 
 There is one situation where shortened variable names might be acceptable, which is lambda function calls like `starfruits.map(s -> s.weight() * 2.2)`, or generally for very short function calls, since you can see on that or the previous line what `s` means.
 
@@ -380,14 +404,6 @@ In Wo, one could skip importing `strings` and just use TODO
 
 One way around it is to rename `strings`, but this is a perfectly good variable name that might be used frequently. This means a better alternative would be to use the `"strings" as "string_util"` syntax, or to differentiate the formatting of packages used in code like `@strings.append` as a rudimentary example.
 
-## Map
-
-I understand `map[key]value` is supposed to reflect the `func(input) return` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
-
-
-
-I think this is too disruptive and unnecessary of a change, so I kept `map[key]value`
-
 ## Array
 
 Map is declared and called like this:
@@ -437,6 +453,14 @@ Go kind asupports the latter, and the first is known for being hard to read
 
 ## set
 
+Implementing this really wasn't all that interesting or challenging.
+
+Because of the way `map` is designed (a hashmap), the keys and values are stored rather insignificantly, and removing the values from its structure was pretty simple to do. There isn't anything special about the difference between key and value besides that one part gets hashed and one part doesn't. So, yes, I copied map and refactored it; I really don't think there is any faster way to do *this map* for *its* intended purposes without also improving hashmap. That wasn't really my intention with Wo, but if someone sees a way of seriously improving the native hashmap when it doesn't have values, or if I spot an obvious one, then go ahead.
+
+So I made `map`'s key as `set`'s element, wiping any functionality with the map values.
+
+This does mean the removal of the `val = m[key]` method, as that doesn't really mean anything for sets. Instead, I modified and kept the `_, ok = m[key]` method, using it like `ok = s[elem]`.
+
 ```go
 primes set[int] = {2, 3, 5, 7}  // declaration
 ok = primes[4]                  // is ok if contains elem
@@ -444,17 +468,21 @@ primes.insert[11]               // insert / add
 primes.delete[7]                // delete / remove
 ```
 
-I prefer `add`, but the established naming (from map) uses insert, so I don't want it to get messy.
-
-I also support a `sets` package in the same ways that the `maps` package does.
+I prefer `add` and `remove`, but the established naming (from map) uses insert, so I don't want it to get too inconsistent. It's not an impossible consideration however.
 
 There are also fast versions of the map for strings, int32, and int64, which I've also implemented.
 
-Because of the way `map` is designed (a hashmap), the keys and values are stored rather insignificantly, and removing the values from its structure was pretty simple to do. There isn't anything special about the difference between key and value besides that one part gets hashed and one part doesn't. So, yes, I copied map and refactored it; I really don't think there is any faster way to do *this map* for *its* intended purposes without also improving hashmap. That wasn't really my intention with Wo, but if someone sees a way of seriously improving the native hashmap when it doesn't have values, or if I spot an obvious one, then go ahead.
+I also support a `sets` package in the same ways that the `maps` package does.
 
-So I made `map`'s key as `set`'s element, wiping any functionality with the map values.
+## Style
 
-This does mean the removal of the `val = m[key]` method, as that doesn't really mean anything for sets. Instead, I modified and kept the `_, ok = m[key]` method, using it like `ok = s[elem]`.
+Sets in math use `{ }` to mean "unordered, unique collection", but in programming, it means "ordered, repeatable collection". I think it is ok to use the curly braces for sets, since it is programmatically ordered and repeatable data at first, but then it will become converted from that explicit representation into a something which is guaranteed to be an actual set. I can actually still say `{ a, b, a, c }` in math, but it represents a set of `a`, `b` and `c` without order. It is also predictable with the formatting already used since, even if someone made their own set or any kind of math collection, it would use the curly braces.
+
+## Map[K, V]
+
+I understand `map[key]value` is supposed to reflect the `func(input) return` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
+
+I think this is too disruptive and unnecessary of a change, so I kept `map[key]value`
 
 ## enum
 

@@ -198,7 +198,8 @@ const (
 	OLEN           // len(X)
 	OMAKE          // make(Args) (before type checking converts to one of the following)
 	OMAKECHAN      // make(Type[, Len]) (type is chan)
-	OMAKEMAP       // make(Type[, Len]) (type is map)
+	OMAKEMAP       // make(Type[, Len]) (type is map) // TODO(bran) usages
+	OMAKESET       // make(Type[, Len]) (type is set)
 	OMAKESLICE     // make(Type[, Len[, Cap]]) (type is slice)
 	OMAKESLICECOPY // makeslicecopy(Type, Len, Cap) (type is slice; Len is length and Cap is the copied from slice)
 	// OMAKESLICECOPY is created by the order pass and corresponds to:

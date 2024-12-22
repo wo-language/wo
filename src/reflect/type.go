@@ -1601,10 +1601,7 @@ func haveIdenticalUnderlyingType(T, V *abi.Type, cmpTags bool) bool {
 	case Map:
 		return haveIdenticalType(T.Key(), V.Key(), cmpTags) && haveIdenticalType(T.Elem(), V.Elem(), cmpTags)
 
-	case Set:
-		return haveIdenticalType(T.Elem(), V.Elem(), cmpTags)
-
-	case Pointer, Slice:
+	case Pointer, Slice, Set:
 		return haveIdenticalType(T.Elem(), V.Elem(), cmpTags)
 
 	case Struct:
@@ -1869,6 +1866,71 @@ func MapOf(key, elem Type) Type {
 		mt.MapType.ValueSize = uint8(etyp.Size_)
 	}
 	mt.MapType.BucketSize = uint16(mt.Bucket.Size_)
+	if isReflexive(ktyp) {
+		mt.Flags |= 4
+	}
+	if needKeyUpdate(ktyp) {
+		mt.Flags |= 8
+	}
+	if hashMightPanic(ktyp) {
+		mt.Flags |= 16
+	}
+	mt.PtrToThis = 0
+
+	ti, _ := lookupCache.LoadOrStore(ckey, toRType(&mt.Type))
+	return ti.(Type)
+}
+
+// SetOf returns the map type with the given key and element types.
+// For example, if k represents int and e represents string,
+// SetOf(k, e) represents map[int]string.
+//
+// If the key type is not a valid map key type (that is, if it does
+// not implement Go's == operator), MapOf panics.
+func SetOf(elem Type) Type {
+	ktyp := elem.common()
+
+	if ktyp.Equal == nil {
+		panic("reflect.SetOf: invalid key type " + stringFor(ktyp))
+	}
+
+	// Look in cache.
+	ckey := cacheKey{Set, ktyp, nil, 0} // TODO(bran)
+	if mt, ok := lookupCache.Load(ckey); ok {
+		return mt.(Type)
+	}
+
+	// Look in known types.
+	s := "set[" + stringFor(ktyp) + "]"
+	for _, tt := range typesByString(s) {
+		mt := (*setType)(unsafe.Pointer(tt))
+		if mt.Elem == ktyp {
+			ti, _ := lookupCache.LoadOrStore(ckey, toRType(tt))
+			return ti.(Type)
+		}
+	}
+
+	// Make a set type.
+	// Note: flag values must match those used in the TSET case
+	// in ../cmd/compile/internal/reflectdata/reflect.go:writeType.
+	var imap any = (map[unsafe.Pointer]struct{})(nil) // TODO(bran) go compiler can't support set notation
+	mt := **(**setType)(unsafe.Pointer(&imap))
+	mt.Str = resolveReflectName(newName(s, "", false, false))
+	mt.TFlag = 0
+	mt.Hash = fnv1(0, 'm', byte(ktyp.Hash>>24), byte(ktyp.Hash>>16), byte(ktyp.Hash>>8), byte(ktyp.Hash)) // TODO(bran) should use x = 0 ?
+	mt.Elem = ktyp
+	mt.Bucket = setBucketOf(ktyp)
+	mt.Hasher = func(p unsafe.Pointer, seed uintptr) uintptr {
+		return typehash(ktyp, p, seed)
+	}
+	mt.Flags = 0
+	if ktyp.Size_ > abi.MapMaxKeyBytes {
+		mt.KeySize = uint8(goarch.PtrSize)
+		mt.Flags |= 1 // indirect key
+	} else {
+		mt.KeySize = uint8(ktyp.Size_)
+	}
+	mt.SetType.BucketSize = uint16(mt.Bucket.Size_)
 	if isReflexive(ktyp) {
 		mt.Flags |= 4
 	}
@@ -2175,6 +2237,59 @@ func bucketOf(ktyp, etyp *abi.Type) *abi.Type {
 		GCData:   gcdata,
 	}
 	s := "bucket(" + stringFor(ktyp) + "," + stringFor(etyp) + ")"
+	b.Str = resolveReflectName(newName(s, "", false, false))
+	return b
+}
+
+func setBucketOf(ktyp *abi.Type) *abi.Type {
+	if ktyp.Size_ > abi.MapMaxKeyBytes {
+		ktyp = ptrTo(ktyp)
+	}
+
+	// Prepare GC data if any.
+	// A bucket is at most bucketSize*(1+maxKeySize)+ptrSize bytes,
+	// or 1024 bytes, or 128 pointer-size words
+	// Note that since the key is known to be <= 128 bytes,
+	// they're guaranteed to have bitmaps instead of GC programs.
+	var gcdata *byte
+	var ptrdata uintptr
+
+	size := abi.MapBucketCount*(1+ktyp.Size_) + goarch.PtrSize
+	if size&uintptr(ktyp.Align_-1) != 0 {
+		panic("reflect: bad size computation in MapOf")
+	}
+
+	if ktyp.Pointers() {
+		nptr := (abi.MapBucketCount*(1+ktyp.Size_) + goarch.PtrSize) / goarch.PtrSize
+		n := (nptr + 7) / 8 // TODO(bran) math might work differently for sets
+
+		// Runtime needs pointer masks to be a multiple of uintptr in size.
+		n = (n + goarch.PtrSize - 1) &^ (goarch.PtrSize - 1)
+		mask := make([]byte, n)
+		base := uintptr(abi.MapBucketCount / goarch.PtrSize)
+
+		emitGCMask(mask, base, ktyp, abi.MapBucketCount)
+		base += abi.MapBucketCount * ktyp.Size_ / goarch.PtrSize
+
+		word := base
+		mask[word/8] |= 1 << (word % 8)
+		gcdata = &mask[0]
+		ptrdata = (word + 1) * goarch.PtrSize
+
+		// overflow word must be last
+		if ptrdata != size {
+			panic("reflect: bad layout computation in MapOf")
+		}
+	}
+
+	b := &abi.Type{
+		Align_:   goarch.PtrSize,
+		Size_:    size,
+		Kind_:    abi.Struct,
+		PtrBytes: ptrdata,
+		GCData:   gcdata,
+	}
+	s := "bucket(" + stringFor(ktyp) + ")"
 	b.Str = resolveReflectName(newName(s, "", false, false))
 	return b
 }

@@ -1367,10 +1367,10 @@ func reflect_setassign(t *settype, h *hset, key unsafe.Pointer, elem unsafe.Poin
 }
 
 //wo:linkname reflect_setassign_faststr reflect.setassign_faststr0
-func reflect_setassign_faststr(t *settype, h *hset, key string, elem unsafe.Pointer) {
-	p := setassign_faststr(t, h, key)
-	typedmemmove(t.Elem, p, elem)
-}
+//func reflect_setassign_faststr(t *settype, h *hset, key string, elem unsafe.Pointer) {
+//	p := setassign_faststr(t, h, key)
+//	typedmemmove(t.Elem, p, elem)
+//}
 
 //wo:linkname reflect_setdelete reflect.setdelete
 func reflect_setdelete(t *settype, h *hset, key unsafe.Pointer) {
@@ -1551,7 +1551,7 @@ func setclone2(t *settype, src *hset) *hset {
 		fatal("concurrent set clone and set write")
 	}
 
-	if src.B == 0 && !(t.IndirectKey() && t.NeedKeyUpdate()) && !t.IndirectElem() {
+	if src.B == 0 && !(t.IndirectKey() && t.NeedKeyUpdate()) {
 		// Quick copy for small maps.
 		dst.buckets = newobject(t.Bucket)
 		dst.count = src.count

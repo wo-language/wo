@@ -16,20 +16,26 @@ Development steps:
 - run a modified compiler [✅]
     - run a .wo file (in a separate project) [✅]
 - modifying the compiler code to support each kind of syntax [Doing...]
-  - doing it for just one and test running it
+  - doing it for just one and test running it [Doing with set...]
   - make code formatter detect it
-- modifying the runner to support that transformation
+  - try to make some modular feature, 
+- modifying the runner to support that transformation [Next]
 - possibly making the `wo` command separate, or at least instructing on how to make it an alias.
 - checking if it still reaches all the targets
 - setting up the website in Go then Wo
-- dealing with versions and downloadable executable installations for other users to test, perhaps offering an online playground
+- dealing with versions and downloadable executable installations for other users to test
+- perhaps offering an online playground
 - a transpiler that converts them between each other
 
 
-### todo
+### other todo
 
 1. refactor test/wo/*.wo -> test/wo_*.wo if they don't get ran, also need to change some bat file to include it in the tests maybe
 2. add automated tests in my own run_wo.bat
+
+
+99. 
+100. better icon if anyone offers one
 
 
 ### run without tests
@@ -61,33 +67,6 @@ current commit syntax attempt to add:
 `interface` is `tie` - fails because token defined in multiple places
 
 recognizes `->` - fails bc doesn't belong anywhere
-
-### `set`
-- no syntax for it
-- also impl's `setiter`, set_faststr, set_fast64, set_fast32, sets, sets/iter
-https://dave.cheney.net/2018/05/29/how-the-go-runtime-implements-maps-efficiently-without-generics
-```go
-m := map[kType]vType // init
-v := m[k]     // mapaccess1(m, k, &v)
-v, ok := m[k] // mapaccess2(m, k, &v, &ok)
-m[k] = 9001   // mapinsert(m, k, 9001)
-delete(m, k)  // mapdelete(m, k)
-
-s := set[eType] // init
----            // setaccess1 - disabled
-ok := s[e]     // setaccess2(s, e, &ok) - similar signature of mapaccess1
-s.insert(9001) // setinsert(s, e, 9001)
-delete(s, e)   // setdelete(s, e)
-
-```
-meaning:
-remove mapaccess1,
-modify signature of mapaccess2,
-change the parser's syntax
-
-- it should really barely be much faster than map[type]struct{}
-  - since I only removed the element field and any calculations for it (which were constant time ones)
-  - the overall time complexity should be the same
 
 
 after adding/removing any fundamental types, you have to run
