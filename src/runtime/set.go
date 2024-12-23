@@ -103,7 +103,7 @@ type setextra struct {
 	// overflow and oldoverflow are only used if key and elem do not contain pointers.
 	// overflow contains overflow buckets for hset.buckets.
 	// oldoverflow contains overflow buckets for hset.oldbuckets.
-	// The indirection allows to store a pointer to the slice in hiterset.
+	// The indirection allows to store a pointer to the slice in hsetiter.
 	overflow    *[]*bset
 	oldoverflow *[]*bset
 
@@ -125,9 +125,9 @@ type bset struct {
 }
 
 // A hash iteration structure.
-// If you modify hiterset, also change cmd/compile/internal/reflectdata/reflect.go
+// If you modify hsetiter, also change cmd/compile/internal/reflectdata/reflect.go
 // and reflect/value.go to match the layout of this structure.
-type hiterset struct {
+type hsetiter struct {
 	key         unsafe.Pointer // Must be in first position.  Write nil to indicate iteration end (see cmd/compile/internal/walk/range.go).
 	t           *settype
 	h           *hset
@@ -804,10 +804,10 @@ search:
 	h.flags &^= hashWriting
 }
 
-// setiterinit initializes the hiterset struct used for ranging over maps.
-// The hiterset struct pointed to by 'it' is allocated on the stack
+// setiterinit initializes the hsetiter struct used for ranging over maps.
+// The hsetiter struct pointed to by 'it' is allocated on the stack
 // by the compilers order pass or on the heap by reflect_setiterinit.
-// Both need to have zeroed hiterset since the struct contains pointers.
+// Both need to have zeroed hsetiter since the struct contains pointers.
 //
 // setiterinit should be an internal detail,
 // Do not access it using linkname.
@@ -816,7 +816,7 @@ search:
 // See go.dev/issue/67401.
 //
 //wo:linkname setiterinit
-func setiterinit(t *settype, h *hset, it *hiterset) {
+func setiterinit(t *settype, h *hset, it *hsetiter) {
 	if raceenabled && h != nil {
 		callerpc := getcallerpc()
 		racereadpc(unsafe.Pointer(h), callerpc, abi.FuncPCABIInternal(setiterinit))
@@ -827,7 +827,7 @@ func setiterinit(t *settype, h *hset, it *hiterset) {
 		return
 	}
 
-	if unsafe.Sizeof(hiterset{})/goarch.PtrSize != 12 {
+	if unsafe.Sizeof(hsetiter{})/goarch.PtrSize != 12 {
 		throw("hash_iter size incorrect") // see cmd/compile/internal/reflectdata/reflect.go
 	}
 	it.h = h
@@ -869,7 +869,7 @@ func setiterinit(t *settype, h *hset, it *hiterset) {
 // See go.dev/issue/67401.
 //
 //wo:linkname setiternext
-func setiternext(it *hiterset) {
+func setiternext(it *hsetiter) {
 	h := it.h
 	if raceenabled {
 		callerpc := getcallerpc()
@@ -1389,7 +1389,7 @@ func reflect_setdelete_faststr(t *settype, h *hset, key string) {
 // See go.dev/issue/67401.
 //
 //wo:linkname reflect_setiterinit reflect.setiterinit
-func reflect_setiterinit(t *settype, h *hset, it *hiterset) {
+func reflect_setiterinit(t *settype, h *hset, it *hsetiter) {
 	setiterinit(t, h, it)
 }
 
@@ -1400,7 +1400,7 @@ func reflect_setiterinit(t *settype, h *hset, it *hiterset) {
 // See go.dev/issue/67401.
 //
 //wo:linkname reflect_setiternext reflect.setiternext
-func reflect_setiternext(it *hiterset) {
+func reflect_setiternext(it *hsetiter) {
 	setiternext(it)
 }
 
@@ -1411,7 +1411,7 @@ func reflect_setiternext(it *hiterset) {
 // See go.dev/issue/67401.
 //
 //wo:linkname reflect_setiterkey reflect.setiterkey
-func reflect_setiterkey(it *hiterset) unsafe.Pointer {
+func reflect_setiterkey(it *hsetiter) unsafe.Pointer {
 	return it.key
 }
 
@@ -1422,7 +1422,7 @@ func reflect_setiterkey(it *hiterset) unsafe.Pointer {
 // See go.dev/issue/67401.
 //
 //wo:linkname reflect_setiterelem reflect.setiterelem
-//func reflect_setiterelem(it *hiterset) unsafe.Pointer {
+//func reflect_setiterelem(it *hsetiter) unsafe.Pointer {
 //	return it.elem
 //}
 

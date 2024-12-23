@@ -2040,11 +2040,11 @@ func (f flag) panicNotMap() {
 	f.mustBe(Map)
 }
 
-// hiter's structure matches runtime.hiter's structure.
+// hsetiter's structure matches runtime.hsetiter's structure.
 // Having a clone here allows us to embed a set iterator
 // inside type SetIter so that SetIters can be re-used
 // without doing any allocations.
-type hiterset struct { // TODO(bran) iteration over set is different than map; remove k, v :=
+type hsetiter struct { // TODO(bran) iteration over set is different than map; remove k, v :=
 	key         unsafe.Pointer
 	t           unsafe.Pointer
 	h           unsafe.Pointer
@@ -2061,7 +2061,7 @@ type hiterset struct { // TODO(bran) iteration over set is different than map; r
 	checkBucket uintptr
 }
 
-func (h *hiterset) initialized() bool {
+func (h *hsetiter) initialized() bool {
 	return h.t != nil
 }
 
@@ -2069,7 +2069,7 @@ func (h *hiterset) initialized() bool {
 // See [Value.SetRange].
 type SetIter struct {
 	m        Value
-	hiterset hiterset
+	hiterset hsetiter
 }
 
 // Key returns the key of iter's current set entry.
@@ -2115,8 +2115,8 @@ func (v Value) SetIterSetKey(iter *SetIter) {
 	typedmemmove(v.typ(), v.ptr, key.ptr)
 }
 
-// ValueSet returns the value of iter's current set entry.
-func (iter *SetIter) ValueSet() Value {
+// SetValue returns the value of iter's current set entry.
+func (iter *SetIter) SetValue() Value {
 	if !iter.hiterset.initialized() {
 		panic("SetIter.Value called before Next")
 	}
@@ -2160,7 +2160,7 @@ func (v Value) SetIterSetValue(iter *SetIter) {
 
 // Next advances the set iterator and reports whether there is another
 // entry. It returns false when iter is exhausted; subsequent
-// calls to [SetIter.Key], [SetIter.ValueSet], or [SetIter.Next] will panic.
+// calls to [SetIter.Key], [SetIter.SetValue], or [SetIter.Next] will panic.
 func (iter *SetIter) Next() bool {
 	if !iter.m.IsValid() {
 		panic("SetIter.Next called on an iterator that does not have an associated set Value")
@@ -2185,13 +2185,13 @@ func (iter *SetIter) Reset(v Value) {
 		v.mustBe(Set)
 	}
 	iter.m = v
-	iter.hiterset = hiterset{}
+	iter.hiterset = hsetiter{}
 }
 
 // SetRange returns a range iterator for a set.
 // It panics if v's Kind is not [Set].
 //
-// Call [SetIter.Next] to advance the iterator, and [SetIter.Key]/[SetIter.ValueSet] to access each entry.
+// Call [SetIter.Next] to advance the iterator, and [SetIter.Key]/[SetIter.SetValue] to access each entry.
 // [SetIter.Next] returns false when the iterator is exhausted.
 // SetRange follows the same iteration semantics as a range statement.
 //
@@ -4151,16 +4151,16 @@ func setdelete(t *abi.Type, m unsafe.Pointer, key unsafe.Pointer)
 func setdelete_faststr(t *abi.Type, m unsafe.Pointer, key string)
 
 //wo:noescape
-func setiterinit(t *abi.Type, m unsafe.Pointer, it *hiterset)
+func setiterinit(t *abi.Type, m unsafe.Pointer, it *hsetiter)
 
 //wo:noescape
-func setiterkey(it *hiterset) (key unsafe.Pointer)
+func setiterkey(it *hsetiter) (key unsafe.Pointer)
 
 //wo:noescape
-func setiterelem(it *hiterset) (elem unsafe.Pointer)
+func setiterelem(it *hsetiter) (elem unsafe.Pointer)
 
 //wo:noescape
-func setiternext(it *hiterset)
+func setiternext(it *hsetiter)
 
 //wo:noescape
 func setlen(m unsafe.Pointer) int
