@@ -80,10 +80,10 @@ relevant files structure:
 
 data graph:
 
-hset
-abi.SetType <- settype, reflect/setType <- value <- rrtype
-abi.Type <- reflect/rtype
-hset, reflect/type.Set <- reflectdata
+hset <- value
+abi.SetType <- settype, reflect.setType <- value <- rrtype
+abi.Type <- reflect.rtype
+hset, reflect.type.Set <- reflectdata
 TSET <- range
 SetType <- alg
 

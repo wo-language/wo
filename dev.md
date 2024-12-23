@@ -98,12 +98,10 @@ and modify the meaning of:
 maybe `?`.
 
 and possibly remove (ignore):
-`iota`, `range`
+`iota`, `range`, `any`
 
-however, I would actually keep these, as it should compile both Go and Wo, and they share the same type specifications.
-This would also allow errors like "Wo doesn't use the range syntax, try : " for example.
-
-
+however, I would actually keep these as tokens, as it should compile in both Go and Wo, and they share the same type specifications.
+This would also better allow errors like "Wo doesn't use the range syntax, try : " for example.
 
 other:
 

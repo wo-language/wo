@@ -1,6 +1,6 @@
 ### Wo is a fork of Go
 
-The Wo language is an interoperable successor to Go. It offers alternative syntax and language features aimed at readability.
+The Wo language is an interoperable successor to Go that offers alternative syntax and language features aimed at readability.
 
 For example,
 
@@ -27,12 +27,11 @@ var file, return(none, 3, err) = os.Open("hi.wo") // with other return values
 var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
 ```
 
-Not only that, I am considering making different language features **modular**. If someone just likes only the interface syntax, and that's all they want, then I could allow either compiler flags or special headers in the file to indicate which ones to have turned off. All of them except experimental or "indifferent" ones would be enabled by default.
+Not only that, I am considering making different language features **modular**. If someone likes only the interface syntax, and that's all they want, then I could allow either compiler flags or special headers in the file to indicate which ones to have turned off.
 
 The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options
 
 Currently, this s a **proof of concept** and I have not necessarily got any of these working yet.
-
 
 | Rule                                                                            | Usage                                                                                                                                            |
 |---------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -42,8 +41,7 @@ Currently, this s a **proof of concept** and I have not necessarily got any of t
 | **Doesn't** allow import overloading or **keyword overloading**                 | `var int int = 1` and `rune := 'W'` give compile error                                                                                           |
 | **Doens't** use "`range`" in **enhanced for** loops `for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                                                               |
 | **Doesn't** prefer name shortenings                                             | `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)                                                              |
-| Has the **ternary operator** for<br/>`if a, cond := call(); cond {}`            | `a, if(cond) = call() {} else {}`<br/>or maybe `?:` and  `a, cond? = call() {} : {}`                                                             |
-| Uses `[]` after the type for arrays to reflect `map[key]`                       | **`int[]`** and `int[...][3]`                                                                                                                    |
+| Has the **ternary operator** for<br/>`if a, cond := call(); cond {}`            | `a, if(cond) := call() {} else {}`<br/>`a = if cond {} else {}`                                                                                  |
 
 (In the future) Wo also...
 - Reworks variables by
@@ -69,9 +67,10 @@ Besides syntactical and formatting difference, Wo also offers functional differe
 - Make slice append more predictable
 - Tuples as an assignable type
 - Native string and slice operations like `==` and `"".contains`
-- Run other functions besides main / package control
+- Package scope control and visibility
+- Run other functions besides main
 
-### See the list below for other several other more unlikely features:
+### See the list below for several unlikely but possible features:
 <details>
 <summary>
 Potential Features
@@ -83,19 +82,13 @@ Potential Features
 - *Undecided* whether to switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types like `int i`, `struct s`, `string proc(float32 f)`
 - *MAYBE* don't use `type` from `type A interface {}`
 - *MAYBE* Make it more obvious that map and slice are pointers? https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it
-- *MAYBE* (probably won't) allow methods to be in their struct like
+- *MAYBE* (probably won't) allow methods to be in their struct
+  - `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` -> `struct Bug { fly()   flee() { this.fly() } }`
+  - and/or `struct (Bug* bug) { }` to allow `bug` instead of `this`
 - *MAYBE* not allowing **mixing shadowed** and initialized variable declarations
-
-
-`struct Bug { func fly() }   func (f F*) flee() {f.fly()}` ->
-
-`struct Bug { fly()   flee() { this.fly() } }` or `struct (Bug* bug) { }` to allow `bug` instead of `this`
-
 </details>
 
-To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ justifications.md for now
-
-I'd rather `wo` were a lite CLI command that just uses the Go compiler that's already installed rather than needing a different build of the entire compiler, but I'm making it a separate build for now.
+To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md) for now.
 
 ### Code example
 
@@ -199,8 +192,13 @@ FilePath interface {
 |<pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>| <pre>&emsp;defer reader.Close!()<br><br><br><br><br></pre>                                                                                                               |
 |<pre>type Program struct {<br>&emsp;executable [...]byte<br>}<br>func (p Program*) output() string {<br>&emsp;return p.executable[:strings.LastIndex(p.executable, ".exe"))<br>}</pre>| <pre>struct Program {<br>&emsp;byte[...] executable<br>&emsp;string outputPath() {<br>&emsp;&emsp;return executable[:executable.LastIndex(".exe")]<br>&emsp;}<br>}</pre> |
 
+### How to install
 
-### Trademark disclaimer
+I'd rather `wo` were a lite CLI command that just uses the Go compiler that's already installed rather than needing a different build of the entire compiler, but I'm making it a separate build for now.
+
+You can install it by building it from this source checked out from the right version, as per https://go.dev/doc/install/source#bootstrapFromCrosscompiledSource. Currently, it does not work, and I am working to fix it.
+
+## Trademark disclaimer
 
 All activity here should follow all of Go's guidelines at https://go.dev/brand/. If they inform me that anything violates it, then I will quickly comply. It is also preferable to follow https://go.dev/conduct
 
