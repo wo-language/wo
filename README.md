@@ -14,13 +14,13 @@ if err != nil {
 would be done like this in Wo:
 
 ```go
-var file = os.Open!("hi.wo") // pending decisions here; it's a WIP
+var file = os.Open("hi.wo")! // pending decisions here; it's a WIP
 ```
 
 Some other ways to handle errors in Wo:
 
 ```go
-var file = os.Open!!("hi.wo") // panic
+var file = os.Open("hi.wo")!! // panic
 var file, log("Error:", err)   = os.Open("hi.wo")
 var file, handle(err)          = os!Open("hi.wo") // handle and throw
 var file, return(none, 3, err) = os.Open("hi.wo") // with other return values
@@ -46,10 +46,10 @@ Currently, this s a **proof of concept** and I have not necessarily got any of t
 (In the future) Wo also...
 - Reworks variables by
     - Not giving an **error for unused variables**, (just warns and compiles them away)
-    - Not allowing undeclared variables or **"zero values"** like `var x`
+    - Not allowing undeclared variables or "**zero values**" like `var x`
     - Allow optionals for when the zero value would have had a double meaning like `string?` to avoid `""`
       - However, I could allow zero value initialization with `none`, like `int x` would mean `int x = none`
-    - Separating the usage of **`var`, `:=`, and `=`** amongst initializing, shadowing, and setting variables without any overlapping functionality
+    - Separating the usage of `var`, `:=`, and `=` amongst initializing, shadowing, and setting variables without any overlapping functionality
       - Uses `=` for initialization and setting, requiring `:=` for only shadowing, and then use **`i int = 5`** syntax for initializing or `var i = 5` for untyped variables
     - Making `_, val = f()` redundant (like `for i = range` has it optionally) by accessing only specific values from multi-return values: `w, o = f()` where `func f() (w, skip, o)`
       - Unless `f` were to return an `error`, maybe requiring something like `val, err <!= f()` when that could happen
