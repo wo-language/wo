@@ -1,7 +1,5 @@
 In here, I give explain, argue for, and document Wo's design decisions. Maybe it could be interesting to some people, but it serves as an important documentation to me, so I know what has already been considered and tested.
 
-Whenever I quote something in this file, is it to [their FAQ](https://go.dev/doc/faq)
-
 ### Index
 
 - [Theory](#Theory)
@@ -76,17 +74,15 @@ When people try to answer this online, like on Stack Overflow, there are a mix o
 
 Besides the obvious reasons of "having a good feature that lets you program", [their FAQ](https://go.dev/doc/faq#Design) has these categories of justifications
 
-- Prevention of a feature because, to a programmer, it:
+- Prevention of a feature because it:
   1. Makes compiling easier to implement
   2. It can be or always is
      - confusing
      - convoluted
      - unreadable
      - harder to use
-  3. Was just for the parser before
-  4. Makes them think about something important instead
-  5. Consumers their time
-  6. Is slow
+  3. So they have to think about something important instead
+  4. Slow
 - Inclusion of a feature because it:
   1. Was fine in practice
   2. To replace a prevented feature
@@ -169,6 +165,8 @@ Sure, but you don't need to overcompensate. An error doesn't deserve multiple ex
 
 ### interface{}
 
+
+
 I chose `<T>` for `interface{T}`. I considered something like `~`, but you can't wrap around with that. There was also `#{}`, but the shortness of `<>` was more attractive. Tags are a symbol that are not used in Go and is already associated with types.
 
 ```go
@@ -239,17 +237,6 @@ I chose to make it the **value** by default as it would be more common and intui
 
 ### The possibilities of variable declaration and assignment
 
-> #### Why is the syntax so different from C?
-> Other than declaration syntax, the differences are not major and stem from two desires. First, the syntax should feel light, without too many mandatory keywords, repetition, or arcana. Second, the language has been designed to be easy to analyze and can be parsed without a symbol table. This makes it much easier to build tools such as debuggers, dependency analyzers, automated documentation extractors, IDE plug-ins, and so on. C and its descendants are notoriously difficult in this regard.
-> 
-> #### Why are declarations backwards?
-> 
-> They’re only backwards if you’re used to C. In C, the notion is that a variable is declared like an expression denoting its type, which is a nice idea, but the type and expression grammars don’t mix very well and the results can be confusing; consider function pointers. Go mostly separates expression and type syntax and that simplifies things (using prefix * for pointers is an exception that proves the rule).
-> 
-> ...the := short declaration form argues that a full variable declaration should present the same order as := so
-
-Additionally, arranging the type like this helps to avoid C's complex "spiral" function types.
-
 Go offers these styles of declarations:
 ```go
 //z := 1 // not possible at package level
@@ -287,8 +274,6 @@ func declares() {
  fmt.Println(a, b, ... x, y) // haha
 }
 ```
-
-
 
 Let's reduce this down as much as possible to rules for describing what's above. I'll use a logical grid strategy.
 
@@ -444,9 +429,10 @@ By the way, I dream of a language where all the reserved words have some symbol,
 
 ## Overloading functions
 
-> #### [Why does Go not support overloading of methods and operators?](https://go.dev/doc/faq#overloading)
+> [Why does Go not support overloading of methods and operators?](https://go.dev/doc/faq#overloading)
 > 
 > Method dispatch is simplified if it doesn’t need to do type matching as well. Experience with other languages told us that having a variety of methods with the same name but different signatures was occasionally useful but that it could also be confusing and fragile in practice. Matching only by name and requiring consistency in the types was a major simplifying decision in Go’s type system.
+
 
 Preventing function overloading sounds like a good idea in theory, but in practice it results in artificially lengthening function names, when their original form was already the most descriptive. A description of something can be done by its contents; the parameters describe the function already, there is no necessity to change the name when the parameters change too. It aligns with language and nature.
 
@@ -479,37 +465,21 @@ payWith(creditCardNumber, city, state)
 
 which has much less redundant information.
 
-And let's say that two functions with the same name yet also the same type parameters collide:
+I have used this aspect of programming many, many times. It has been far from the top of the list of things that could make my code vague, and I'm not convinced that it's ever a primary culprit.
 
-```go
-payWith(dollars int)
-payWith(pennies int)
-```
+The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis at compile time. It is very close to the line of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious thing to be would be some structures which are just unsafe pointers underneath. Type inference is possible, but it would require a bit of reworking. It's already safe for situations like `[3]int != [2]int != []int != []*int`, but not when it comes to generics and interfaces.
 
-Then the compiler error in this case servers as a useful message, that you should rename the methods to reflect their functionality:
 
-```go
-payWithDollars(dollars int)
-payWithPennies(pennies int)
-```
 
-Which does now have redundant info, but it's necessary in this case in order to differentiate them.
+Additionally, `[:]` already does this. It's equivalent to `slice(start=0, end=0, max=0)`.
 
-I have used overloaded functions many, many times. It has been far from the top of the list of things that could make my code vague, and I'm not convinced that it's ever a primary culprit.
-
-The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis at compile time. It is very close to the path of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious problem would be something which is just an unsafe pointers underneath being confused with any other pointer. Type inference is possible, but it would require a bit of reworking. It's already safe for situations like `[3]int != [2]int != []int != []*int`, but not when it comes to generics and interfaces. I could allow it when it's not vague, and then error when it is, which is what Java does for vague overrides.
-
-It also makes sense to pair overloaded functions with default parameters.
-
-Technically `[:]` already does this. It's equivalent to `slice(start=0, end=0, max=0)`.
-
-### i
+## i
 
 `x := 5 - 3i`
 
 I vote to keep this since this is cool and kind of funny. It doesn't intersect with any other syntax.
 
-### Ternary
+## Ternary
 
 There is `?:` and `if else`, but let's look at more possibilities
 .
@@ -708,7 +678,7 @@ I think this is too disruptive and unnecessary of a change as shown in the previ
 
 In general, having a term like `set` while also preventing reserved words from being overloading can make the language difficult to use. Especially since `set(v)` is a likely function name.
 
-> #### Why are maps built in?
+> Why are maps built in?
 > 
 > The same reason strings are: they are such a powerful and important data structure that providing one excellent implementation with syntactic support makes programming more pleasant. We believe that Go’s implementation of maps is strong enough that it will serve for the vast majority of uses. If a specific application can benefit from a custom implementation, it’s possible to write one but it will not be as convenient syntactically; this seems a reasonable tradeoff.
 
@@ -734,7 +704,9 @@ Monday.working
 `struct S {}`
 `interface I {}`
 
-### Scope control
+---
+
+## Scope control
 
 There are over 100 "halls of shame" in Go's source code, which is a kind of comment they have that links to repos that used a function that it "shouldn't have".
 
