@@ -55,7 +55,8 @@ func Init() {
 	ChanType = fromReflect(reflect.TypeOf(abi.ChanType{}))
 	FuncType = fromReflect(reflect.TypeOf(abi.FuncType{}))
 	InterfaceType = fromReflect(reflect.TypeOf(abi.InterfaceType{}))
-	MapType = fromReflect(reflect.TypeOf(abi.MapType{})) // TODO
+	MapType = fromReflect(reflect.TypeOf(abi.MapType{}))
+	SetType = fromReflect(reflect.TypeOf(abi.SetType{}))
 	PtrType = fromReflect(reflect.TypeOf(abi.PtrType{}))
 	SliceType = fromReflect(reflect.TypeOf(abi.SliceType{}))
 	StructType = fromReflect(reflect.TypeOf(abi.StructType{}))

@@ -29,28 +29,75 @@ change the parser's syntax
 relevant files structure:
 - src
   - cmd/compile/internal
-    - ir/node.go
-    - reflectdata/reflect.go
-    - typecheck.go
-  - go/ast
-    - ast.go
+    - ir/no
+    - noder/
+    - reflect/type
+    - reflectdata/reflect
+    - rrtype/rrtype
+    - typecheck
+    - types
+      - fmt
+      - identity
+      - kind_string
+      - size
+      - type
+      - universe
+    - walk
+      - assign
+      - range
+  - go
+    - ast
+      - ast
+      - walk
+    - build/build
+    - parser
+      - interface
+      - parser
+      - resolver
+    - scanner
+      - errors
+      - scanner
+    - token/token
   - internal
-    - abi
+    - abi/type
+    - pkgbits/codes
+  - reflect/value
   - runtime
-    - set.go
-    - set_fast32.go
-    - set_fast64.go
-    - set_faststr.go
-    - sets.go
+    - alg 
+    - set
+    - set_fast32
+    - set_fast64
+    - set_faststr
+    - sets
+    - type
+  - sets
+    - example_test
+    - iter
+    - iter_test
+    - sets
+    - sets_test
 
-relevant files relationships:
 
-- ir/node.go
-- reflect.go
-- typecheck.go
-- abi
-- set.go
-- set_fast32.go
-- set_fast64.go
-- set_faststr.go
-- sets.go
+data graph:
+
+hset
+abi.SetType <- settype, reflect/setType <- value <- rrtype
+abi.Type <- reflect/rtype
+hset, reflect/type.Set <- reflectdata
+TSET <- range
+SetType <- alg
+
+OMAKESET
+
+
+
+
+
+
+
+
+
+
+
+
+
