@@ -1,6 +1,6 @@
 In here, I give explain, argue for, and document Wo's design decisions. Maybe it could be interesting to some people, but it serves as an important documentation to me, so I know what has already been considered and tested.
 
-Whenever I quote something in this file, is it to [their FAQ](https://go.dev/doc/faq)
+#### *Remember, many of these things are pending, and waiting to be tested properly, and any of these could be scrapped or altered!*
 
 ### Index
 
@@ -23,7 +23,7 @@ A similar situation was Scala's improvements over Java. It clearly improved the 
 
 I have not seen anything in the programming language landscape like that - a direct child of Go that addresses its design.
 
-And let it be known, the internet is full of needless speculation as to "why Go did this and not that?", so I'll also make this transparent and be skeptical of any justification that people give to Go. Instead, prioritizing the objective best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
+And let it be known, the internet is full of needless speculation as to "why Go did this and not that?", so I'll also make this transparent and be skeptical of any justification that people give to Go, instead prioritizing the objective best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
 
 Ultimately, certain improvements can be more valuable in different circumstances, while it doesn't matter in others. For example, I had a Java program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) into Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
 
@@ -68,7 +68,7 @@ For example, Learning Go 2nd edition says:
 
 > Note: The Go compiler won’t stop you from creating unread package-level variables. This is one more reason you should avoid creating package-level variables.
 
-This is absolutely backwards logic to me from a compiler's perspective. It shouldn't allow you to do something that you shouldn't do.
+This is backwards logic to me from the compiler's perspective. It shouldn't allow you to do something that you shouldn't do.
 
 ### Go's design reasons
 
@@ -76,17 +76,15 @@ When people try to answer this online, like on Stack Overflow, there are a mix o
 
 Besides the obvious reasons of "having a good feature that lets you program", [their FAQ](https://go.dev/doc/faq#Design) has these categories of justifications
 
-- Prevention of a feature because, to a programmer, it:
+- Prevention of a feature because it:
   1. Makes compiling easier to implement
   2. It can be or always is
      - confusing
      - convoluted
      - unreadable
      - harder to use
-  3. Was just for the parser before
-  4. Makes them think about something important instead
-  5. Consumers their time
-  6. Is slow
+  3. So they have to think about something important instead
+  4. Slow
 - Inclusion of a feature because it:
   1. Was fine in practice
   2. To replace a prevented feature
@@ -149,23 +147,60 @@ There is one situation where shortened variable names might be acceptable, which
 
 In the same realm is shadowing and keyword overloading, which I go into later.
 
-Wo also does not allow variable names like `π` or `__`.
-
-And it's hard to do something about the inconsistent capitalization in functions. There certainly shouldn't be both "Init" and "init" in the same file, though. Nonetheless, Wo uses camelCase function and variable names.
+This abbreviation system and forcing functions to not have the same name is ironically avoided by importing from a package, which is basically the same thing as lengthening a function name anyway except with an extra `.`.
 
 ### Renaming package methods
 
-I also want to rename some common methods in the standard library. For example,
+I also want to rename some common methods in the standard library. For example, I find `fmt`'s function names really vague.
 
 - `ConcatFormat` for `SprintF` in `fmt`
 
+`Print, Printf, Sprint, Sprintf, Fprint, Fprintf, Sscanf, Fscanf,` etc.
+
+I would have never had to carefully decode the tiny difference between their documentations either if they were just named something like
+
+`PrintFormat, Concat, ConcatFormat, FormatterPrint, ScanString, ScanReader` etc.
+
+or just leaving the varying arguments as optional parameters with the same function names
+
+`Scan(string), Scan(reader)`
+
+### type keyword
+
+Going for this syntax is a real possibility, but I don't see it necessary or too helpful (either way):
+`struct S {}`
+`interface I {}`
+so I'm going with Go's way for now.
+
+### Overloading package names
+
+This is just allowed because a package could be called anything, but it shouldn't be allowed without some kind of error. I'm taking for granted people don't necessarily rely on IDEs here. For example,
+
+```go
+import { "strings" }
+
+func combineThem(strings /* Wo Error */ []string) string {
+    return strings.Join /* Go error */ (strings, ", ")
+}
+```
+
+would not compile in Go, but not because of the existence of the variable name `strings`, but because `Join` is being called on that variable, when the author intended for it to be `Join` from the `strings`. It is because `strings` is overloading the `"strings"` package from the `import`.
+
+By the way, in Wo, I plan to make it so that one could just skip importing `strings` and just be able to call `Join` on a `[]string` like `stringsVariable.Join(", ")`. This could help contribute to avoiding these situations, but it could still happen of course.
+
+One way around it is to rename `strings`, but this is a perfectly good variable name that might be used frequently across the file. The solution is to use `string_util "strings"` syntax, or to differentiate the formatting of packages used in code like `@strings.append` as a rudimentary example.
+
+In fact, they have to do a similar thing in other scripts with exported functions since they don't have capitals. Wo could do something about that, like by allowing any case, just excluding lowercase characters from scripts that have a mixed case ([e.g.](https://www.compart.com/en/unicode/category/Lu) Latin, Cyrillic, Greek, Coptic, Armenian, some symbols like ℇ𝞥𝙰𝔛𐲖, although some of these are not recommended by unicode to be used as identifiers), and languages without any capitals wouldn't have that restriction.
+
+Another way of doing it is to always export packages capitalized like `Strings "strings"` as a naming standard.
+
+By the way, I dream of a language where all the reserved words have some symbol, and you write all your own stuff like regular words and spaces like `bird $get color` for `bird.get(color)`, and you get to define the meaning of all your own sentences by token order like some declaration `String A "with" String B -> concat(A, B)` or `Number A (Number B) -> A * B`. Or maybe Haskell has invaded my subconsciousness?
+
+### Overloading reserved words
+
+I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, but I simply don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is totally confusing. Enough said.
+
 ## Syntax Features
-
-### error handling
-
-> We believe that coupling exceptions to a control structure, as in the try-catch-finally idiom, results in convoluted code. It also tends to encourage programmers to label too many ordinary errors, such as failing to open a file, as exceptional.
-
-Sure, but you don't need to overcompensate. An error doesn't deserve multiple extra lines to remind you, even more than the main plot. Errors are still secondary, basically an after-thought, for better or for worse (Yes, I dream of a language with errors in mind first). A miniscule check is actually enough, since you don't need to be constantly reminded by it as it is not essential to the flow of the logic of your code, while still letting you ask "is this error checked?" and then easily seeing that it is because you're looking for it. This situation is not one typical of over abstraction, it's a perfect example of something that should be reduced to improve readability by hightlighting what matters
 
 ### interface{}
 
@@ -239,17 +274,6 @@ I chose to make it the **value** by default as it would be more common and intui
 
 ### The possibilities of variable declaration and assignment
 
-> #### Why is the syntax so different from C?
-> Other than declaration syntax, the differences are not major and stem from two desires. First, the syntax should feel light, without too many mandatory keywords, repetition, or arcana. Second, the language has been designed to be easy to analyze and can be parsed without a symbol table. This makes it much easier to build tools such as debuggers, dependency analyzers, automated documentation extractors, IDE plug-ins, and so on. C and its descendants are notoriously difficult in this regard.
-> 
-> #### Why are declarations backwards?
-> 
-> They’re only backwards if you’re used to C. In C, the notion is that a variable is declared like an expression denoting its type, which is a nice idea, but the type and expression grammars don’t mix very well and the results can be confusing; consider function pointers. Go mostly separates expression and type syntax and that simplifies things (using prefix * for pointers is an exception that proves the rule).
-> 
-> ...the := short declaration form argues that a full variable declaration should present the same order as := so
-
-Additionally, arranging the type like this helps to avoid C's complex "spiral" function types.
-
 Go offers these styles of declarations:
 ```go
 //z := 1 // not possible at package level
@@ -287,8 +311,6 @@ func declares() {
  fmt.Println(a, b, ... x, y) // haha
 }
 ```
-
-
 
 Let's reduce this down as much as possible to rules for describing what's above. I'll use a logical grid strategy.
 
@@ -418,35 +440,12 @@ a, b = 1, 2
 
 as this is tricky to read and unnecessarily horizontal.
 
-### Overloading reserved words
-
-I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, but I simply don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is totally confusing. Enough said.
-
-### Overloading package names
-
-This is just allowed because a package could be called anything, but it shouldn't be allowed without some kind of error. I'm taking for granted people don't necessarily rely on IDEs here. For example,
-
-```go
-import { "strings" }
-
-func combineThem(strings /* Wo Error */ []string) string {
-    return strings.Join /* Go error */ (strings, ", ")
-}
-```
-
-would not compile in Go, but not because of the existence of the variable name `strings`, but because `Join` is being called on that variable, when the author intended for it to be `Join` from the `strings`. It is because `strings` is overloading the `"strings"` package from the `import`.
-
-By the way, in Wo, I plan to make it so that one could just skip importing `strings` and just be able to call `Join` on a `[]string` like `stringsVariable.Join(", ")`. This could help contribute to avoiding these situations, but it could still happen of course.
-
-One way around it is to rename `strings`, but this is a perfectly good variable name that might be used frequently across the file. This means a better alternative would be to use the `"strings" as "string_util"` syntax, or to differentiate the formatting of packages used in code like `@strings.append` as a rudimentary example.
-
-By the way, I dream of a language where all the reserved words have some symbol, and you write all your own stuff like regular words and spaces like `bird $get color` for `bird.get(color)`, and you get to define the meaning of all your own sentences by token order like some declaration `String A "with" String B -> concat(A, B)` or `Number A (Number B) -> A * B`. Or maybe Haskell has invaded my subconsciousness?
-
 ## Overloading functions
 
-> #### [Why does Go not support overloading of methods and operators?](https://go.dev/doc/faq#overloading)
+> [Why does Go not support overloading of methods and operators?](https://go.dev/doc/faq#overloading)
 > 
 > Method dispatch is simplified if it doesn’t need to do type matching as well. Experience with other languages told us that having a variety of methods with the same name but different signatures was occasionally useful but that it could also be confusing and fragile in practice. Matching only by name and requiring consistency in the types was a major simplifying decision in Go’s type system.
+
 
 Preventing function overloading sounds like a good idea in theory, but in practice it results in artificially lengthening function names, when their original form was already the most descriptive. A description of something can be done by its contents; the parameters describe the function already, there is no necessity to change the name when the parameters change too. It aligns with language and nature.
 
@@ -479,37 +478,21 @@ payWith(creditCardNumber, city, state)
 
 which has much less redundant information.
 
-And let's say that two functions with the same name yet also the same type parameters collide:
+I have used this aspect of programming many, many times. It has been far from the top of the list of things that could make my code vague, and I'm not convinced that it's ever a primary culprit.
 
-```go
-payWith(dollars int)
-payWith(pennies int)
-```
+The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis at compile time. It is very close to the line of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious thing to be would be some structures which are just unsafe pointers underneath. Type inference is possible, but it would require a bit of reworking. It's already safe for situations like `[3]int != [2]int != []int != []*int`, but not when it comes to generics and interfaces.
 
-Then the compiler error in this case servers as a useful message, that you should rename the methods to reflect their functionality:
 
-```go
-payWithDollars(dollars int)
-payWithPennies(pennies int)
-```
 
-Which does now have redundant info, but it's necessary in this case in order to differentiate them.
+Additionally, `[:]` already does this. It's equivalent to `slice(start=0, end=0, max=0)`.
 
-I have used overloaded functions many, many times. It has been far from the top of the list of things that could make my code vague, and I'm not convinced that it's ever a primary culprit.
-
-The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis at compile time. It is very close to the path of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious problem would be something which is just an unsafe pointers underneath being confused with any other pointer. Type inference is possible, but it would require a bit of reworking. It's already safe for situations like `[3]int != [2]int != []int != []*int`, but not when it comes to generics and interfaces. I could allow it when it's not vague, and then error when it is, which is what Java does for vague overrides.
-
-It also makes sense to pair overloaded functions with default parameters.
-
-Technically `[:]` already does this. It's equivalent to `slice(start=0, end=0, max=0)`.
-
-### i
+## i
 
 `x := 5 - 3i`
 
 I vote to keep this since this is cool and kind of funny. It doesn't intersect with any other syntax.
 
-### Ternary
+## Ternary
 
 There is `?:` and `if else`, but let's look at more possibilities
 .
@@ -639,7 +622,41 @@ I'm going with `v = 2 * (if cond { a } else { b }) + ` for now, despite the curl
 
 I'll do this by either adding an expression identical to the `if else` statement, or modify the statement to become an expression.
 
+### Util
+
+The point here is to avoid package calls like
+
+`strings.contains(str, sub)`
+
+vs
+
+`str.contains(sub)`.
+
+From go's source code,
+
+```go
+func equal(x, y []string) bool {
+  if len(x) != len(y) {
+    return false
+  }
+  for i, xi := range x {
+    if xi != y[i] {
+      return false
+    }
+  }
+  return true
+}
+
+x.equals(y)
+```
+vs
+```go
+x == y
+```
+
 ## Functional Features
+
+(I don't mean functional programming)
 
 ### set
 
@@ -708,16 +725,335 @@ I think this is too disruptive and unnecessary of a change as shown in the previ
 
 In general, having a term like `set` while also preventing reserved words from being overloading can make the language difficult to use. Especially since `set(v)` is a likely function name.
 
-> #### Why are maps built in?
+> Why are maps built in?
 > 
 > The same reason strings are: they are such a powerful and important data structure that providing one excellent implementation with syntactic support makes programming more pleasant. We believe that Go’s implementation of maps is strong enough that it will serve for the vast majority of uses. If a specific application can benefit from a custom implementation, it’s possible to write one but it will not be as convenient syntactically; this seems a reasonable tradeoff.
 
 There isn't anything inherently significant about a `map` or `len`; it can just be represented by a struct or function. So it's down to just making a language nicer. I'm also proposing `enum`, `some`, and `none`. I don't think this is crossing the line yet of having to consistently and annoyingly rename things like class to clazz yet, but that does feel like a dishonest representation of a program when renamings like that have to happen, since the restriction is coming from a meta syntactical problem, not a functional one.
 
-### enum
+## About Error handling
+
+### Optional
+
+Here are a couple designs:
+```go
+type Option1[T any] interface {
+  none    // = some 0 sized type
+  some(T) // = T
+}
+
+type Option2[T any] struct {
+  exists bool
+  t T
+}
+```
+
+Option1 can't do type assertion or type switch, requiring some kind of handler like `errors.Is`. It can do `some` / `none` pattern matching easier. Option2 can do field embedding, which is pretty important to errors, but it could probably still work with some native implementation details. It also aligns more with the idea of returning structs, however that principle is not as strong for the case of this interface.
+
+### Meaning of "Null"
+
+Before talking about error handling, I'll brief about `nil` in general.
+
+I believe the billion-dollar mistake spawned from the need to represent uninitialized variables and unknown references.
+
+Null isn't really a thing in byte code land. It's a high level concept to cover up something happening. What null actually represents to the byte code side could be anything, but it's often just a 0, something unallocated, or it's just removed by the time it reaches byte code. In other words, null isn't real, it's part of the veil of the type system.
+
+> What nil indicates for a variable with an interface type is whether you can invoke methods on it. As I covered earlier, you can invoke methods on nil concrete instances, so it makes sense that you can invoke methods on an interface variable that was assigned a nil concrete instance. If an interface variable is nil, invoking any methods on it triggers a panic (which I’ll discuss in “panic and recover”). If an interface variable is non-nil, you can invoke methods on it. (But note that if the value is nil and the methods of the assigned type don’t properly handle nil, you could still trigger a panic.)
+>
+> Since an interface instance with a non-nil type is not equal to nil, it is not straightforward to tell whether the value associated with the interface is nil when the type is non-nil. You must use reflection (which I’ll discuss in “Use Reflection to Check If an Interface’s Value Is nil”) to find out.
+>
+> Learning Go
+
+In summary, `nil` has been given more meaning. There are two levels of `nil` for interfaces, one is the type and one is the value. For the interface type, you can't call methods on it if that is `nil`, but you can call methods on a `nil` for regular types if the method is using a pointer receiver or if the value is `nil` and the interface type isn't, but you have to use reflection in that case. This discrepancy exists because of how Go manages interfaces by keeping track of type information and wrapping the actual value.
+
+These were just some examples of the meaning of `nil` in the context of how it functions in the language, but it can also mean *anything* that the programmer wants. Although it is an agreed upon standard, this has happened with error handling.
+
+### Error Handling
+
+> We believe that coupling exceptions to a control structure, as in the try-catch-finally idiom, results in convoluted code. It also tends to encourage programmers to label too many ordinary errors, such as failing to open a file, as exceptional.
+
+Sure, but you don't need to overcompensate. An error doesn't deserve multiple extra lines to remind you, even more than the main plot. Errors are still secondary, basically an after-thought, for better or for worse (Yes, I dream of a language with errors in mind first). A miniscule check is actually enough, since you don't need to be constantly reminded by it as it is not essential to the flow of the logic of your code, while still letting you ask "is this error checked?" and then easily seeing that it is because you're looking for it. This situation is not one typical of over abstraction, it's a perfect example of something that should be reduced to improve readability by highlighting what matters
+
+Go has an interesting way of going about errors. Its primary goal is to strictly treat them as values.
+
+This means that there is an `error` type that gets passed through return values and into variables. No wonder it has tuples. It's often returned as a value, as opposed to "being thrown", although they aren't too far apart in practice. panic is much closer to a serious exception being brought up.
+
+> `error` is a value.
+
+Sounds alright until you add:
+
+> `error` is a value, and it not being `nil` means there is an error.
+
+---
+
+What error handling should Wo have?
+
+Representing and dealing with errors by some other structure that
+1. Has significant and consistent purpose in the language that doesn't impede the development process, and
+2. Compiles to equal or better machine code.
+   is a worthy design.
+
+For that, we have:
+
+1. Go's current system is one contender.
+2. And there's the counterpart to the `error` value pattern is the `option` or the more thorough `result`.
+
+We have learned our lessons from many languages in the past.
+
+Let's wager for the best thing we can design with our constraints.
+
+#### if err != nil
+
+I know this debate goes in circles. Why don't we all just try out something new to see what it's like in practice, that's what computer science is about, right? I'll offer some options.
+
+Here's the common example:
 
 ```go
-type Days enum {
+f, err := os.Open("hi.wo")
+if err != nil {
+    return nil, err
+}
+```
+
+There are common shortcuts to do error checking:
+
+```go
+if err := doer(); err != nil {
+  return error
+}
+```
+
+and
+
+```go
+token, err := scanner.Scan()
+check(err)
+```
+
+...but we could use an alternative syntax like:
+
+```go
+var token = scanner.Scan()!
+```
+
+I was originally considering `scanner!Scan()` since the actual symbol of `!` is like a variation of `.`, but the compiler got it confused with the not symbol without a package identifier: `!Scan()` looks too much like "Not (Result of Scan)".
+
+Now here's a bunch of other options:
+
+```go
+var file, log("Error:", err)   = os.Open("hi.wo")
+var file, handle(err)          = os.Open("hi.wo")!  // handle and throw
+var file, return(none, 3, err) = os.Open("hi.wo")   // with other return values
+var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
+if var file                    = os.Open("hi.wo") { /*main code*/ }    // Swift/Rust
+var file                       = os.Open("hi.wo")!! // panic
+var file                       = os.Open("hi.wo")?  // unwrap or panic
+var file                       = os.Open("hi.wo").orElse(newFile)
+var file                       = os.Open("hi.wo")? else newFile
+```
+
+The ultra-shortened version removes some choice you get with error-handling, but you can still shorten that pattern as well as having this option.
+
+I don't think `nil` should represent that an error didn't happen.
+
+A higher representation of the meaning of `nil` in the context of errors would be:
+
+```
+err == nil: no error occured
+err != nil: an error occured, and err is the description of the error
+```
+
+It could be represented by calling something like this:
+
+```go
+func (err *error) errored() bool
+```
+
+or with an optional:
+
+```go
+Option[error]
+
+none:      no error occured
+some(err): an error occured, and it is err
+```
+
+which aligns with the semantic meaning of "whether an error happened or not" more.
+
+---
+
+Additionally, errors are bound to functions, as they are something that can happen when a function is ran. This means we could generalize it further by signifying that some function can return an error:
+
+```go
+func a() res {}
+errable func b() res {}
+```
+
+Or maybe
+
+```go
+func b() errable res {}
+```
+
+if it is the function's result which is to reveal the error.
+
+If we combine it with the option pattern, it would be equivalent to
+
+```go
+func b() res? ^ error? {}
+```
+
+where ^ means xor, as in, either a result or an error.
+
+which is basically just an interface or struct like
+
+```go
+type Errable[T any] struct {
+  err   error
+  value T
+}
+type Errable[T any] interface {
+  error
+  value() T
+}
+```
+
+which is equivalent to `Option[error]`.
+
+For example
+
+```go
+func div(a, b int) (int, error) {}
+if quotient, err := div(a, b); err != nil {
+  return err
+}
+```
+
+in Wo, could be written as:
+
+```go
+func div(a, b int) errable int {}
+quotient int = div(a, b)!
+	
+// or with more handling
+var quotient = div(a, b).orElse(NaN)
+var quotient = div(a, b)? else NaN // for fun
+
+// other ideas ........
+var quotient, if(err) = div(a, b) {
+  quotient = NaN
+}
+var quotient = match div(a, b) {
+  case q   int   -> q
+  case err error -> NaN
+}
+var quotient = try div(a, b) { NaN }
+```
+
+...and is converted to the effect of:
+
+```go
+func div(a, b int) Errable[int] {}
+quotient int = 0
+var quotientOrErr = div(a, b)
+switch quotientOrErr.(type) {
+  case error:
+    return quotientOrErr.(error)
+}
+quotient = quotientOrErr.value()
+```
+
+and is indeed about the same thing as a `Result` or `Option`. So I've naturally came to the same conclusion as just using that pattern with some custom syntactical sugar.
+
+The big difference here between implementing it yourself and customizing the compiler is that I can take existing functions and interpret them as a Result.
+
+Like, this standard function,
+```go
+func Open(name string) (*File, error)
+```
+
+in some Wo file could be interpreted like this:
+
+```go
+func Open(name string) errable *File
+
+var file = os.Open("README.md")!
+```
+
+---
+
+Another aspect of error handling is extending them.
+
+> Errors are an exception to this rule. As you’ll see in Chapter 9, Go functions and methods can declare a return parameter of the error interface type. In the case of error, it’s quite likely that different implementations of the interface could be returned, so you need to use an interface to handle all possible options, as interfaces are the only abstract type in Go.
+> 
+Learning Go 2nd
+
+
+
+### ok
+
+These ideas with err will also apply to ok, since this also represents an optional.
+
+What I'll do is, if any function from the standard library or any Go file is like
+
+`func f() (T, bool)`
+
+It can be interpreted as an optional or not. It's impossible to know if that's what it was, though. So, in Wo code, it must explicitly be an optional to be treated like one, and this is just a problem with interoperating with vague Go code.
+
+```go
+func get() (int, bool) {} // std lib or Go file
+
+func use() { // 
+  fmt.PrintLn(get()?, get().isPresent(), get().) 
+}
+```
+
+In other languages, `?` is a way of unwrapping, so it could be confusing to use something like `func f() T?`, so I'll go with the more explicit `func f() Option[T]` for Wo.
+
+I could also mirror errors with `func h() T!`, but they shouldn't be stacked with each other like `func j() T?!` since the `ok` pattern is like a softer version of an error. Errors imply existence of the values as do `ok`s, just without the implication of an error happening.
+
+
+### Enum
+
+This is how it is replicated in Go:
+
+```go
+const {
+  Sunday = 1 + iota
+  Monday
+}
+
+func root(day int) string {
+  switch day {
+    case Sunday:
+      return "sun"
+    case Monday:
+      return "moon"
+    default:
+      panic("not a day of the week")
+  }
+}
+
+func working(day int) bool {
+  switch day {
+    case Sunday:
+      return true
+    case Monday:
+      return false
+    default:
+      panic("not a day of the week")
+  }
+}
+
+func test() (int, string, bool) {
+  return Sunday, root(Monday), working(Sunday)
+}
+```
+
+and with an `enum` type:
+
+```go
+type Day enum {
     Sunday("sun", false),
     Monday("moon", true)
 
@@ -725,19 +1061,24 @@ type Days enum {
     workday bool
 }
 
-Sunday.position
-Monday.working
+(day Day) func val() {
+  return 1 + day.position // 1 + iota
+}
+
+func test() (int, string, bool) {
+ return Sunday.val(), Monday.root, Sunday.working
+}
 ```
 
-### type
-
-`struct S {}`
-`interface I {}`
-
-### Scope control
+## Scope control
 
 There are over 100 "halls of shame" in Go's source code, which is a kind of comment they have that links to repos that used a function that it "shouldn't have".
 
 It's not really a laughing matter at that point, programs should be able to represent who gets access to what. Or, they should be given proper solutions to the work-arounds that they had to use.
 
+### other
 
+
+> Type conversions between slices and array pointers can fail at runtime and don’t support the comma ok idiom, so be careful when using them!
+> 
+> Learning Go
