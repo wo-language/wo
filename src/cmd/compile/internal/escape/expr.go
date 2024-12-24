@@ -155,11 +155,7 @@ func (e *escape) exprSkipInit(k hole, n ir.Node) {
 	case ir.OMAKECHAN:
 		n := n.(*ir.MakeExpr)
 		e.discard(n.Len)
-	case ir.OMAKEMAP:
-		n := n.(*ir.MakeExpr)
-		e.spill(k, n)
-		e.discard(n.Len)
-	case ir.OMAKESET:
+	case ir.OMAKEMAP, ir.OMAKESET:
 		n := n.(*ir.MakeExpr)
 		e.spill(k, n)
 		e.discard(n.Len)
