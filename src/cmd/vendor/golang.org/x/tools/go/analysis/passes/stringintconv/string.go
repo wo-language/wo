@@ -15,6 +15,7 @@ import (
 	"golang.org/x/tools/go/analysis/passes/inspect"
 	"golang.org/x/tools/go/analysis/passes/internal/analysisutil"
 	"golang.org/x/tools/go/ast/inspector"
+	"golang.org/x/tools/internal/aliases"
 	"golang.org/x/tools/internal/analysisinternal"
 	"golang.org/x/tools/internal/typeparams"
 )
@@ -198,30 +199,32 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		// the type has methods, as some {String,GoString,Format}
 		// may change the behavior of fmt.Sprint.
 		if len(ttypes) == 1 && len(vtypes) == 1 && types.NewMethodSet(V0).Len() == 0 {
-			fmtName, importEdits := analysisinternal.AddImport(pass.TypesInfo, file, arg.Pos(), "fmt", "fmt")
+			fmtName, importEdit := analysisinternal.AddImport(pass.TypesInfo, file, arg.Pos(), "fmt", "fmt")
 			if types.Identical(T0, types.Typ[types.String]) {
 				// string(x) -> fmt.Sprint(x)
-				addFix("Format the number as a decimal", append(importEdits,
-					analysis.TextEdit{
+				addFix("Format the number as a decimal", []analysis.TextEdit{
+					importEdit,
+					{
 						Pos:     call.Fun.Pos(),
 						End:     call.Fun.End(),
 						NewText: []byte(fmtName + ".Sprint"),
-					}),
-				)
+					},
+				})
 			} else {
 				// mystring(x) -> mystring(fmt.Sprint(x))
-				addFix("Format the number as a decimal", append(importEdits,
-					analysis.TextEdit{
+				addFix("Format the number as a decimal", []analysis.TextEdit{
+					importEdit,
+					{
 						Pos:     call.Lparen + 1,
 						End:     call.Lparen + 1,
 						NewText: []byte(fmtName + ".Sprint("),
 					},
-					analysis.TextEdit{
+					{
 						Pos:     call.Rparen,
 						End:     call.Rparen,
 						NewText: []byte(")"),
-					}),
-				)
+					},
+				})
 			}
 		}
 
@@ -247,7 +250,7 @@ func run(pass *analysis.Pass) (interface{}, error) {
 
 func structuralTypes(t types.Type) ([]types.Type, error) {
 	var structuralTypes []types.Type
-	if tp, ok := types.Unalias(t).(*types.TypeParam); ok {
+	if tp, ok := aliases.Unalias(t).(*types.TypeParam); ok {
 		terms, err := typeparams.StructuralTerms(tp)
 		if err != nil {
 			return nil, err

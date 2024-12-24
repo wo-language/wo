@@ -8,7 +8,6 @@ import (
 	"go/types"
 
 	"golang.org/x/tools/internal/aliases"
-	"golang.org/x/tools/internal/typesinternal"
 )
 
 // importMap computes the import map for a package by traversing the
@@ -48,41 +47,32 @@ func importMap(imports []*types.Package) map[string]*types.Package {
 
 	addType = func(T types.Type) {
 		switch T := T.(type) {
+		case *aliases.Alias:
+			addType(aliases.Unalias(T))
 		case *types.Basic:
 			// nop
-		case typesinternal.NamedOrAlias: // *types.{Named,Alias}
-			// Add the type arguments if this is an instance.
-			if targs := typesinternal.TypeArgs(T); targs.Len() > 0 {
-				for i := 0; i < targs.Len(); i++ {
-					addType(targs.At(i))
-				}
-			}
-
+		case *types.Named:
 			// Remove infinite expansions of *types.Named by always looking at the origin.
 			// Some named types with type parameters [that will not type check] have
 			// infinite expansions:
 			//     type N[T any] struct { F *N[N[T]] }
 			// importMap() is called on such types when Analyzer.RunDespiteErrors is true.
-			T = typesinternal.Origin(T)
+			T = T.Origin()
 			if !typs[T] {
 				typs[T] = true
-
-				// common aspects
 				addObj(T.Obj())
-				if tparams := typesinternal.TypeParams(T); tparams.Len() > 0 {
+				addType(T.Underlying())
+				for i := 0; i < T.NumMethods(); i++ {
+					addObj(T.Method(i))
+				}
+				if tparams := T.TypeParams(); tparams != nil {
 					for i := 0; i < tparams.Len(); i++ {
 						addType(tparams.At(i))
 					}
 				}
-
-				// variant aspects
-				switch T := T.(type) {
-				case *types.Alias:
-					addType(aliases.Rhs(T))
-				case *types.Named:
-					addType(T.Underlying())
-					for i := 0; i < T.NumMethods(); i++ {
-						addObj(T.Method(i))
+				if targs := T.TypeArgs(); targs != nil {
+					for i := 0; i < targs.Len(); i++ {
+						addType(targs.At(i))
 					}
 				}
 			}

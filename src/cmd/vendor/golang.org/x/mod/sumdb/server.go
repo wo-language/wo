@@ -6,7 +6,6 @@
 package sumdb
 
 import (
-	"bytes"
 	"context"
 	"net/http"
 	"os"
@@ -151,8 +150,6 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
 				}
-				// Data tiles contain formatted records without the first line with record ID.
-				_, msg, _ = bytes.Cut(msg, []byte{'\n'})
 				data = append(data, msg...)
 			}
 			w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
