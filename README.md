@@ -22,37 +22,41 @@ Some other ways to handle errors in Wo:
 ```go
 var file = os.Open("hi.wo")!! // panic
 var file, log("Error:", err)   = os.Open("hi.wo")
-var file, handle(err)          = os!Open("hi.wo") // handle and throw
+var file, handle(err)          = os.Open("hi.wo")! // handle and throw
 var file, return(none, 3, err) = os.Open("hi.wo") // with other return values
 var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
 ```
 
-Not only that, I am considering making different language features **modular**. If someone likes only the interface syntax, and that's all they want, then I could allow either compiler flags or special headers in the file to indicate which ones to have turned off.
+I am considering making different language features **modular**. If someone likes only the interface syntax, and that's all they want, then I could allow either compiler flags headers in the file to indicate which ones to have turned off.
 
 The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options
 
 Currently, this s a **proof of concept** and I have not necessarily got any of these working yet.
 
-| Rule                                                                            | Usage                                                                                                                                            |
-|---------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| Uses `<>`, not `interface{}` in type parameters                                 | `f(a interface{})` -> `f(a <>)` or `interface{Length() int}` to `<Length() int>`                                                                 |
-| Allows **function overloading**                                                 | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`                                                            |
-| ...but does **allow** **default arguments** in functions anyway                 | `print(stdout = console,`<br/>&emsp;`formatter = defaultFormatter,`<br/>&emsp;`string)`<br/>like how `[:]` already does: `slice(start=0, end=0)` |
-| **Doesn't** allow import overloading or **keyword overloading**                 | `var int int = 1` and `rune := 'W'` give compile error                                                                                           |
-| **Doens't** use "`range`" in **enhanced for** loops `for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                                                               |
-| **Doesn't** prefer name shortenings                                             | `f` for `file` or function names like `SprintF` for `ConcatFormat` (isn't enforced)                                                              |
-| Has the **ternary operator** for<br/>`if a, cond := call(); cond {}`            | `a, if(cond) := call() {} else {}`<br/>`a = if cond {} else {}`                                                                                  |
+| Rule                                                                            | Usage                                                                                                                                                          |
+|---------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Uses `<>`, not `interface{}`                                                    | `f(a interface{})` → `f(a <>)`<br/>`interface{Length() int}` → `<Length() int>`                                                                                |
+| Allows **function overloading**                                                 | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`                                                                          |
+| ...but does **allow** **default arguments** in functions anyway                 | `print(stdout = console,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`string)`                                                            |
+| **Doesn't** allow import overloading or **keyword overloading**                 | `var int int = 1` and `rune := 'W'` give compiler error                                                                                                        |
+| **Doens't** use "`range`" in **enhanced for** loops `for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                                                                             |
+| **Doesn't** prefer name shortenings                                             | `f` for `file` or `SprintF` for `ConcatFormat` (isn't enforced)                                                                                                |
+| Has a **ternary expression**                                                    | `v = if cond {} else {}`                                                                                                                                       |
+| Assignment with conditional shortcut<br/>`if a, cond := call(); cond {}`        | `var a, if(cond) = call() {}`                                                                                                                             |
 
-(In the future) Wo also...
+
+Wo also...
 - Reworks variables by
     - Not giving an **error for unused variables**, (just warns and compiles them away)
     - Not allowing undeclared variables or "**zero values**" like `var x`
     - Allow optionals for when the zero value would have had a double meaning like `string?` to avoid `""`
       - However, I could allow zero value initialization with `none`, like `int x` would mean `int x = none`
     - Separating the usage of `var`, `:=`, and `=` amongst initializing, shadowing, and setting variables without any overlapping functionality
-      - Uses `=` for initialization and setting, requiring `:=` for only shadowing, and then use **`i int = 5`** syntax for initializing or `var i = 5` for untyped variables
-    - Making `_, val = f()` redundant (like `for i = range` has it optionally) by accessing only specific values from multi-return values: `w, o = f()` where `func f() (w, skip, o)`
-      - Unless `f` were to return an `error`, maybe requiring something like `val, err <!= f()` when that could happen
+      - Uses `=` for initialization and setting
+      - Requires `:=` for shadowing only
+      - **`i int = 5`** syntax for initializing
+      - `var i = 5` for untyped variables
+    - Making the underscore redundant in (`_, val = f()`) by accessing chosen return values by names: `w, o = f()` where `func f() (w, skip, o)`
 - Will still commit to universal formatting
 - Is a **WIP**, but will always accept change and criticism
 - Makes you say **"woah"**
@@ -148,7 +152,7 @@ func runProgramO(dir interface{string|url}) (int, *string, error) {
 ```
 a possible design for Wo:
 ```go
-runProgram(<string|url> directory) -> errable (int, string) { // members reversed to order by relevancy
+func runProgram(<string|url> directory) errable (int, string) { // members reversed to order by relevancy
   fileName, if(!ok) = runnableFiles[directory] {
     return errors.New("invalid filepath") // like throw
   }
