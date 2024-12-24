@@ -423,7 +423,7 @@ func (n *LogicalExpr) SetOp(op Op) {
 }
 
 // A MakeExpr is a make expression: make(Type[, Len[, Cap]]).
-// Op is OMAKECHAN, OMAKEMAP, OMAKESLICE, or OMAKESLICECOPY,
+// Op is OMAKECHAN, OMAKEMAP, OMAKESET, OMAKESLICE, or OMAKESLICECOPY,
 // but *not* OMAKE (that's a pre-typechecking CallExpr).
 type MakeExpr struct {
 	miniExpr
@@ -443,7 +443,7 @@ func (n *MakeExpr) SetOp(op Op) {
 	switch op {
 	default:
 		panic(n.no("SetOp " + op.String()))
-	case OMAKECHAN, OMAKEMAP, OMAKESLICE, OMAKESLICECOPY:
+	case OMAKECHAN, OMAKEMAP, OMAKESET, OMAKESLICE, OMAKESLICECOPY:
 		n.op = op
 	}
 }
