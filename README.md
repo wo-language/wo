@@ -33,46 +33,49 @@ The point of these features is to drop the bantering about the theories of how m
 
 Currently, this s a **proof of concept** and I have not necessarily got any of these working yet.
 
-| Rule                                                                            | Usage                                                                                                                                                          |
-|---------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Uses `<>`, not `interface{}`                                                    | `f(a interface{})` → `f(a <>)`<br/>`interface{Length() int}` → `<Length() int>`                                                                                |
-| Allows **function overloading**                                                 | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`                                                                          |
-| ...but does **allow** **default arguments** in functions anyway                 | `print(stdout = console,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`string)`                                                            |
-| **Doesn't** allow import overloading or **keyword overloading**                 | `var int int = 1` and `rune := 'W'` give compiler error                                                                                                        |
-| **Doens't** use "`range`" in **enhanced for** loops `for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                                                                             |
-| **Doesn't** prefer name shortenings                                             | `f` for `file` or `SprintF` for `ConcatFormat` (isn't enforced)                                                                                                |
-| Has a **ternary expression**                                                    | `v = if cond {} else {}`                                                                                                                                       |
-| Assignment with conditional shortcut<br/>`if a, cond := call(); cond {}`        | `var a, if(cond) = call() {}`                                                                                                                             |
+| Wo...                                                                                    | Usage                                                                                               |
+|------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Uses `<>`, not `interface{}`                                                             | `f(a interface{})` → `f(a <>)`<br/>`interface{Length() int}` → `<Length() int>`                     |
+| **Doesn't** prefer name shortenings                                                      | `f` for `file` or `ConcatFormat` for `SprintF` (isn't enforced)                                     |
+| Allows **function overloading**                                                          | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`               |
+| ...and also **allows** **default arguments** in functions                                | `print(stdout = console,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`string)` |
+| **Doesn't** allow import overloading or **keyword overloading**                          | `var int int = 1` and `rune := 'W'` give a compiler error                                           |
+| **Doesn't** use "`range`" in **enhanced for** loops like<br/>`for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                  |
+| Has a **ternary expression**                                                             | `v = if cond {} else {}`                                                                            |
+| Assignment with conditional shortcut<br/>`if a, cond := call(); cond {}`                 | `var a, if(cond) = call() {}`                                                                       |
+| Makes `_` redundant in (`_, val = f()`)<br/>by accessing chosen return values by names   | `w, o = f()` where `func f() (w, skip, o)`                                                          | 
+
+| Wo also...                                                                     |
+|--------------------------------------------------------------------------------|
+| Only warns for **unused variables**, not errors                                |
+| Doesn't allow undeclared variables or "**zero values**" like `var x string`    |
+| Allows optionals for double meaning zero values like `string?` to avoid `""`   |
+| Can initialize zero values with `none`, like `int x` would mean `int x = none` |
+| Separates the usage of `var`, `:=`, and `=` without overlapping functionality  |
+| `var` for for untyped variable declaration                                     |
+| `=` for initializing with the type like **`i int = 5`**                        |
+| `:=` for shadowing **only**                                                    |
+| Doesn't allow **mixing shadowed** and initialized variable declarations        |
+| Will still commit to universal formatting                                      |
+| Is open source and free                                                        | 
+| Is a **WIP**, but will always accept change and criticism                      |
+| Has a **wo**mbat mascot                                                        | 
+| Makes you say **"woah"**                                                       |
 
 
-Wo also...
-- Reworks variables by
-    - Not giving an **error for unused variables**, (just warns and compiles them away)
-    - Not allowing undeclared variables or "**zero values**" like `var x`
-    - Allow optionals for when the zero value would have had a double meaning like `string?` to avoid `""`
-      - However, I could allow zero value initialization with `none`, like `int x` would mean `int x = none`
-    - Separating the usage of `var`, `:=`, and `=` amongst initializing, shadowing, and setting variables without any overlapping functionality
-      - Uses `=` for initialization and setting
-      - Requires `:=` for shadowing only
-      - **`i int = 5`** syntax for initializing
-      - `var i = 5` for untyped variables
-    - Making the underscore redundant in (`_, val = f()`) by accessing chosen return values by names: `w, o = f()` where `func f() (w, skip, o)`
-- Will still commit to universal formatting
-- Is a **WIP**, but will always accept change and criticism
-- Makes you say **"woah"**
+Besides syntactical and formatting difference, Wo also offers
 
-Wo is open source and free. Yes, the mascot is a **wo**mbat.
-
-Besides syntactical and formatting difference, Wo also offers functional differences such as
-- A native implementation of `set`
-- Could address **null checking** somehow (e.g. `nonnull` or `option`) and pointer/value receivers
-- Error values: a few potential options: not returning `nil` if there is no error, but something like `status.isErr()` being true, maybe like Rust's [result](https://doc.rust-lang.org/std/result/). Or `error` overriding all other return values like an exception: `io.Read` returns either `n` or throws `error` like `errable io.Read() n` or [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html)
-- (compile time) explicit `enum` and `union`
-- Make slice append more predictable
-- Tuples as an assignable type
-- Native string and slice operations like `==` and `"".contains`
-- Package scope control and visibility
-- Run other functions besides main
+| Functional Features                                                                                                                                                                                                                                                                       |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| A native implementation of `set` and atomic `set`<br/>                                                                                                                                                                                                                                    
+ as well as native support for other collections like stack and tree set                                                                                                                                                                                                                   |
+| Could address **null checking** somehow (e.g. `nonnull` or `option`) and pointer/value receivers<br/> Maybe taking inspiration from Rust's [result](https://doc.rust-lang.org/std/result/) or Scala's [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html) |
+| `enum`                                                                                                                                                                                                                                                                                    |
+| Make slice append more predictable                                                                                                                                                                                                                                                        |
+| Have tuples as an assignable type                                                                                                                                                                                                                                                         |
+| Native strings, maps, and slice operations like `==` and `"".contains`                                                                                                                                                                                                                    |
+| Package scope control and visibility                                                                                                                                                                                                                                                      |
+| Run other functions besides main                                                                                                                                                                                                                                                          |
 
 ### See the list below for several unlikely but possible features:
 <details>
@@ -89,7 +92,6 @@ Potential Features
 - *MAYBE* (probably won't) allow methods to be in their struct
   - `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` -> `struct Bug { fly()   flee() { this.fly() } }`
   - and/or `struct (Bug* bug) { }` to allow `bug` instead of `this`
-- *MAYBE* not allowing **mixing shadowed** and initialized variable declarations
 </details>
 
 To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md) for now.
