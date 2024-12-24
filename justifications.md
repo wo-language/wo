@@ -17,9 +17,9 @@ In here, I give explain, argue for, and document Wo's design decisions. Maybe it
 
 When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language is based on C so it's fast.
 
-A similar situation was Scala's improvements over Java. It clearly improved the syntax and design, especially with pattern matching, and, importantly, interoped with Java.
+A similar situation was Scala's improvements over Java. It clearly improved the syntax and design, especially with pattern matching, and, importantly, interoped with Java. This goes even deeper than that by modifying the same compiler.
 
-I have not seen anything in the programming language landscape like this - a direct child of Go that addresses its design.
+I have not seen anything in the programming language landscape like that - a direct child of Go that addresses its design.
 
 And let it be known, the internet is full of needless speculation as to "why Go did this and not that?", so I'll also make this transparent and be skeptical of any justification that people give to Go. Instead, prioritizing the objective best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
 
@@ -44,6 +44,18 @@ It's our job to pay attention to details, but let's still make it as easy on our
 
 The current state of Go's compiler forces you to be vague, and their style designs recommend using vague variable and function names. This isn't exactly a criticism, but just a description of how Go appears to me.
 
+### Why modularity
+
+I am considering making different language features **modular**. That is, they can be enabled or disabled either through a compiler flag, in the module file, or with some header.
+
+This isn't the newest idea, as languages all have versions one can choose of their liking. Rust has that capability with something like `#![allow(unused)]` which allows unused variables in the entire file.
+
+If someone just likes only the interface syntax, and that's all they want, then they can still use Wo in that way without dealing with the parts they don't like.
+
+For example, enforcing the type before the variable name is universally disagreed on, so this could just be an additional option, not the Wo default. If a feature isn't restrictive, then it doesn't need a flag.
+
+That means there are these types of features: Those enforced without an option, those that are on by default, those that are off by default. All of them except experimental or "indifferent" ones would be enabled by default.
+
 ### To restrict or to allow
 
 Should we allow bad language and hope that users don't use it? Or should we completely ban it...
@@ -56,17 +68,26 @@ For example, Learning Go 2nd edition says:
 
 This is absolutely backwards logic to me from a compiler's perspective. It shouldn't allow you to do something that you shouldn't do.
 
-### Why modularity
+### Go's design reasons
 
-I am considering making different language features **modular**. That is, they can be enabled or disabled either through a compiler flag, in the module file, or with some header.
+When people try to answer this online, like on Stack Overflow, there are a mix of reasons provided for the language decisions with Go, with a mixed supposed underlying principle behind these. On Go's FAQ however, it's quite more straight forward, though, and it's useful here.
 
-This isn't the newest idea, as languages all have versions one can choose of their liking. Rust has that capability with something like `#![allow(unused)]` which allows unused variables in the entire file.
+Besides the obvious reasons of "having a good feature that lets you program", [their FAQ](https://go.dev/doc/faq#Design) has these categories of justifications
 
-If someone just likes only the interface syntax, and that's all they want, then they can still use Wo in that way without dealing with the parts they don't like.
+- Prevention of a feature because it:
+  1. Makes compiling easier to implement
+  2. It can be or always is
+     - confusing
+     - convoluted
+     - unreadable
+     - harder to use
+  3. So they have to think about something important instead
+  4. Slow
+- Inclusion of a feature because it:
+  1. Was fine in practice
+  2. To replace a prevented feature
 
-For example, enforcing the type before the variable name is universally disagreed on, so this could just be an additional option, not the Wo default. If a feature isn't restrictive, then it doesn't need a flag.
-
-That means there are these types of features: Those enforced without an option, those that are on by default, those that are off by default. All of them except experimental or "indifferent" ones would be enabled by default.
+They don't go too far into depth on what exactly makes something readable or not, but I'm going to painstakingly analyze it for each featre.
 
 ## Conventions
 
@@ -128,9 +149,23 @@ Wo also does not allow variable names like `π` or `__`.
 
 And it's hard to do something about the inconsistent capitalization in functions. There certainly shouldn't be both "Init" and "init" in the same file, though. Nonetheless, Wo uses camelCase function and variable names.
 
+### Renaming package methods
+
+I also want to rename some common methods in the standard library. For example,
+
+- `ConcatFormat` for `SprintF` in `fmt`
+
 ## Syntax Features
 
+### error handling
+
+> We believe that coupling exceptions to a control structure, as in the try-catch-finally idiom, results in convoluted code. It also tends to encourage programmers to label too many ordinary errors, such as failing to open a file, as exceptional.
+
+Sure, but you don't need to overcompensate. An error doesn't deserve multiple extra lines to remind you, even more than the main plot. Errors are still secondary, basically an after-thought, for better or for worse (Yes, I dream of a language with errors in mind first). A miniscule check is actually enough, since you don't need to be constantly reminded by it as it is not essential to the flow of the logic of your code, while still letting you ask "is this error checked?" and then easily seeing that it is because you're looking for it. This situation is not one typical of over abstraction, it's a perfect example of something that should be reduced to improve readability by hightlighting what matters
+
 ### interface{}
+
+
 
 I chose `<T>` for `interface{T}`. I considered something like `~`, but you can't wrap around with that. There was also `#{}`, but the shortness of `<>` was more attractive. Tags are a symbol that are not used in Go and is already associated with types.
 
@@ -198,7 +233,7 @@ I see this as "memorized information"; it's arbitrary. There's no way of knowing
 
 I chose to make it the **value** by default as it would be more common and intuitive as one seems to want to ignore the index by nature of using the enhanced "for an item *in* items", possibly opting for a traditional `for i = 0; i < len; i++` otherwise, or just using `for i, _ : values {}` for access to the index.
 
-- That could be problematic when frequently using this when trying to modify arrays by their index, so range could be kept to mean "range of indices over"
+- That could be problematic when frequently using this when trying to modify arrays or slices by their index, so range could be kept to mean "range of indices over"
 
 ### The possibilities of variable declaration and assignment
 
@@ -394,6 +429,11 @@ By the way, I dream of a language where all the reserved words have some symbol,
 
 ## Overloading functions
 
+> [Why does Go not support overloading of methods and operators?](https://go.dev/doc/faq#overloading)
+> 
+> Method dispatch is simplified if it doesn’t need to do type matching as well. Experience with other languages told us that having a variety of methods with the same name but different signatures was occasionally useful but that it could also be confusing and fragile in practice. Matching only by name and requiring consistency in the types was a major simplifying decision in Go’s type system.
+
+
 Preventing function overloading sounds like a good idea in theory, but in practice it results in artificially lengthening function names, when their original form was already the most descriptive. A description of something can be done by its contents; the parameters describe the function already, there is no necessity to change the name when the parameters change too. It aligns with language and nature.
 
 Without overloading, shortened function names:
@@ -427,7 +467,9 @@ which has much less redundant information.
 
 I have used this aspect of programming many, many times. It has been far from the top of the list of things that could make my code vague, and I'm not convinced that it's ever a primary culprit.
 
-The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis, but I believe it is totally possible here. It is very close to the line of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious thing to be would be some structures which are just unsafe pointers underneath. Still, I think this can be done at compile time as these types were designed to be strict, e.g. `[3]int != [2]int != []int != []*int`.
+The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis at compile time. It is very close to the line of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious thing to be would be some structures which are just unsafe pointers underneath. Type inference is possible, but it would require a bit of reworking. It's already safe for situations like `[3]int != [2]int != []int != []*int`, but not when it comes to generics and interfaces.
+
+
 
 Additionally, `[:]` already does this. It's equivalent to `slice(start=0, end=0, max=0)`.
 
@@ -594,7 +636,7 @@ And Wo also support a `sets` package in the same ways that the `maps` package do
 
 Sets in math use `{ }` to mean "unordered, unique collection", but in Go, which uses EBNF, it means "ordered, repeatable collection". I think it is ok to use the curly brackets for sets, since it is programmatically ordered and repeatable data at first, but then it will become converted from that explicit representation into something which is guaranteed to be an actual set. I can actually still say `{ a, b, a, c }` in math, but it represents a set of `a`, `b` and `c` without order. It is also predictable with the formatting already used with arrays and maps. If someone made their own set or any kind of math collection, it'd use the curly brackets.
 
-## Array
+### Slices / Arrays
 
 I've concluded that it's not feasible to use `arr[]` because of how it interacts with map.
 
@@ -612,25 +654,35 @@ but array is declared and called like this:
 
 The odd one out is `[x]arr`, which has the array marks as a prefix. What if it were the suffix?
 
-For example, what about an array of a map from keys of arrays of bytes to values of (maps with keys of byte arrays to values of arrays of strings)
+For example, what about a slice of a map from keys of 4 bytes to values of (maps with keys of 2 bytes to values of slices of strings)
 ```
-[]map[[]byte]map[[]byte][]string     // Go
-map[byte[]]map[byte[]]string[][]     // arr[] --- vague
-map[[]byte, map[[]byte, []string]][] // map[A, B]
-map[byte[], map[byte[], string[]]][] // map[A, B] and arr[]
+[]map[[4]byte]map[[2]byte][]string     // Go
+map[byte[4]]map[byte[2]]string[][]     // arr[] --- vague
+map[[4]byte, map[[2]byte, []string]][] // map[A, B]
+map[byte[4], map[byte[2], string[]]][] // map[A, B] and arr[]
 ```
 
 The second one is ambiguous, since it could mean a double array of strings, which doesn't happen when we use `map[A, B]`
 
 The last one prefers depth, so it ends up pushing more symbols to the end.
 
-For arrays, I say either keep []arr with map[A, B], or just don't make any changes
+For arrays and slices, I say either keep [ ]arr with map[A, B], or just don't make any changes
 
 ### Map[K, V]
 
 I understand `map[key]value` is supposed to reflect the `func(input) val` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
 
 I think this is too disruptive and unnecessary of a change as shown in the previous section, so I'll keep `map[key]value`
+
+### on adding keywords
+
+In general, having a term like `set` while also preventing reserved words from being overloading can make the language difficult to use. Especially since `set(v)` is a likely function name.
+
+> Why are maps built in?
+> 
+> The same reason strings are: they are such a powerful and important data structure that providing one excellent implementation with syntactic support makes programming more pleasant. We believe that Go’s implementation of maps is strong enough that it will serve for the vast majority of uses. If a specific application can benefit from a custom implementation, it’s possible to write one but it will not be as convenient syntactically; this seems a reasonable tradeoff.
+
+There isn't anything inherently significant about a `map` or `len`; it can just be represented by a struct or function. So it's down to just making a language nicer. I'm also proposing `enum`, `some`, and `none`. I don't think this is crossing the line yet of having to consistently and annoyingly rename things like class to clazz yet, but that does feel like a dishonest representation of a program when renamings like that have to happen, since the restriction is coming from a meta syntactical problem, not a functional one.
 
 ### enum
 
@@ -645,14 +697,6 @@ type Days enum {
 
 Sunday.position
 Monday.working
-```
-
-### union
-
-```go
-type Point union {
-
-}
 ```
 
 ### type

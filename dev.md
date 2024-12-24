@@ -27,6 +27,18 @@ Development steps:
 - perhaps offering an online playground
 - a transpiler that converts them between each other
 
+###
+
+versioning:
+
+should have independent wo versions correlating to go ones like
+
+1.23.3 - wo 1.23.3A, 1.23.3B
+1.19 - wo 1.19A, 1.19B
+
+offering them by major section
+
+letters separated for compatability
 
 ### other todo
 
@@ -68,12 +80,17 @@ current commit syntax attempt to add:
 
 recognizes `->` - fails bc doesn't belong anywhere
 
-
 after adding/removing any fundamental types, you have to run
 
-go get -u golang.org/x/tools/cmd/stringer
-go install stringer
-cmd\compile\internal\types $ stringer -type Kind -trimprefix T type.go
+1. switch to default compiler
+2. go get -u golang.org/x/tools/cmd/stringer
+3. go install stringer
+4. go mod vendor
+5. run commands:
+   - cmd\compile\internal\types $ stringer -type Kind -trimprefix T type.go
+   - src/cmd/compile/internal/ir/ $ stringer -type=Op -trimprefix=O node.go
+     - creates op_string.go
+6. switch back compiler
 
 ### how I added another reserved word steps
 
