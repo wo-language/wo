@@ -17,84 +17,76 @@ would be done like this in Wo:
 var file = os.Open("hi.wo")! // pending decisions here; it's a WIP
 ```
 
-Some other ways to handle errors in Wo:
-
-```go
-var file = os.Open("hi.wo")!! // panic
-var file, log("Error:", err)   = os.Open("hi.wo")
-var file, handle(err)          = os.Open("hi.wo")! // handle and throw
-var file, return(none, 3, err) = os.Open("hi.wo") // with other return values
-var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
-```
-
 I am considering making different language features **modular**. If someone likes only the interface syntax, and that's all they want, then I could allow either compiler flags headers in the file to indicate which ones to have turned off.
 
-The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options
+The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options.
 
-Currently, this s a **proof of concept** and I have not necessarily got any of these working yet.
+Currently, this is a <u>proof of concept</u>, and I have not necessarily got **any of these** working yet.
 
-| Wo...                                                                                    | Usage                                                                                               |
-|------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| Uses `<>`, not `interface{}`                                                             | `f(a interface{})` → `f(a <>)`<br/>`interface{Length() int}` → `<Length() int>`                     |
-| **Doesn't** prefer name shortenings                                                      | `f` for `file` or `ConcatFormat` for `SprintF` (isn't enforced)                                     |
-| Allows **function overloading**                                                          | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`               |
-| ...and also **allows** **default arguments** in functions                                | `print(stdout = console,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`string)` |
-| **Doesn't** allow import overloading or **keyword overloading**                          | `var int int = 1` and `rune := 'W'` give a compiler error                                           |
-| **Doesn't** use "`range`" in **enhanced for** loops like<br/>`for i, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                  |
-| Has a **ternary expression**                                                             | `v = if cond {} else {}`                                                                            |
-| Assignment with conditional shortcut<br/>`if a, cond := call(); cond {}`                 | `var a, if(cond) = call() {}`                                                                       |
-| Makes `_` redundant in (`_, val = f()`)<br/>by accessing chosen return values by names   | `w, o = f()` where `func f() (w, skip, o)`                                                          | 
+| Wo...                                                                                                 | Usage                                                                                               |
+|-------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Uses `<>`, not `interface{}`                                                                          | `f(a interface{})` → `f(a <>)`<br/>`interface{Length() int}` → `<Length() int>`                     |
+| Doesn't prefer **name shortenings**                                                                   | `file`, not `f`. And `ConcatFormat`, not `SprintF` (isn't enforced)                                 |
+| Allows **function overloading**                                                                       | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`               |
+| ...and also allows **default arguments** in functions                                                 | `print(stdout = console,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`string)` |
+| Doesn't allow **import overloading** or **keyword overloading**                                       | `var int int = 1` and `rune := 'W'` give a compiler error                                           |
+| Doesn't use `range` in enhanced for loops like<br/>`for i, v := range nums {}`                        | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                  |
+| Has the **ternary expression**                                                                        | `v = if cond {} else {}`                                                                            |
+| Has assignment with a conditional shortcut<br/>`if a, cond := call(); cond {}`                        | `var a, if(cond) = call() {}`                                                                       |
+| Makes `_` redundant in `_, val = f()`<br/>by accessing return values by names                         | `w, o = f()` where `func f() (w, skip, o)`<br/>...unless it's an error                              | 
 
-| Wo also...                                                                     |
-|--------------------------------------------------------------------------------|
-| Only warns for **unused variables**, not errors                                |
-| Doesn't allow undeclared variables or "**zero values**" like `var x string`    |
-| Allows optionals for double meaning zero values like `string?` to avoid `""`   |
-| Can initialize zero values with `none`, like `int x` would mean `int x = none` |
-| Separates the usage of `var`, `:=`, and `=` without overlapping functionality  |
-| `var` for for untyped variable declaration                                     |
-| `=` for initializing with the type like **`i int = 5`**                        |
-| `:=` for shadowing **only**                                                    |
-| Doesn't allow **mixing shadowed** and initialized variable declarations        |
-| Will still commit to universal formatting                                      |
-| Is open source and free                                                        | 
-| Is a **WIP**, but will always accept change and criticism                      |
-| Has a **wo**mbat mascot                                                        | 
-| Makes you say **"woah"**                                                       |
-
+| Wo also...                                                                           |
+|--------------------------------------------------------------------------------------|
+| Only **warns** for **unused variables**, not errors                                  |
+| Doesn't allow undeclared variables or **zero values** like `var x string`            |
+| Allows **optionals** for double meaning **zero values** like `string?` to avoid `""` |
+| Can initialize zero values with `none`, like `int x` would mean `int x = none`       |
+| Separates `var`, `:=`, and `=` without overlapping functionality                     |
+| `var` for for untyped variable declaration                                           |
+| `=` for initializing with the type like **`i int = 5`**                              |
+| `:=` for shadowing **only**                                                          |
+| Doesn't allow **mixing shadowed** and initialized variable declarations              |
+| Will still commit to **universal formatting**                                        |
+| Is **open source and free**                                                          | 
+| Is a **WIP**, but will always accept change and criticism                            |
+| Has a **wo**mbat mascot                                                              | 
+| Makes you say **"woah"**                                                             |
 
 Besides syntactical and formatting difference, Wo also offers
 
-| Functional Features                                                                                                                                                                                                                                                                       |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| A native implementation of `set` and atomic `set`<br/>                                                                                                                                                                                                                                    
- as well as native support for other collections like stack and tree set                                                                                                                                                                                                                   |
-| Could address **null checking** somehow (e.g. `nonnull` or `option`) and pointer/value receivers<br/> Maybe taking inspiration from Rust's [result](https://doc.rust-lang.org/std/result/) or Scala's [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html) |
-| `enum`                                                                                                                                                                                                                                                                                    |
-| Make slice append more predictable                                                                                                                                                                                                                                                        |
-| Have tuples as an assignable type                                                                                                                                                                                                                                                         |
-| Native strings, maps, and slice operations like `==` and `"".contains`                                                                                                                                                                                                                    |
-| Package scope control and visibility                                                                                                                                                                                                                                                      |
-| Run other functions besides main                                                                                                                                                                                                                                                          |
+| Functional Features                                                                                                                                                                                                                                                           |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| A native implementation of `set` and atomic `set`,<br/>as well as native support for other **collections** like stack and tree set                                                                                                                                            |
+| An optional type, which should support functional programing and error handling like [lo](https://github.com/samber/lo) and [mo](https://github.com/samber/mo)                                                                                                                |
+| Could address **null checking** somehow (e.g. `nonnil`) and pointer/value receivers,<br/> maybe taking inspiration from Rust's [result](https://doc.rust-lang.org/std/result/) or Scala's [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html) |
+| `enum`                                                                                                                                                                                                                                                                        |
+| Make slice append more predictable                                                                                                                                                                                                                                            |
+| Have tuples as an assignable type                                                                                                                                                                                                                                             |
+| Native strings, maps, and slice operations like `==` and `"".contains`                                                                                                                                                                                                        |
+| Package scope control and **visibility**                                                                                                                                                                                                                                      |
+| Run other functions besides main                                                                                                                                                                                                                                              |
 
-### See the list below for several unlikely but possible features:
+### To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md).
+
+#### See the list below for several unlikely but possible features:
 <details>
 <summary>
-Potential Features
+Potential Features...
 </summary>
 
-- *MAYBE* remove `func`, and remove parens from the receiver like `func (C* c) f[A rune](a int) (float32, error) {}` to `C.f[rune A](int a) float32? {}`
-- Signify errored outputs like `f() errable (int, string)` means `f() error? | (int, string)?` where only one is some and the other is none
-- Use the arrow return style in `func`s, and for function types: `var f func(func(float64) int) string` for `(float64 -> int) -> string f`
-- *Undecided* whether to switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types like `int i`, `struct s`, `string proc(float32 f)`
-- *MAYBE* don't use `type` from `type A interface {}`
-- *MAYBE* Make it more obvious that map and slice are pointers? https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it
-- *MAYBE* (probably won't) allow methods to be in their struct
-  - `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` -> `struct Bug { fly()   flee() { this.fly() } }`
-  - and/or `struct (Bug* bug) { }` to allow `bug` instead of `this`
+| Potential Features                                                                                                                                                                                    |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Remove `func`, and remove parens from the receiver like `func (C* c) f[A rune](a int) (float32, error) {}` to `C.f[rune A](int a) float32? {}`                                                        |
+| Signify errored outputs like `f() errable (int, string)` means `f() error? (int, string)?` where only one is some and the other is none                                                               |
+| Use the arrow return style in `func`s, and for function types: `var f func(func(float64) int) string` for `(float64 -> int) -> string f`                                                              |
+| Switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types like `int i`, `struct s`, `string proc(float32 f)` |
+| Don't use `type` from `type A interface {}`                                                                                                                                                           |
+| Make it more obvious that map and slice are [pointers](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it)?                                                             |
+| Allow methods to be in their struct like `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` -> `struct Bug { fly()   flee() { this.fly() } }`                                                 |
+| and/or `struct (Bug* bug) { }` to allow `bug` instead of `this`                                                                                                                                       |
 </details>
 
-To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md) for now.
+
 
 ### Code example
 
@@ -112,7 +104,7 @@ func (p Program*) output() string {
   return p.executable[:strings.LastIndex(p.executable, ".exe"))
 }
 
-func (p Program*) len() int {
+func (p Program*) length() int {
   return len(p.executable)
 }
 
@@ -124,7 +116,7 @@ func runProgram() string {
   return output
 }
 
-var fs = map[FilePath]string{"/app/host": "server.ts", "/", "Main.java"}
+var fs = map[FilePath]string{"/app/host": "server.ts", "/": "Main.java"}
 
 func runProgramO(dir interface{string|url}) (int, *string, error) {
   f, ok = fs[dir]
@@ -149,7 +141,7 @@ func runProgramO(dir interface{string|url}) (int, *string, error) {
 
   p := myCompiler.build(reader)
 
-  return p.len(), *p.outputPath(), nil
+  return p.length(), *p.outputPath(), nil
 }
 ```
 a possible design for Wo:
@@ -162,28 +154,28 @@ func runProgram(<string|url> directory) errable (int, string) { // members rever
   defer reader.Close!()
   reader.Sync!()
   program Program = myCompiler.build(reader)
-  return program.outputPath() // converts it to some(string) and error as nil/none
+  return program.length(), program.outputPath() // converts it to some(string) and error as nil/none
 }
 
-runnableFiles = map[FilePath, string]{"/app/host": "server.ts", "/", "Main.java"}
+runnableFiles map[FilePath]string = {"/app/host": "server.ts", "/": "Main.java"}
 
-runProgram() -> string {
+func runProgram() string {
   output, log(err) = runProgram("/")
   return output
 }
 
-Program struct {
+struct Program {
   byte[...] executable
-  outputPath() -> string {
+  func outputPath() string {
     return executable[:executable.LastIndex(".exe")]
   }
 
-  len() -> int {
+  func length() int {
     len(executable)
   }
 }
 
-FilePath interface {
+interface FilePath {
   string | url
 }
 ```

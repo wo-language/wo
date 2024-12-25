@@ -21,7 +21,7 @@ A similar situation was Scala's improvements over Java. It clearly improved the 
 
 I have not seen anything in the programming language landscape like that - a direct child of Go that addresses its design.
 
-And let it be known, the internet is full of needless speculation as to "why Go did this and not that?", so I'll also make this transparent and be skeptical of any justification that people give to Go. Instead, prioritizing the objective best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
+And let it be known, the internet is full of needless speculation as to "why Go did this and not that?", so I'll also make this transparent and be skeptical of any justification that people give to Go, instead prioritizing the objective best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
 
 Ultimately, certain improvements can be more valuable in different circumstances, while it doesn't matter in others. For example, I had a Java program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) into Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
 
@@ -149,19 +149,25 @@ Wo also does not allow variable names like `π` or `__`.
 
 And it's hard to do something about the inconsistent capitalization in functions. There certainly shouldn't be both "Init" and "init" in the same file, though. Nonetheless, Wo uses camelCase function and variable names.
 
+This abbreviation system and forcing functions to not have the same name is ironically avoided by importing from a package, which is basically the same thing as lengthening a function name anyway except with an extra `.`.
+
 ### Renaming package methods
 
-I also want to rename some common methods in the standard library. For example,
+I also want to rename some common methods in the standard library. For example, I find `fmt`'s function names really vague.
 
 - `ConcatFormat` for `SprintF` in `fmt`
 
+`Print, Printf, Sprint, Sprintf, Fprint, Fprintf, Sscanf, Fscanf,` etc.
+
+I would have never had to carefully decode the tiny difference between their documentations either if they were just named something like
+
+`PrintFormat, Concat, ConcatFormat, FormatterPrint, ScanString, ScanReader` etc.
+
+or just leaving the varying arguments as optional parameters with the same function names
+
+`scan(string), scan(reader)`
+
 ## Syntax Features
-
-### error handling
-
-> We believe that coupling exceptions to a control structure, as in the try-catch-finally idiom, results in convoluted code. It also tends to encourage programmers to label too many ordinary errors, such as failing to open a file, as exceptional.
-
-Sure, but you don't need to overcompensate. An error doesn't deserve multiple extra lines to remind you, even more than the main plot. Errors are still secondary, basically an after-thought, for better or for worse (Yes, I dream of a language with errors in mind first). A miniscule check is actually enough, since you don't need to be constantly reminded by it as it is not essential to the flow of the logic of your code, while still letting you ask "is this error checked?" and then easily seeing that it is because you're looking for it. This situation is not one typical of over abstraction, it's a perfect example of something that should be reduced to improve readability by hightlighting what matters
 
 ### interface{}
 
@@ -609,6 +615,36 @@ I'm going with `v = 2 * (if cond { a } else { b }) + ` for now, despite the curl
 
 I'll do this by either adding an expression identical to the `if else` statement, or modify the statement to become an expression.
 
+### Util
+
+`strings.contains(str, sub)`
+
+vs
+
+`str.contains(sub)`
+
+from go's source code,
+
+```go
+func equal(x, y []string) bool {
+	if len(x) != len(y) {
+		return false
+	}
+	for i, xi := range x {
+		if xi != y[i] {
+			return false
+		}
+	}
+	return true
+}
+
+x.equals(y)
+```
+vs
+```go
+x == y
+```
+
 ## Functional Features
 
 ### set
@@ -683,6 +719,201 @@ In general, having a term like `set` while also preventing reserved words from b
 > The same reason strings are: they are such a powerful and important data structure that providing one excellent implementation with syntactic support makes programming more pleasant. We believe that Go’s implementation of maps is strong enough that it will serve for the vast majority of uses. If a specific application can benefit from a custom implementation, it’s possible to write one but it will not be as convenient syntactically; this seems a reasonable tradeoff.
 
 There isn't anything inherently significant about a `map` or `len`; it can just be represented by a struct or function. So it's down to just making a language nicer. I'm also proposing `enum`, `some`, and `none`. I don't think this is crossing the line yet of having to consistently and annoyingly rename things like class to clazz yet, but that does feel like a dishonest representation of a program when renamings like that have to happen, since the restriction is coming from a meta syntactical problem, not a functional one.
+### error handling
+
+> We believe that coupling exceptions to a control structure, as in the try-catch-finally idiom, results in convoluted code. It also tends to encourage programmers to label too many ordinary errors, such as failing to open a file, as exceptional.
+
+Sure, but you don't need to overcompensate. An error doesn't deserve multiple extra lines to remind you, even more than the main plot. Errors are still secondary, basically an after-thought, for better or for worse (Yes, I dream of a language with errors in mind first). A miniscule check is actually enough, since you don't need to be constantly reminded by it as it is not essential to the flow of the logic of your code, while still letting you ask "is this error checked?" and then easily seeing that it is because you're looking for it. This situation is not one typical of over abstraction, it's a perfect example of something that should be reduced to improve readability by hightlighting what matters
+
+Go has an interesting way of going about errors. Its primary goal is to strictly treat them as values.
+
+This means that there is an `error` type that gets passed through return values and into variables. No wonder it has tuples. It's often returned as a value, as opposed to "being thrown", although they aren't too far apart in practice. panic is much closer to a serious exception being brought up.
+
+> `error` is a value
+
+sounds good until you add
+
+> `error` is a value, and it not being `nil` means there is an error
+
+A higher representation of the meaning of `nil` in the context of errors would be
+
+```
+err == nil: no error occured
+err != nil: an error occured, and err is the description of the error
+```
+
+It also means something about meaning of `nil` objects. This system allows the ability to call methods on `nil`, and the underlying function can choose what happens.
+
+This means that `nil` is given different meanings in different situations. The reason it exists is just because objects aren't necessarily instantiated, so they are a "`null`" by convention.
+
+Null isn't a thing in byte code. It's a high level concept to cover up something happening. What null actually represents to the byte code side is often just a 0 or something unallocated, or it's removed by the time it reaches byte code. In other words, null isn't real, it's part of the veil of the type system.
+
+What error handling should Wo have?
+
+Representing and dealing with errors by some other structure that
+1. Has significant and consistent purpose in the language that doesn't impede the development process, and
+2. Compiles to equal or better machine code.
+   is a worthy design.
+
+Go's current system is one contendor.
+
+The counterpart to the `error` value pattern is the `option` or the more thorough `result`.
+
+We have learned our lessons from many languages in the past.
+
+Let's wager for the best thing we can design with our constraints.
+
+#### if err != nil
+
+I know this debate goes in circles. Why don't we all just try out something new to see what it's like in practice, that's what computer science is about, right? I'll offer some options.
+
+There are common shortcuts people do error checking:
+
+```go
+if err := doer(); err != nil {
+}
+```
+and
+```go
+token, err := scanner.Scan()
+check(err)
+```
+but we could one-up it with alternative syntax being allowed like
+
+`var token, log(err) = scanner.Scan()`
+
+`var token, return(err) = scanner.Scan()`
+
+`var token, err = scanner.Scan()!`
+
+and I was also considering `scanner!Scan()` since a `!` is like a variation of `.`, but the compiler got it confused with the not symbol without a package identifier.
+
+```go
+f, err := os.Open("hi.wo")
+if err != nil {
+    return nil, err
+}
+```
+
+```go
+var file = os.Open("hi.wo")!
+```
+
+```go
+var file, log("Error:", err)   = os.Open("hi.wo")
+var file, handle(err)          = os.Open("hi.wo")!  // handle and throw
+var file, return(none, 3, err) = os.Open("hi.wo")   // with other return values
+var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
+if var file                    = os.Open("hi.wo") { continue }    // Swift/Rust
+var file                       = os.Open("hi.wo").orElse(newFile)
+var file                       = os.Open("hi.wo")!! // panic
+var file                       = os.Open("hi.wo")? // unwrap or panic
+var file                       = os.Open("hi.wo")? else newFile
+```
+
+The ultra-shortened version removes some choice you get with error-handling, but you can still shorten that pattern as well as having this option.
+
+I don't see why `nil` should represent an error not happening.
+
+```go
+func (err error*) errored() bool
+```
+or
+```go
+none: no error occured
+some(err), an error occured, and it is err
+```
+
+aligns with the meaning more.
+
+Additionally, errors are bound to functions, as they are something that can happen when a function is ran. This means we could generalize it further
+
+```go
+func a() res {}
+errable func b() res {}
+```
+
+Or maybe
+
+```go
+func b() errable res {}
+```
+
+if it's the function's result which is to reveal the error
+
+If we combine it with the option pattern, it would be equivalent to
+
+```go
+func b() res? ^ error? {}
+```
+
+where ^ means xor, as in, either a result or an error.
+
+which is basically just an interface or struct like
+
+```go
+type Errable[T any] struct {
+  err   error
+  value T
+}
+type Errable[T any] interface {
+  error
+  value() T
+}
+```
+
+for example
+
+```go
+func div(a, b int) (int, error) {}
+if quotient, err := div(a, b); err != nil {
+  return err
+}
+```
+
+in Wo, is written as
+
+```go
+func div(a, b int) errable int {}
+quotient int = div(a, b)!
+// or with more handling
+var quotient = div(a, b).orElse(NaN)
+var quotient = div(a, b)? else NaN // for fun
+
+// other ideas
+var quotient, if(err) = div(a, b) {
+  quotient = NaN
+}
+var quotient = match div(a, b) {
+  case q   int   -> q
+  case err error -> NaN
+}
+var quotient = try div(a, b) { NaN }
+```
+
+and is converted to the effect of
+
+```go
+func div(a, b int) Errable[int] {}
+quotient int = 0
+var quotientOrErr = div(a, b)
+switch quotientOrErr.(type) {
+  case error:
+    return quotientOrErr.(error)
+}
+quotient = quotientOrErr.value()
+```
+
+and is indeed about the same thing as a `Result`. So I've naturally came to the same conclusion as just using that pattern with some custom syntactical sugar.
+
+The big difference here between implementing it yourself and customizing the compiler is that I can take existing functions and interpret them as a Result.
+
+```go
+func Open(name string) (*File, error) // this standard function
+// in some Wo file could be used like this
+func Open(name string) errable *File
+var file = os.Open("README.md")!
+```
 
 ### enum
 
@@ -711,5 +942,3 @@ Monday.working
 There are over 100 "halls of shame" in Go's source code, which is a kind of comment they have that links to repos that used a function that it "shouldn't have".
 
 It's not really a laughing matter at that point, programs should be able to represent who gets access to what. Or, they should be given proper solutions to the work-arounds that they had to use.
-
-
