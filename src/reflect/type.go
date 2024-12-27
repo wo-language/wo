@@ -497,7 +497,7 @@ var kindNames = []string{
 	Func:          "func",
 	Interface:     "interface",
 	Map:           "map",
-	Set:           "set",
+	Set:           "hashset",
 	Pointer:       "ptr",
 	Slice:         "slice",
 	String:        "string",

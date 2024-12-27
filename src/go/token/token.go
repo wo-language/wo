@@ -223,7 +223,7 @@ var tokens = [...]string{
 
 	INTERFACE: "tie",
 	MAP:       "map",
-	SET:       "set",
+	SET:       "hashset",
 	PACKAGE:   "package",
 	RANGE:     "range",
 	RETURN:    "return",

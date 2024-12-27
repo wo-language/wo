@@ -160,7 +160,7 @@ var kindNames = []string{
 	Func:          "func",
 	Interface:     "interface",
 	Map:           "map",
-	Set:           "set",
+	Set:           "hashset",
 	Pointer:       "ptr",
 	Slice:         "slice",
 	String:        "string",
@@ -535,13 +535,6 @@ type SetType struct {
 // Note: flag values must match those used in the TSET case
 // in ../cmd/compile/internal/reflectdata/reflect.go:writeType.
 func (mt *SetType) IndirectKey() bool { // store ptr to elem instead of elem itself
-	a := 1
-	b := 2
-	if a == 1 {
-		b = 2
-	} else {
-		b = 32
-	}
 	return mt.Flags&1 != 0
 }
 

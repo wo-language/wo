@@ -169,7 +169,7 @@ x == y
 [] Started implementing
 
 ```go
-primes set[int] = { 2, 3, 5 }  // declaration
+primes hashset[int] = { 2, 3, 5 }  // declaration
 ok = primes[4]                 // is ok if contains elem
 primes.insert[7]               // insert / add
 primes.delete[3]               // delete / remove

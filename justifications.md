@@ -669,11 +669,13 @@ So I made `map`'s keys as `set`'s elements, wiping any functionality with `map`'
 This does mean the removal of the `val = m[key]` method, as that doesn't really mean anything for sets. Instead, I modified and kept the `_, ok = m[key]` method, using it like `ok = s[elem]`.
 
 ```go
-primes set[int] = { 2, 3, 5 }  // declaration
+primes hashset[int] = { 2, 3, 5 }  // declaration
 ok = primes[4]                 // is ok if contains elem
 primes.insert[7]               // insert / add
 primes.delete[3]               // delete / remove
 ```
+
+I had to name it `hashset` because `set` covers up too many existing methods, but now I have to do file dependent token reading.
 
 I prefer `add` and `remove`, but the naming (from `map`) uses `insert`, so I don't want it to get too inconsistent and therefore unpredictable. It's not an impossible consideration, however, but I'd prefer renaming the `map` methods too in that case.
 
