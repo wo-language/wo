@@ -1768,7 +1768,7 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 				x = &ast.SelectorExpr{X: x, Sel: sel}
 			}
 		case token.NOT: // !fn()   id!fn()   !id!fn()   ida!idb!fn()... should be considered
-			if p.scanner.IsWo() {
+			if p.scanner.IsWo() { // TODO(bran)
 				p.next()
 				switch p.tok {
 				case token.IDENT:

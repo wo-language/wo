@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"slices"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
@@ -112,6 +113,10 @@ type File struct {
 // Name returns the file name of file f as registered with AddFile.
 func (f *File) Name() string {
 	return f.name
+}
+
+func (f *File) IsWo() bool {
+	return strings.HasSuffix(f.name, ".wo")
 }
 
 // Base returns the base offset of file f as registered with AddFile.

@@ -98,6 +98,10 @@ func (p *parser) init(file *PosBase, r io.Reader, errh ErrorHandler, pragh Pragm
 	p.indent = nil
 }
 
+//func (p *parser) IsWo() bool {
+//	return p.file.IsWo()
+//}
+
 // takePragma returns the current parsed pragmas
 // and clears them from the parser state.
 func (p *parser) takePragma() Pragma {
@@ -408,6 +412,7 @@ func (p *parser) fileOrNil() *File {
 	}
 	f.Pragma = p.takePragma()
 	f.PkgName = p.name()
+	//f.isWo = p.IsWo()
 	p.want(_Semi)
 
 	// don't bother continuing if package clause has errors

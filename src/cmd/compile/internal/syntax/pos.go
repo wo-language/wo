@@ -4,7 +4,9 @@
 
 package syntax
 
-import "fmt"
+import (
+	"fmt"
+)
 
 // PosMax is the largest line or column value that can be represented without loss.
 // Incoming values (arguments) larger than PosMax will be set to PosMax.
@@ -214,6 +216,11 @@ func (base *PosBase) Trimmed() bool {
 	}
 	return base.trimmed
 }
+
+//func (base *PosBase) IsWo() bool {
+//	if base == nil { return false }
+//	return strings.HasSuffix(base.filename, ".wo")
+//}
 
 func sat32(x uint) uint32 {
 	if x > PosMax {

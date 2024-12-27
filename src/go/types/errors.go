@@ -247,6 +247,9 @@ func (check *Checker) softErrorf(at positioner, code Code, format string, args .
 	err := check.newError(code)
 	err.addf(at, format, args...)
 	err.soft = true
+	if check.fset.File(at.Pos()).IsWo() && code == UnusedVar {
+		return // cancel
+	}
 	err.report()
 }
 
