@@ -83,10 +83,12 @@ recognizes `->` - fails bc doesn't belong anywhere
 after adding/removing any fundamental types, you have to run
 
 1. switch to default compiler or both root and path to this one
+  - don't install to /wo/scr/cmd/vendor, put it in default Go source
+  - otherwise, this means you're deploying the compiler with some extra tool that should be optional
 2. go get -u golang.org/x/tools/cmd/stringer
 3. go mod vendor
-4. switch back path
 4. go install stringer
+4. switch back path
 5. run commands:
    - cmd\compile\internal\types $ stringer -type Kind -trimprefix T type.go
    - src/cmd/compile/internal/ir/ $ stringer -type=Op -trimprefix=O node.go
