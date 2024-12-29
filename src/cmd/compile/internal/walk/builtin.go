@@ -405,6 +405,102 @@ func walkMakeMap(n *ir.MakeExpr, init *ir.Nodes) ir.Node {
 	return mkcall1(fn, n.Type(), init, reflectdata.MakeMapRType(base.Pos, n), typecheck.Conv(hint, argtype), h)
 }
 
+// walkMakeSet walks an OMAKESET node.
+func walkMakeSet(n *ir.MakeExpr, init *ir.Nodes) ir.Node {
+	t := n.Type()
+	hsetType := reflectdata.SetType()
+	hint := n.Len
+
+	// var h *hset
+	var h ir.Node
+	if n.Esc() == ir.EscNone {
+		// Allocate hset on stack.
+
+		// var hv hset
+		// h = &hv
+		h = stackTempAddr(init, hsetType)
+
+		// Allocate one bucket pointed to by hset.buckets on stack if hint
+		// is not larger than BUCKETSIZE. In case hint is larger than
+		// BUCKETSIZE runtime.makeset will allocate the buckets on the heap.
+		// Maximum key and elem size is 128 bytes, larger objects
+		// are stored with an indirection. So max bucket size is 2048+eps.
+		if !ir.IsConst(hint, constant.Int) ||
+			constant.Compare(hint.Val(), token.LEQ, constant.MakeInt64(abi.MapBucketCount)) {
+
+			// In case hint is larger than BUCKETSIZE runtime.makeset
+			// will allocate the buckets on the heap, see #20184
+			//
+			// if hint <= BUCKETSIZE {
+			//     var bv bset
+			//     b = &bv
+			//     h.buckets = b
+			// }
+
+			nif := ir.NewIfStmt(base.Pos, ir.NewBinaryExpr(base.Pos, ir.OLE, hint, ir.NewInt(base.Pos, abi.MapBucketCount)), nil, nil)
+			nif.Likely = true
+
+			// var bv bset
+			// b = &bv
+			b := stackTempAddr(&nif.Body, reflectdata.MapBucketType(t))
+
+			// h.buckets = b
+			bsym := hsetType.Field(5).Sym // hset.buckets see reflect.go:hset
+			na := ir.NewAssignStmt(base.Pos, ir.NewSelectorExpr(base.Pos, ir.ODOT, h, bsym), typecheck.ConvNop(b, types.Types[types.TUNSAFEPTR]))
+			nif.Body.Append(na)
+			appendWalkStmt(init, nif)
+		}
+	}
+
+	if ir.IsConst(hint, constant.Int) && constant.Compare(hint.Val(), token.LEQ, constant.MakeInt64(abi.MapBucketCount)) {
+		// Handling make(set[any]any) and
+		// make(set[any]any, hint) where hint <= BUCKETSIZE
+		// special allows for faster set initialization and
+		// improves binary size by using calls with fewer arguments.
+		// For hint <= BUCKETSIZE overLoadFactor(hint, 0) is false
+		// and no buckets will be allocated by makeset. Therefore,
+		// no buckets need to be allocated in this code path.
+		if n.Esc() == ir.EscNone {
+			// Only need to initialize h.hash0 since
+			// hmap h has been allocated on the stack already.
+			// h.hash0 = rand32()
+			rand := mkcall("rand32", types.Types[types.TUINT32], init)
+			hashsym := hsetType.Field(4).Sym // hmap.hash0 see reflect.go:hmap
+			appendWalkStmt(init, ir.NewAssignStmt(base.Pos, ir.NewSelectorExpr(base.Pos, ir.ODOT, h, hashsym), rand))
+			return typecheck.ConvNop(h, t)
+		}
+		// Call runtime.makehset to allocate an
+		// hset on the heap and initialize hset's hash0 field.
+		fn := typecheck.LookupRuntime("makeset_small", t.Key(), t.Elem())
+		return mkcall1(fn, n.Type(), init)
+	}
+
+	if n.Esc() != ir.EscNone {
+		h = typecheck.NodNil()
+	}
+	// Set initialization with a variable or large hint is
+	// more complicated. We therefore generate a call to
+	// runtime.makeset to initialize hset and allocate the
+	// set buckets.
+
+	// When hint fits into int, use makeset instead of
+	// makeset64, which is faster and shorter on 32 bit platforms.
+	fnname := "makeset64" // TODO(bran) make sure it is connected
+	argtype := types.Types[types.TINT64]
+
+	// Type checking guarantees that TIDEAL hint is positive and fits in an int.
+	// See checkmake call in TSET case of OMAKE case in OpSwitch in typecheck1 function.
+	// The case of hint overflow when converting TUINT or TUINTPTR to TINT
+	// will be handled by the negative range checks in makeset during runtime.
+	if hint.Type().IsKind(types.TIDEAL) || hint.Type().Size() <= types.Types[types.TUINT].Size() {
+		fnname = "makeset"
+		argtype = types.Types[types.TINT]
+	}
+
+	fn := typecheck.LookupRuntime(fnname, hsetType, t.Key(), t.Elem())
+	return mkcall1(fn, n.Type(), init, reflectdata.MakeMapRType(base.Pos, n), typecheck.Conv(hint, argtype), h)
+}
+
 // walkMakeSlice walks an OMAKESLICE node.
 func walkMakeSlice(n *ir.MakeExpr, init *ir.Nodes) ir.Node {
 	l := n.Len

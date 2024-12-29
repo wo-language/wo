@@ -18,8 +18,9 @@ Development steps:
 - modifying the compiler code to support each kind of syntax [Doing...]
   - doing it for just one and test running it [Doing with set...]
   - make code formatter detect it
-  - try to make some modular feature, 
-- modifying the runner to support that transformation [Next]
+  - try to make some modular feature
+- modifying the runner to support that transformation [Next] [Doing with set...]
+- add appropriate tests
 - possibly making the `wo` command separate, or at least instructing on how to make it an alias.
 - checking if it still reaches all the targets
 - setting up the website in Go then Wo
@@ -61,11 +62,22 @@ cd src
 
 running go on a .wo file seems to give "function main is undeclared in the main package"
 
-current expected output: linkname must refer to declared function or variable (I haven't set it up)
+current expected output:
+\wo\src\runtime\proc.go:6630:13: internal compiler error: type pMask has no receiver base type
+it happens on a function called `set`, and the formatted was getting tripped up on anything called set earlier.
+So I renamed it to hashset, but it still does that same error.
+go clean -cache didn't do anything. Nor deleting the generated compilers.
+I renamed the erroring function to something else, and it gave the same error.
+Was the hint from the go fmt just a red herring, and there really is a problem with this part of the code?
+I already checked, this, the upstream branch, and go's master branch all matched on this part of the code.
+I must have really messed up the compiler, since I don't even see anything wrong with the code that created this error
+now I tried go clean -cache -modcache. same error
+with extra debugging: type: pMask, name: set, kind: SLICE, isPtr(): false
+still nothing... however, the "SLICE" is interesting. I traced the error backwards and found out that I accidentally replaced "TSLICE" with "TSET" in the base receiver type checking.
 
 ---
 I think the compiler runs in this order:
-build serialize scanner parser resolver walk
+build { serialize scanner parser resolver walk } -> make exe pkg/compiler -> compile /runtime -> go.exe
 creation of the compiler runs:
 
 `go test -run=Generate -write=all`
@@ -79,6 +91,8 @@ current commit syntax attempt to add:
 `interface` is `tie` - fails because token defined in multiple places
 
 recognizes `->` - fails bc doesn't belong anywhere
+
+`hashset`
 
 after adding/removing any fundamental types, you have to run
 

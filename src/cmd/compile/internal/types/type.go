@@ -957,7 +957,7 @@ func (t *Type) Elem() *Type {
 	case TSET:
 		return t.extra.(*Set).Elem
 	}
-	base.Fatalf("Type.KeyElem %s", t.kind)
+	base.Fatalf("Type.Elem %s", t.kind)
 	return nil
 }
 
@@ -2010,7 +2010,7 @@ func ReceiverBaseType(t *Type) *Type {
 		return t
 	}
 	switch t.Kind() {
-	case TARRAY, TCHAN, TFUNC, TMAP, TSET, TSTRING, TSTRUCT:
+	case TARRAY, TCHAN, TFUNC, TMAP, TSET, TSLICE, TSTRING, TSTRUCT:
 		return t
 	}
 	return nil

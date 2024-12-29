@@ -245,6 +245,7 @@ var hsetType *types.Type
 
 // SetType returns a type interchangeable with runtime.hset.
 // Make sure this stays in sync with runtime/set.go.
+// and compile walk builtin walkMakeSet
 func SetType() *types.Type {
 	if hsetType != nil {
 		return hsetType
@@ -992,7 +993,7 @@ func needkeyupdate(t *types.Type, isSet bool) bool {
 	default:
 		var keyHolder string
 		if isSet {
-			keyHolder = "set"
+			keyHolder = "hashset"
 		} else {
 			keyHolder = "map"
 		}

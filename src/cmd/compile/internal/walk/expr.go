@@ -295,6 +295,10 @@ func walkExpr1(n ir.Node, init *ir.Nodes) ir.Node {
 		n := n.(*ir.MakeExpr)
 		return walkMakeChan(n, init)
 
+	case ir.OMAKESET:
+		n := n.(*ir.MakeExpr)
+		return walkMakeSet(n, init)
+
 	case ir.OMAKEMAP:
 		n := n.(*ir.MakeExpr)
 		return walkMakeMap(n, init)

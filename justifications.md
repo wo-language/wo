@@ -768,7 +768,15 @@ Null isn't really a thing in byte code land. It's a high level concept to cover 
 
 In summary, `nil` has been given more meaning. There are two levels of `nil` for interfaces, one is the type and one is the value. For the interface type, you can't call methods on it if that is `nil`, but you can call methods on a `nil` for regular types if the method is using a pointer receiver or if the value is `nil` and the interface type isn't, but you have to use reflection in that case. This discrepancy exists because of how Go manages interfaces by keeping track of type information and wrapping the actual value.
 
-These were just some examples of the meaning of `nil` in the context of how it functions in the language, but it can also mean *anything* that the programmer wants. Although it is an agreed upon standard, this has happened with error handling.
+These were just some examples of the meaning of `nil` in the context of how it functions in the language, but it can also mean *anything* that the programmer wants. For example, from Go's source code:
+
+```go
+if pkg == nil {
+  pkg = nopkg
+}
+```
+
+This has happened with error handling, although it is an agreed upon standard.
 
 ### Error Handling
 
