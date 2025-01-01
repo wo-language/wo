@@ -559,7 +559,7 @@ func (p *parser) parseTypeName(ident *ast.Ident) ast.Expr {
 		ident = p.parseIdent()
 	}
 
-	if p.tok == token.PERIOD || p.tok == token.NOT {
+	if p.tok == token.PERIOD {
 		// ident is a package name
 		p.next()
 		sel := p.parseIdent()
@@ -664,10 +664,10 @@ func (p *parser) parseFieldDecl() *ast.Field {
 	switch p.tok {
 	case token.IDENT:
 		name := p.parseIdent()
-		if p.tok == token.PERIOD || p.tok == token.NOT || p.tok == token.STRING || p.tok == token.SEMICOLON || p.tok == token.RBRACE {
+		if p.tok == token.PERIOD || p.tok == token.STRING || p.tok == token.SEMICOLON || p.tok == token.RBRACE {
 			// embedded type
 			typ = name
-			if p.tok == token.PERIOD || p.tok == token.NOT {
+			if p.tok == token.PERIOD {
 				typ = p.parseQualifiedIdent(name)
 			}
 		} else {
@@ -836,11 +836,6 @@ func (p *parser) parseParamDecl(name *ast.Ident, typeSetsOK bool) (f field) {
 
 		case token.PERIOD:
 			// name "." ...
-			f.typ = p.parseQualifiedIdent(f.name)
-			f.name = nil
-
-		case token.NOT:
-			// name "!" ...
 			f.typ = p.parseQualifiedIdent(f.name)
 			f.name = nil
 
@@ -1528,16 +1523,6 @@ func (p *parser) parseSelector(x ast.Expr) ast.Expr {
 	return &ast.SelectorExpr{X: x, Sel: sel}
 }
 
-func (p *parser) parseBangSelector(x ast.Expr) ast.Expr {
-	if p.trace {
-		defer un(trace(p, "Selector"))
-	}
-
-	sel := p.parseIdent()
-
-	return &ast.BangSelectorExpr{X: x, Sel: sel}
-}
-
 func (p *parser) parseTypeAssertion(x ast.Expr) ast.Expr {
 	if p.trace {
 		defer un(trace(p, "TypeAssertion"))
@@ -1750,7 +1735,6 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 			switch p.tok {
 			case token.IDENT:
 				x = p.parseSelector(x)
-
 			case token.LPAREN:
 				x = p.parseTypeAssertion(x)
 			default:
@@ -1767,22 +1751,6 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 				sel := &ast.Ident{NamePos: pos, Name: "_"}
 				x = &ast.SelectorExpr{X: x, Sel: sel}
 			}
-		case token.NOT: // !fn()   id!fn()   !id!fn()   ida!idb!fn()... should be considered
-			if p.scanner.IsWo() { // TODO(bran)
-				p.next()
-				switch p.tok {
-				case token.IDENT:
-					x = p.parseBangSelector(x)
-				default:
-					pos := p.pos
-					p.errorExpected(pos, "selector or type assertion")
-					if p.tok != token.RBRACE {
-						p.next() // make progress
-					}
-					sel := &ast.Ident{NamePos: pos, Name: "_"}
-					x = &ast.SelectorExpr{X: x, Sel: sel}
-				}
-			}
 		case token.LBRACK:
 			x = p.parseIndexOrSliceOrInstance(x)
 		case token.LPAREN:
@@ -1793,7 +1761,7 @@ func (p *parser) parsePrimaryExpr(x ast.Expr) ast.Expr {
 			t := ast.Unparen(x)
 			// determine if '{' belongs to a composite literal or a block statement
 			switch t.(type) {
-			case *ast.BadExpr, *ast.Ident, *ast.SelectorExpr, *ast.BangSelectorExpr:
+			case *ast.BadExpr, *ast.Ident, *ast.SelectorExpr:
 				if p.exprLev < 0 {
 					return x
 				}
@@ -2545,7 +2513,7 @@ func (p *parser) parseImportSpec(doc *ast.CommentGroup, _ token.Token, _ int) as
 	switch p.tok {
 	case token.IDENT:
 		ident = p.parseIdent()
-	case token.PERIOD, token.NOT:
+	case token.PERIOD:
 		ident = &ast.Ident{NamePos: p.pos, Name: "."}
 		p.next()
 	}
