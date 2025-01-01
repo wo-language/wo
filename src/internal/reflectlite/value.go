@@ -330,6 +330,9 @@ func chanlen(unsafe.Pointer) int
 //go:noescape
 func maplen(unsafe.Pointer) int
 
+//go:noescape
+func setlen(unsafe.Pointer) int
+
 // Len returns v's length.
 // It panics if v's Kind is not Array, Chan, Map, Slice, or String.
 func (v Value) Len() int {
@@ -342,6 +345,8 @@ func (v Value) Len() int {
 		return chanlen(v.pointer())
 	case abi.Map:
 		return maplen(v.pointer())
+	case abi.Set:
+		return setlen(v.pointer())
 	case abi.Slice:
 		// Slice is bigger than a word; assume flagIndir.
 		return (*unsafeheader.Slice)(v.ptr).Len

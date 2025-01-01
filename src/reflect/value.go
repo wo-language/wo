@@ -2115,48 +2115,48 @@ func (v Value) SetIterSetKey(iter *SetIter) {
 	typedmemmove(v.typ(), v.ptr, key.ptr)
 }
 
-// SetValue returns the value of iter's current set entry.
-func (iter *SetIter) SetValue() Value {
-	if !iter.hiterset.initialized() {
-		panic("SetIter.Value called before Next")
-	}
-	iterelem := setiterelem(&iter.hiterset)
-	if iterelem == nil {
-		panic("SetIter.Value called on exhausted iterator")
-	}
-
-	t := (*setType)(unsafe.Pointer(iter.m.typ()))
-	vtype := t.Elem
-	return copyVal(vtype, iter.m.flag.ro()|flag(vtype.Kind()), iterelem)
-}
-
-// SetIterSetValue assigns to v the value of iter's current set entry.
-// It is equivalent to v.Set(iter.Value()), but it avoids allocating a new Value.
-// As in Go, the value must be assignable to v's type and
-// must not be derived from an unexported field.
-func (v Value) SetIterSetValue(iter *SetIter) {
-	if !iter.hiterset.initialized() {
-		panic("reflect: Value.SetIterSetValue called before Next")
-	}
-	iterelem := setiterelem(&iter.hiterset)
-	if iterelem == nil {
-		panic("reflect: Value.SetIterSetValue called on exhausted iterator")
-	}
-
-	v.mustBeAssignable()
-	var target unsafe.Pointer
-	if v.kind() == Interface {
-		target = v.ptr
-	}
-
-	t := (*setType)(unsafe.Pointer(iter.m.typ()))
-	vtype := t.Elem
-
-	iter.m.mustBeExported() // do not let unexported m leak
-	elem := Value{vtype, iterelem, iter.m.flag | flag(vtype.Kind()) | flagIndir}
-	elem = elem.assignTo("reflect.SetIter.SetValueSet", v.typ(), target)
-	typedmemmove(v.typ(), v.ptr, elem.ptr)
-}
+//// SetValue returns the value of iter's current set entry.
+//func (iter *SetIter) SetValue() Value {
+//	if !iter.hiterset.initialized() {
+//		panic("SetIter.Value called before Next")
+//	}
+//	iterelem := setiterelem(&iter.hiterset)
+//	if iterelem == nil {
+//		panic("SetIter.Value called on exhausted iterator")
+//	}
+//
+//	t := (*setType)(unsafe.Pointer(iter.m.typ()))
+//	vtype := t.Elem
+//	return copyVal(vtype, iter.m.flag.ro()|flag(vtype.Kind()), iterelem)
+//}
+//
+//// SetIterSetValue assigns to v the value of iter's current set entry.
+//// It is equivalent to v.Set(iter.Value()), but it avoids allocating a new Value.
+//// As in Go, the value must be assignable to v's type and
+//// must not be derived from an unexported field.
+//func (v Value) SetIterSetValue(iter *SetIter) {
+//	if !iter.hiterset.initialized() {
+//		panic("reflect: Value.SetIterSetValue called before Next")
+//	}
+//	iterelem := setiterelem(&iter.hiterset)
+//	if iterelem == nil {
+//		panic("reflect: Value.SetIterSetValue called on exhausted iterator")
+//	}
+//
+//	v.mustBeAssignable()
+//	var target unsafe.Pointer
+//	if v.kind() == Interface {
+//		target = v.ptr
+//	}
+//
+//	t := (*setType)(unsafe.Pointer(iter.m.typ()))
+//	vtype := t.Elem
+//
+//	iter.m.mustBeExported() // do not let unexported m leak
+//	elem := Value{vtype, iterelem, iter.m.flag | flag(vtype.Kind()) | flagIndir}
+//	elem = elem.assignTo("reflect.SetIter.SetValueSet", v.typ(), target)
+//	typedmemmove(v.typ(), v.ptr, elem.ptr)
+//}
 
 // Next advances the set iterator and reports whether there is another
 // entry. It returns false when iter is exhausted; subsequent
@@ -4109,8 +4109,6 @@ func maplen(m unsafe.Pointer) int
 
 func mapclear(t *abi.Type, m unsafe.Pointer)
 
-// #wo
-
 func makeset(t *abi.Type, cap int) (m unsafe.Pointer)
 
 //wo:noescape
@@ -4119,7 +4117,6 @@ func setaccess(t *abi.Type, m unsafe.Pointer, key unsafe.Pointer) (val unsafe.Po
 //wo:noescape
 func setaccess_faststr(t *abi.Type, m unsafe.Pointer, key string) (val unsafe.Pointer)
 
-//wo:noescape
 func setassign0(t *abi.Type, m unsafe.Pointer, key, val unsafe.Pointer)
 
 // setassign should be an internal detail.
@@ -4128,41 +4125,42 @@ func setassign0(t *abi.Type, m unsafe.Pointer, key, val unsafe.Pointer)
 // Do not remove or change the type signature.
 // See go.dev/issue/67401.
 //
-//wo:linkname setassign
+//go:linkname setassign
 func setassign(t *abi.Type, m unsafe.Pointer, key, val unsafe.Pointer) {
 	contentEscapes(key)
 	contentEscapes(val)
 	setassign0(t, m, key, val)
 }
 
-//wo:noescape
+//go:noescape
 func setassign_faststr0(t *abi.Type, m unsafe.Pointer, key string, val unsafe.Pointer)
 
-func setassign_faststr(t *abi.Type, m unsafe.Pointer, key string, val unsafe.Pointer) {
-	contentEscapes((*unsafeheader.String)(unsafe.Pointer(&key)).Data)
-	contentEscapes(val)
-	setassign_faststr0(t, m, key, val)
-}
+//func setassign_faststr(t *abi.Type, m unsafe.Pointer, key string, val unsafe.Pointer) {
+//	contentEscapes((*unsafeheader.String)(unsafe.Pointer(&key)).Data)
+//	contentEscapes(val)
+//	setassign_faststr0(t, m, key, val)
+//}
 
-//wo:noescape
+//go:noescape
 func setdelete(t *abi.Type, m unsafe.Pointer, key unsafe.Pointer)
 
-//wo:noescape
+//go:noescape
 func setdelete_faststr(t *abi.Type, m unsafe.Pointer, key string)
 
-//wo:noescape
+//go:noescape
 func setiterinit(t *abi.Type, m unsafe.Pointer, it *hsetiter)
 
-//wo:noescape
+//go:noescape
 func setiterkey(it *hsetiter) (key unsafe.Pointer)
 
+// should not be used
 //wo:noescape
-func setiterelem(it *hsetiter) (elem unsafe.Pointer)
+//func setiterelem(it *hsetiter) (elem unsafe.Pointer)
 
-//wo:noescape
+//go:noescape
 func setiternext(it *hsetiter)
 
-//wo:noescape
+//go:noescape
 func setlen(m unsafe.Pointer) int
 
 func setclear(t *abi.Type, m unsafe.Pointer)

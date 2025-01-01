@@ -1,8 +1,8 @@
 
 ### `set`
-- no syntax for it
 - also impl's `setiter`, set_faststr, set_fast64, set_fast32, sets, sets/iter, make()
 - https://dave.cheney.net/2018/05/29/how-the-go-runtime-implements-maps-efficiently-without-generics
+- impl tests and redo benchmarks
 ```go
 m := map[kType]vType // init
 v := m[k]     // mapaccess1(m, k, &v)

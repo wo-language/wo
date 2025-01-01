@@ -62,18 +62,7 @@ cd src
 
 running go on a .wo file seems to give "function main is undeclared in the main package"
 
-current expected output:
-\wo\src\runtime\proc.go:6630:13: internal compiler error: type pMask has no receiver base type
-it happens on a function called `set`, and the formatted was getting tripped up on anything called set earlier.
-So I renamed it to hashset, but it still does that same error.
-go clean -cache didn't do anything. Nor deleting the generated compilers.
-I renamed the erroring function to something else, and it gave the same error.
-Was the hint from the go fmt just a red herring, and there really is a problem with this part of the code?
-I already checked, this, the upstream branch, and go's master branch all matched on this part of the code.
-I must have really messed up the compiler, since I don't even see anything wrong with the code that created this error
-now I tried go clean -cache -modcache. same error
-with extra debugging: type: pMask, name: set, kind: SLICE, isPtr(): false
-still nothing... however, the "SLICE" is interesting. I traced the error backwards and found out that I accidentally replaced "TSLICE" with "TSET" in the base receiver type checking.
+compile errors about set
 
 ---
 I think the compiler runs in this order:
