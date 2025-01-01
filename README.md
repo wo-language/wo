@@ -11,62 +11,89 @@ if err != nil {
 }
 ```
 
-would be done like this in Wo:
+could be done like this in Wo:
 
 ```go
-var file = os.Open("hi.wo")! // Pending decisions here. It's a WIP
+var file = os.Open("hi.wo")!
 ```
 
-I am considering making different language features **modular**. If someone likes only the interface syntax, and that's all they want, then I could allow either compiler flags headers in the file to indicate which ones to have turned off.
+(Pending decisions here. It's a WIP)
 
-The point of these features is to drop the bantering about the theories of how much to boilerplate or whether to copy what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of this myself, and these were the most notable options.
+The point of these features is to look beyond the banter of theories like how much to boilerplate or whether to do what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of these features, and these were the most notable options. I hope you find them interesting - feel free to give us your own suggestions.
 
-Currently, this is a <u>proof of concept</u>, and I have not necessarily got **any of these** working yet.
+### *Currently, this is a <u>proof of concept</u>, and none of these necessarily work yet.*
 
-| Wo...                                                                                                 | Usage                                                                                               |
-|-------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| Uses `<>`, not `interface{}`                                                                          | `f(a interface{})` → `f(a <>)`<br/>`interface{Length() int}` → `<Length() int>`                     |
-| Doesn't prefer **name shortenings**                                                                   | `file`, not `f`. And `ConcatFormat`, not `SprintF` (isn't enforced)                                 |
-| Allows **function overloading**                                                                       | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`               |
-| ...and also allows **default arguments** in functions                                                 | `print(stdout = console,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`string)` |
-| Doesn't allow **import overloading** or **keyword overloading**                                       | `var int int = 1` and `rune := 'W'` give a compiler error                                           |
-| Doesn't use `range` in enhanced for loops like<br/>`for i, v := range nums {}`                        | `for i, v : nums {}`<br/>`for v : nums` (values instead of `_, v`)                                  |
-| Has the **ternary expression**                                                                        | `v = if cond {} else {}`                                                                            |
-| Has assignment with a conditional shortcut<br/>`if a, cond := call(); cond {}`                        | `var a, if(cond) = call() {}`                                                                       |
-| Makes `_` redundant in `_, val = f()`<br/>by accessing return values by names                         | `w, o = f()` where `func f() (w, skip, o)`<br/>...unless it's an error                              | 
+## Syntax
 
-| Wo also...                                                                           |
-|--------------------------------------------------------------------------------------|
-| Only **warns** for **unused variables**, not errors                                  |
-| Doesn't allow undeclared variables or **zero values** like `var x string`            |
-| Allows **optionals** for double meaning **zero values** like `string?` to avoid `""` |
-| Can initialize zero values with `none`, like `int x` would mean `int x = none`       |
-| Separates `var`, `:=`, and `=` without overlapping functionality                     |
-| `var` for for untyped variable declaration                                           |
-| `=` for initializing with the type like **`i int = 5`**                              |
-| `:=` for shadowing **only**                                                          |
-| Doesn't allow **mixing shadowed** and initialized variable declarations              |
-| Will still commit to **universal formatting**                                        |
-| Is **open source and free**                                                          | 
-| Is a **WIP**, but will always accept change and criticism                            |
-| Has a **wo**mbat mascot                                                              | 
-| Makes you say **"woah"**                                                             |
+|         Syntax Feature         |                                                     Go Syntax | Wo Example                                                                |
+|:------------------------------:|--------------------------------------------------------------:|---------------------------------------------------------------------------|
+|      `interface{}` syntax      |              `f(a interface{})`<br/>`interface{Length() int}` | `f(a <>)`<br/>`<Length() int>`                                            |
+|       Enhanced for loops       | `for i, v := range nums {}` <br/> `for _, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums`                                   |
+|       Ternary expression       |                `var v int; if high { v = 99 } else { v = 1 }` | `var v = if high { 99 } else { 1 }`                                       |
+|   Has conditional assignment   |                               `if a, cond := call(); cond {}` | `if var a = call() {}`                                                    |
+|  `_` for multi return values   |                                                `_, val = f()` | `func f() (skip, val)` Match name:<br/>`val = f()` (unless it's an error) |
+| Lambda arrow in function types |                          `var f func(func(int) int, int) int` | `var f(int -> int, int) -> int`                                           |
+|         Type assertion         |                                            `number.(float32)` | `number as float32`                                                       |
 
-Besides syntactical and formatting difference, Wo also offers
+## Language Design
 
-| Functional Features                                                                                                                                                                                                                                                           |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| A native implementation of `set` and atomic `set`,<br/>as well as native support for other **collections** like stack and tree set                                                                                                                                            |
-| An optional type, which should support functional programing and error handling like [lo](https://github.com/samber/lo) and [mo](https://github.com/samber/mo)                                                                                                                |
-| Could address **null checking** somehow (e.g. `nonnil`) and pointer/value receivers,<br/> maybe taking inspiration from Rust's [result](https://doc.rust-lang.org/std/result/) or Scala's [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html) |
-| `enum`                                                                                                                                                                                                                                                                        |
-| Make slice append more predictable                                                                                                                                                                                                                                            |
-| Have tuples as an assignable type                                                                                                                                                                                                                                             |
-| Native strings, maps, and slice operations like `==` and `"".contains`                                                                                                                                                                                                        |
-| Package scope control and **visibility**                                                                                                                                                                                                                                      |
-| Run other functions besides main                                                                                                                                                                                                                                              |
+| Design                                    | Go Usage                                                                                                                                    | Wo Usage                                                                                            |
+|:------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Doesn't prefer **name shortenings**       | `f`<br/>`SprintF`                                                                                                                           | `file`<br/>`ConcatFormat`                                                                           |
+| Allows **function overloading**           | `print(string)`<br/>`printF(formatter, string)`<br/>`printOF(stdout, formatter, string)`                                                    | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`               |
+| Allows **default arguments** in functions | `print(string, stdout, fmt) {`<br/>&emsp;&emsp;`if fmt == nil {formatter = defFmt}`<br/>&emsp;&emsp;`if stdout == nil {stdout = console} }` | `print(string,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`stdout = console)` |
+
+Wo could also address **null checking** somehow (e.g. `nonnil`) and pointer/value receivers. And as for error handling, maybe take inspiration from Rust's [result](https://doc.rust-lang.org/std/result/) or Scala's [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html).
+
+## Types & Data
+
+|                                          Feature                                          |                                                            Go Method | Wo Example                                                                                                                           |
+|:-----------------------------------------------------------------------------------------:|---------------------------------------------------------------------:|--------------------------------------------------------------------------------------------------------------------------------------|
+|                                       Native `set`                                        |                        `map[int]struct{}` and/or self-implementation | `var s = set[int] { 2, 7 }; ok = s[2]; s.delete(7)`                                                                                  |
+|           Other native collections like stack, list, treeset, and their atomics           |                                                  self-implementation | `stack.pop()`, `tree.remove(n)`                                                                                                      |
+|                                        `enum` type                                        |                                               `iota` and switch case | `type E enum {A(true), B(false); b bool}`<br/>`A.b`=true, `B.name`="B", `A.pos`=0                                                    |
+| [Algebraic data types](https://github.com/golang/go/issues/57644#issuecomment-1372977273) |                                 `type A interface { int \| string }` | `type A int64 \| set[byte]`                                                                                                          |
+|              [Nested union types](https://github.com/golang/go/issues/70752)              |                                 `type A interface { int \| string }` | `type A int \| string`                                                                                                               |
+|                      Native `strings`, `maps`, and slice operations                       |                                      `strings.Contains(str, substr)` | `str.Contains(substr)`                                                                                                               |
+|                                  Optional type with `?`                                   |              `v, ok := m[k]; if ok { }`<br/>`func Get() (int, bool)` | `v int? = m[k]; v?`<br/>`v int = m[k]?`<br/>`func Get() int?`<br/>`.OrElse(v2)`, `.IsPresent()`, etc.                                |
+|                               Errable/Result type with `!`                                | `f, err := Open(n); if err == nil { }`<br/>`func Div() (int, error)` | `file *File! = Open(n); file!`<br/>`file *File = Open(n)!` (must check)<br/>`func Div() int!`<br/>`.OrElse(file2)`, `.Erred()`, etc. |
+|            [Method type parameters](https://github.com/golang/go/issues/49085)            |                                                                      |                                                                                                                                      |
+
+## Variables
+
+|                               Design                                | Go Usage                                                                        | Wo Usage                               |
+|:-------------------------------------------------------------------:|:--------------------------------------------------------------------------------|----------------------------------------|
+|   Doesn't allow **import overloading** or **keyword overloading**   | `var int int = 1`, `rune := 'W'`<br/>`import { strings }; var strings []string` | *compile error*                        |
+|                   Warns for **unused variables**                    | `func f() { x := 1 }`<br/>*compile error*                                       | *warning*                              |
+|                No accessing uninitialized variables                 | `var s string // = ""`<br/>`s += "." // s == "."`                               | `var s string`<br/>`s += "." // error` |
+|                 Assign variables with **only** `=`                  | `var e int; e, z := 8, 9; e = 7`                                                | `var e = 0; e = 7`                     |
+| `:=` for shadowing **only** and not when mixing with initialization | `h := 1; { h, m := 2, 5 }`                                                      | `var h = 1; { h := 2; var m = 5 }`     |
+|               Untyped declaration with **only** `var`               | `var a = 1`, `x := 1`                                                           | `var a = 1`<br/>                       |
+|         Initialize with type with **only** `=` and no `var`         | `var i int = 2`                                                                 | `i int = 2`                            |
+|                         No multi assignment                         | `p, q = 20, 30`                                                                 | *compile error*                        |
+
+## Language Features
+
+Features that change the functionality of the language beyond syntax and design principles.
+
+| Feature                                | Go Method                                                                             | Wo Usage                                                      |
+|:---------------------------------------|---------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| Export explicitly                      | `func Export() // apital`, `func Xแมว() // add "X"`<br/>`func private()` `func แมว()` | `func export แมว()`, `export const Kilo`<br/>`func private()` |
+| Export to the package but not globally | *none*                                                                                | `func pkg Get()`, `type pkg Bog struct`                       |
+| Make slice append more predictable     | Overrides / Resizes                                                                   | Indicates new allocs                                          |
+| Run other functions besides main       | `func main() { other() }`                                                             | `func otherMain()`                                            |
+| More liberal folder structure          | main, mod                                                                             | TODO(bran)                                                    |
 
 ### To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md).
+
+I am considering making each language features **modular**. If someone likes only the interface syntax, and that's all they want, then I could allow either compiler flags headers in the file to indicate which ones to have turned off.
+
+Wo also:
+- Still commits to a **universal formatting**.
+- Is open source and free.
+- Is a **WIP**, but will always accept change and criticism.
+- Has a **wo**mbat mascot.
+- Makes you say **"woah"**.
 
 #### See the list below for several unlikely but possible features:
 <details>
@@ -74,121 +101,16 @@ Besides syntactical and formatting difference, Wo also offers
 Potential Features...
 </summary>
 
-| Potential Features                                                                                                                                                                                    |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Remove `func`, and remove parens from the receiver like `func (C* c) f[A rune](a int) (float32, error) {}` to `C.f[rune A](int a) float32? {}`                                                        |
-| Signify errored outputs like `f() errable (int, string)` means `f() error? (int, string)?` where only one is some and the other is none                                                               |
-| Use the arrow return style in `func`s, and for function types: `var f func(func(float64) int) string` for `(float64 -> int) -> string f`                                                              |
-| Switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types like `int i`, `struct s`, `string proc(float32 f)` |
-| Don't use `type` from `type A interface {}`                                                                                                                                                           |
-| Make it more obvious that map and slice are [pointers](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it)?                                                             |
-| Allow methods to be in their struct like `struct Bug { func fly() }   func (f F*) flee() {f.fly()}` -> `struct Bug { fly()   flee() { this.fly() } }`                                                 |
-| and/or `struct (Bug* bug) { }` to allow `bug` instead of `this`                                                                                                                                       |
+| Potential Features (Unlikely to be added)                                                                                                          | Go                                                             | Wo Proposal                                                                                                            |
+|----------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| Remove `func`, and remove parens from the receiver                                                                                                 | `func (C* c) f[A rune](a int) (float32, error) {}`             | `C.f[rune A](int a) float32? {}`                                                                                       |
+| Use the arrow return style in `func`s, and for function types                                                                                      | `var f func(func(float64) int) string`                         | `(float64 -> int) -> string f`                                                                                         |
+| Switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types | `i int`                                                        | `int i`, `struct s`, `string proc(float32 f)`                                                                          |
+| Have tuples as an assignable type                                                                                                                  | `a, b; return a, b`                                            | `t; return t`                                                                                                          |
+| Don't use `type` in declarations                                                                                                                   | `type A interface {}`                                          | `interface A {}`, `struct B {}`                                                                                        |
+| Make it more obvious that map and slice are [pointers](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it)           | `map`                                                          | `*map`                                                                                                                 |
+| Allow methods to be in their struct                                                                                                                | `struct Bug { func fly() }`<br/>`func (f F*) flee() {f.fly()}` | `struct Bug { fly()`<br/>`flee() { this.fly() } }`<br/>and/or `struct (Bug* bug) { }` to allow `bug` instead of `this` |
 </details>
-
-
-
-### Code example
-
-```go
-import { "strings" }
-type FilePath interface {
-  string | url
-}
-
-type Program struct {
-  executable [...]byte
-}
-
-func (p Program*) output() string {
-  return p.executable[:strings.LastIndex(p.executable, ".exe"))
-}
-
-func (p Program*) length() int {
-  return len(p.executable)
-}
-
-func runProgram() string {
-  output, err = runProgram("/")
-  if err != nil {
-    log(err)
-  }
-  return output
-}
-
-var fs = map[FilePath]string{"/app/host": "server.ts", "/": "Main.java"}
-
-func runProgramO(dir interface{string|url}) (int, *string, error) {
-  f, ok = fs[dir]
-  if (!ok) {
-    return nil, errors.New("invalid filepath")
-  }
-
-  r, err := os.Open(f)
-  if err != nil {
-    return nil, err
-  }
-
-  defer func() {
-    if err := r.Close(); err != nil {
-      return nil, err
-    }
-  }()
-
-  if err := reader.Sync(); err != nil {
-    return nil, err
-  }
-
-  p := myCompiler.build(reader)
-
-  return p.length(), *p.outputPath(), nil
-}
-```
-a possible design for Wo:
-```go
-func runProgram(directory <string|url>) errable (int, string) { // members reversed to order by relevancy
-  if !var fileName = runnableFiles[directory] {
-    return errors.New("invalid filepath")
-  }
-  var reader = os.Open(fileName)!
-  defer reader.Close()!
-  reader.Sync()!
-  var program = myCompiler.build(reader)
-  return program.length(), program.outputPath() // converts it to some(int, string) and error as nil/none
-}
-
-runnableFiles map[FilePath]string = {"/app/host": "server.ts", "/": "Main.java"}
-
-func runProgram() string {
-  output, log(err) = runProgram("/")
-  return output
-}
-
-struct Program {
-  byte[...] executable
-  func outputPath() string {
-    return executable[:executable.LastIndex(".exe")]
-  }
-
-  func length() int {
-    len(executable)
-  }
-}
-
-interface FilePath {
-  string | url
-}
-```
-
-
-| Go                                                                                                                                                                                     | Wo with types before name                                                                                                                                                |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <pre>var fs = map[FilePath]string</pre>                                                                                                                                                | <pre>map[FilePath, string] runnableFiles</pre>                                                                                                                           |
-| <pre>func runProgramO(dir interface{string:url})</pre>                                                                                                                                 | <pre>runProgram(<string:url> directory)</pre>                                                                                                                            |
-| <pre>&emsp;f, ok = fs[dir]<br>&emsp;if (!ok) {<br>&emsp;&emsp;return nil, errors.New("invalid filepath")<br>&emsp;}</pre>                                                              | <pre>&emsp;fileName, if(!ok) = runnableFiles[directory] {<br>&emsp;&emsp;throw error("invalid filepath")<br>&emsp;}<br><br></pre>                                        |
-| <pre>&emsp;r, err := os.Open(f)<br>&emsp;if err != nil {<br>&emsp;&emsp;return nil, err`<br>&emsp;}                                                                                    | <pre>&emsp;*File reader = os.Open!(fileName)<br><br><br><br></pre>                                                                                                       |
-| <pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>                                    | <pre>&emsp;defer reader.Close!()<br><br><br><br><br></pre>                                                                                                               |
-| <pre>type Program struct {<br>&emsp;executable [...]byte<br>}<br>func (p Program*) output() string {<br>&emsp;return p.executable[:strings.LastIndex(p.executable, ".exe"))<br>}</pre> | <pre>struct Program {<br>&emsp;byte[...] executable<br>&emsp;string outputPath() {<br>&emsp;&emsp;return executable[:executable.LastIndex(".exe")]<br>&emsp;}<br>}</pre> |
 
 ### How to install
 
@@ -198,7 +120,7 @@ You can install it by building it from this source checked out from the right ve
 
 ## Trademark disclaimer
 
-All activity here should follow all of Go's guidelines at https://go.dev/brand/. If they inform me that anything violates it, then I will quickly comply. It is also preferable to follow https://go.dev/conduct
+All activity here should follow all of Go's guidelines at https://go.dev/brand/. If they inform me that anything violates it, then I will quickly comply. It is also preferable to follow https://go.dev/conduct.
 
 Do not refer to Wo as anything other than "a fork of Go" at least not in any way that could disparage the Go programming language.
 > Unauthorized Naming Conventions: Naming Conventions that disparage the Go programming language, if not permitted as fair use, are unauthorized.

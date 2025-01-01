@@ -92,7 +92,7 @@ current commit syntax attempt to add:
 
 recognizes `->` - fails bc doesn't belong anywhere
 
-`hashset`
+`set`
 
 after adding/removing any fundamental types, you have to run
 
@@ -124,15 +124,14 @@ it is within that file.
 According to my current specifications,
 
 I want to add these tokens:
-`set`, `some`, `none`, `->`.
-maybe `enum`, `union`.
+`set`, `some()`, `none`, `->`,
+`enum`, `export`.
 
 and modify the meaning of:
-`:`, `!`, `<`, `>`, `:=`
-maybe `?`.
+`:`, `!`, `<`, `>`, `:=`, `var`, `?`.
 
 and possibly remove (ignore):
-`iota`, `range`, `any`
+`iota`, `range`, `any`.
 
 however, I would actually keep these as tokens, as it should compile in both Go and Wo, and they share the same type specifications.
 This would also better allow errors like "Wo doesn't use the range syntax, try : " for example.

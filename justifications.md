@@ -19,11 +19,17 @@ In here, I give explain, argue for, and document Wo's design decisions. Maybe it
 
 When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language is based on C so it's fast.
 
-A similar situation was Scala's improvements over Java. It clearly improved the syntax and design, especially with pattern matching, and, importantly, interoped with Java. This goes even deeper than that by modifying the same compiler.
+A similar situation was Scala over Java. It clearly improved the syntax and design, especially with pattern matching,
+and, importantly, interoped with Java. This project goes deeper than that by modifying the same compiler.
 
 I have not seen anything in the programming language landscape like that - a direct child of Go that addresses its design.
 
 And let it be known, the internet is full of needless speculation as to "why Go did this and not that?", so I'll also make this transparent and be skeptical of any justification that people give to Go, instead prioritizing the objective best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
+
+Additionally, the entire band of questions like "wasn't it designed for bad programmers?" are almost entirely 
+irrelevent here. Whataboutisms like that which lead one astray from the real goals of programming language design are 
+not the main topic here. Tip: it's a fallacy because something is what it is whether someone intended for it to be 
+something or not.
 
 Ultimately, certain improvements can be more valuable in different circumstances, while it doesn't matter in others. For example, I had a Java program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) into Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
 
@@ -45,6 +51,16 @@ I believe that adding comments is to compensate for code that doesn't communicat
 It's our job to pay attention to details, but let's still make it as easy on ourselves as possible.
 
 The current state of Go's compiler forces you to be vague, and their style designs recommend using vague variable and function names. This isn't exactly a criticism, but just a description of how Go appears to me.
+
+Boilerplate actually is good by the way, but only when it is holding up to our regular standards: readable, giving intent, functional, etc. It's stupid to make 5 functions with a string inside different rather than making it a parameter. However, code isn't meant to just be run, it's meant to be used and edited - the code base grows, and it grows off of the previously placed boilerplate in occasionally unpredictable directions.
+
+the `if err != nil {}` pattern doesn't really satisfy that description.
+
+Boilerplate actually is good by the way, but only when it holds up to our regular code standards: readable, giving intent, functional, etc. It's stupid to make 5 functions with a single string inside different rather than just making it a parameter. However, code isn't meant to be just run, it's meant to be used and edited - the code base grows, and it grows off of the previously placed boilerplate in occasionally unpredictable directions. It also serves to not overly compress useful language.
+
+The `if err != nil {}` pattern doesn't really satisfy that description of a useful boilerplate above.
+
+A Similar thing is true with `set`s. You will very rarely need a modified implementation, so it should be a standard. How many times have you had to create your own set implementation when it wasn't for a data structures class or for fun?
 
 ### Why modularity
 
@@ -70,6 +86,10 @@ For example, Learning Go 2nd edition says:
 
 This is backwards logic to me from the compiler's perspective. It shouldn't allow you to do something that you shouldn't do.
 
+### Unpredictible usage
+
+I want to eliminate "memorized info". We should learn what `.` and `if` mean, but some things are completely arbitrary given the context. It's not obvious that `map`s and slices are pointers, it's not obvious what zero values are, and there is unexpected slice appending behavior. These situations should be intuitive based on their appearance, otherwise `slice` should return extra information about what has happened for example.
+
 ### Go's design reasons
 
 When people try to answer this online, like on Stack Overflow, there are a mix of reasons provided for the language decisions with Go, with a mixed supposed underlying principle behind these. On Go's FAQ however, it's quite more straight forward, though, and it's useful here.
@@ -89,7 +109,7 @@ Besides the obvious reasons of "having a good feature that lets you program", [t
   1. Was fine in practice
   2. To replace a prevented feature
 
-They don't go too far into depth on what exactly makes something readable or not, but I'm going to painstakingly analyze it for each featre.
+They don't go too far into depth on what exactly makes something readable or not, but I'm going to painstakingly analyze it for each feature.
 
 ## Conventions
 
@@ -131,15 +151,23 @@ tree.leftBranch().cut()
 
 `tree` is vague to a certain level, as I could be referring to a literal tree or a programmatic tree, but `t` has much less meaning.
 
-Go code is exactly that situation of searching for the meaning of shortened names over and over again.
+Working with Go code is that same situation of searching for the meaning of shortened names over again.
+
+Do removing characters improve readability and adding characters impede readability? Readability means **the ability to read**, which requires the existence of text to read. Cutting off the text makes it har
+
+Get it?
+
+You sacrificed about 5 characters, for what? But, then it suggests we do lengthen the code with `err != nil` instead of `!`. Do you see the double standard? I'm not even saying err check happens a lot, but even if it happens a few times, why not shorten it to a single character (just like with what is done with variables)
 
 The two principles of using more lines in code along with shortening variable names contradict each other.
+
+But there is a distinction here.
 
 Code either extends vertically (less functional abstraction) or horizontally (more function calls, longer names). Shortening names and using loads of null checking both go in the direction of vertical. Please, take your hand off the scroll wheel (or the `hjkl`). In between these two directions is a more square shaped code. And the other extreme typically happens with nested function calling, like some overly clever and lengthy Java streams solution.
 
 ![Image of 3 code editors of code that's tall, square, and wide](https://raw.githubusercontent.com/wo-language/wo-info/refs/heads/main/wo%20resources/code_rectangles_whiteborder.png)
 
-As you can see, the first code editor has 8 lines and reaches the first line, then compressed to 6 lines and reaches the second line, then to just 4 lines. I tried to make them each have the exact same volume of "code".
+As you can see, the first code editor has 8 lines and reaches the first line, then compressed to 6 lines and reaches the second line, then to just 4 lines. I tried to make them each have the exact same "volume" of code.
 
 I find shortened variable names and repeated 3-4 line checking less readable, so I chose to make Wo more towards the square.
 
@@ -147,7 +175,7 @@ There is one situation where shortened variable names might be acceptable, which
 
 In the same realm is shadowing and keyword overloading, which I go into later.
 
-This abbreviation system and forcing functions to not have the same name is ironically avoided by importing from a package, which is basically the same thing as lengthening a function name anyway except with an extra `.`.
+This abbreviation system and forcing functions to not have the same name is ironically avoided by importing from a package, which is basically the same thing as lengthening a function name anyway except with an extra `.`, like `stringsContains() -> strings.Contains()`.
 
 ### Renaming package methods
 
@@ -198,7 +226,7 @@ By the way, I dream of a language where all the reserved words have some symbol,
 
 ### Overloading reserved words
 
-I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, but I simply don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is totally confusing. Enough said.
+I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, but I simply don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is confusing. Enough said.
 
 ## Syntax Features
 
@@ -240,6 +268,10 @@ func main() {
 
 Wo simply allows this. It will become a warning and compiled away. The reason Go doesn't do this is probably because of how it optimizes variables. It does allow unused `const` for the same reason, since those are easier to optimize. However, it is not otherwise impossible to optimize unused variables away.
 
+### Union
+
+| ["Sum" type with `union`](https://github.com/golang/go/issues/19412) | `interface { \| }` and switch case | `type U 
+union {int \| string}`                                                                                                      
 ### For range
 
 The default `for range` syntax is
@@ -279,27 +311,19 @@ Go offers these styles of declarations:
 //z := 1 // not possible at package level
 func declares() {
  var a int = 1
- b int := 1 // not possible
  var c = 1
  d := 1
  var e int
- f int // not possible (unlike C style int f;)
- var X // not possible
  var (
      // all the same things it could already do
  )
  var m, n int = 1, 2
- o, p int := 1, 2 // not possible
  var q, r = 1, 2
  s, t := 1, 2
  var u, v int
- w, x int // not possible
  
- // note: e was already declared (we wouldn't need this note if shadowing were more explicit)
- e := 2       // not possible
  e = 2        // possible, just assigns
  e, y := 2, 3 // possible
- e, _ := 2, 3 // not possible
  if d == 1 {
      d := 2   // possible
      m, n := 3, 4 // possible
@@ -307,6 +331,16 @@ func declares() {
  // at this point,
  // d == 1
  // m, n == 1, 2 
+ 
+ // note: e was already declared (we wouldn't need this note if shadowing were more explicit)
+ e := 2       // not possible
+ e, _ := 2, 3 // not possible
+ 
+ b int := 1 // not possible
+ f int // not possible (unlike C style int f;)
+ var X // not possible
+o, p int := 1, 2 // not possible
+w, x int // not possible
  
  fmt.Println(a, b, ... x, y) // haha
 }
@@ -373,25 +407,26 @@ const  ? ! R ! ! #
 names  R R R R R R
 types  R ! ! ! ! R
   =    R R R R ! R
-values R R R R R R
+values R R R R R ?
 
 var    ! R ! ! ! R
 (...)  ! ! ! ! ! R
 
   :=   ! ! ! ! R !
 shadow ! ! ! ! R !
-count  2 1 1 1 1 2
+count  2 1 1 1 1 3
 ```
 
 I made const like a prefix, required the type, only allow var for multi line and untyped decl, allow everything in or out of the package, and actually added more specification than before by requiring `:=` for shadowing.
 
-This is 6 possibilities without including `(...)` as before, but 8 otherwise, which takes the original 9, removes 2 redundant ones, then adds 2 restrictive one. It adds conditions so there are not multiple ways to do the same task. Only one assignment, only one const declaration, only one shadow, etc., but does not merge untyped declaration.
+This is 7 possibilities without including `(...)` as before, but 8 otherwise, which takes the original 9, removes 5 redundant ones, then adds 3 restrictive one. It adds conditions so there are not multiple ways to do the same task. Only one assignment, only one const declaration, only one shadow, etc., but does not merge untyped declaration.
 
 Here's every possibility in Wo according to that grid:
 
 ```go
 x int = 8
 a var = 8
+var e int // = undefined, not = 0. can't be const
 y const int = 9 // maybe: const y int = 9
 b const = y // maybe: b const var = y
 x = b
@@ -651,12 +686,12 @@ x.equals(y)
 ```
 vs
 ```go
-x == y
+x === y
 ```
 
-## Functional Features
+These could be stored in a `comparisons` or `arrays` package?
 
-(I don't mean functional programming)
+## Language features
 
 ### set
 
@@ -719,7 +754,7 @@ For arrays and slices, I say either keep [ ]arr with map[A, B], or just don't ma
 
 ### Map[K, V]
 
-I understand `map[key]value` is supposed to reflect the `func(input) val` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
+I think `map[key]value` is supposed to reflect the `func(input) val` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
 
 I think this is too disruptive and unnecessary of a change as shown in the previous section, so I'll keep `map[key]value`
 
@@ -751,6 +786,8 @@ type Option2[T any] struct {
 ```
 
 Option1 can't do type assertion or type switch, requiring some kind of handler like `errors.Is`. It can do `some` / `none` pattern matching easier. Option2 can do field embedding, which is pretty important to errors, but it could probably still work with some native implementation details. It also aligns more with the idea of returning structs, however that principle is not as strong for the case of this interface.
+
+It should support functional programing and error handling like [lo](https://github.com/samber/lo) and [mo](https://github.com/samber/mo)
 
 ### Meaning of "Null"
 
@@ -998,6 +1035,13 @@ Another aspect of error handling is extending them.
 > 
 Learning Go 2nd
 
+---
+
+Also, for interoperability, a Wo file can interpret a Go-sourced import such as `func GoGet() (int, bool)` as `func GoGet() Option[int]` where `Option[T]` is just `<T, bool>`, but not within that Wo file. So you must explicitly use the type in the return signature in Wo code like `func WoFunc() T?` to reserve `(T, bool)`.
+
+And the same thing is true for Errable too: `func GoDiv() (int, error)` can be interpreted as `func GoDiv() Errable[int]` where Errable is just `<T, error>`. It should be written like `func arcsin() float!` in Wo code.
+
+And finally Go files compiled with the Wo compiler will interpret these in reverse from a Wo file as how Go typically does it, however it can share the same underlying `Option` and `Errable` types.
 
 
 ### ok
@@ -1022,17 +1066,32 @@ In other languages, `?` is a way of unwrapping, so it could be confusing to use 
 
 I could also mirror errors with `func h() T!`, but they shouldn't be stacked with each other like `func j() T?!` since the `ok` pattern is like a softer version of an error. Errors imply existence of the values as do `ok`s, just without the implication of an error happening.
 
+### import compatibility
+
+To support interoperability with Go files, restricted function names in Wo should still be allowed in Go, but also 
+importable in some way. If one is importing a function called `set`, I don't think this collides with the `set` type,
+but it would still be odd if someone made a `func map()`, so it'll have to be imported in a special way:
+
+`$set` is an option.
+
+### export
+
+
 
 ### Enum
 
 This is how it is replicated in Go:
 
 ```go
-const {
+const (
   Sunday = 1 + iota
   Monday
-}
+)
 
+const (
+  Sunday = "Sunday"
+  Monday = "Monday"
+)
 func root(day int) string {
   switch day {
     case Sunday:
@@ -1047,16 +1106,16 @@ func root(day int) string {
 func working(day int) bool {
   switch day {
     case Sunday:
-      return true
-    case Monday:
       return false
+    case Monday:
+      return true
     default:
       panic("not a day of the week")
   }
 }
 
-func test() (int, string, bool) {
-  return Sunday, root(Monday), working(Sunday)
+func test() (string, int, string, bool) {
+  return Monday, Sunday, root(Monday), working(Sunday)
 }
 ```
 
@@ -1072,11 +1131,11 @@ type Day enum {
 }
 
 (day Day) func val() {
-  return 1 + day.position // 1 + iota
+  return 1 + day.pos // 1 + iota
 }
 
-func test() (int, string, bool) {
- return Sunday.val(), Monday.root, Sunday.working
+func test() (string, int, string, bool) {
+ return Monday.name, Sunday.val(), Monday.root, Sunday.working
 }
 ```
 
@@ -1092,3 +1151,106 @@ It's not really a laughing matter at that point, programs should be able to repr
 > Type conversions between slices and array pointers can fail at runtime and don’t support the comma ok idiom, so be careful when using them!
 > 
 > Learning Go
+## Code example
+
+### Go
+
+```go
+import { "strings" }
+type FilePath interface {
+  string | url
+}
+
+type Program struct {
+  executable [...]byte
+}
+
+func (p Program*) output() string {
+  return p.executable[:strings.LastIndex(p.executable, ".exe"))
+}
+
+func (p Program*) length() int {
+  return len(p.executable)
+}
+
+func runProgram() string {
+  output, err = runProgram("/")
+  if err != nil {
+    log(err)
+  }
+  return output
+}
+
+var fs = map[FilePath]string{"/app/host": "server.ts", "/": "Main.java"}
+
+func runProgramO(dir interface{string|url}) (int, *string, error) {
+  f, ok = fs[dir]
+  if (!ok) {
+    return nil, errors.New("invalid filepath")
+  }
+
+  r, err := os.Open(f)
+  if err != nil {
+    return nil, err
+  }
+
+  defer func() {
+    if err := r.Close(); err != nil {
+      return nil, err
+    }
+  }()
+
+  if err := reader.Sync(); err != nil {
+    return nil, err
+  }
+
+  p := myCompiler.build(reader)
+
+  return p.length(), *p.outputPath(), nil
+}
+```
+### A possible design for Wo
+```go
+func runProgram(directory <string|url>) (int, string)! { // members reversed to order by relevancy
+  if !var fileName = runnableFiles[directory] {
+    return errors.New("invalid filepath")
+  }
+  var reader = os.Open(fileName)!
+  defer reader.Close()!
+  reader.Sync()!
+  var program = myCompiler.build(reader)
+  return program.length(), program.outputPath() // converts it to some(int, string) and error as nil/none
+}
+
+runnableFiles map[FilePath]string = {"/app/host": "server.ts", "/": "Main.java"}
+
+func runProgram() string {
+  output, log(err) = runProgram("/")
+  return output
+}
+
+struct Program {
+  byte[...] executable
+  func outputPath() string {
+    return executable[:executable.LastIndex(".exe")]
+  }
+
+  func length() int {
+    len(executable)
+  }
+}
+
+interface FilePath {
+  string | url
+}
+```
+
+
+| Go                                                                                                                                                                                     | Wo with types before name                                                                                                                                                |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <pre>var fs = map[FilePath]string</pre>                                                                                                                                                | <pre>map[FilePath, string] runnableFiles</pre>                                                                                                                           |
+| <pre>func runProgramO(dir interface{string:url})</pre>                                                                                                                                 | <pre>runProgram(<string:url> directory)</pre>                                                                                                                            |
+| <pre>&emsp;f, ok = fs[dir]<br>&emsp;if (!ok) {<br>&emsp;&emsp;return nil, errors.New("invalid filepath")<br>&emsp;}</pre>                                                              | <pre>&emsp;fileName, if(!ok) = runnableFiles[directory] {<br>&emsp;&emsp;throw error("invalid filepath")<br>&emsp;}<br><br></pre>                                        |
+| <pre>&emsp;r, err := os.Open(f)<br>&emsp;if err != nil {<br>&emsp;&emsp;return nil, err<br>&emsp;}                                                                                     | <pre>&emsp;*File reader = os.Open(fileName)!<br><br><br><br></pre>                                                                                                       |
+| <pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>                                    | <pre>&emsp;defer reader.Close()!<br><br><br><br><br></pre>                                                                                                               |
+| <pre>type Program struct {<br>&emsp;executable [...]byte<br>}<br>func (p Program*) output() string {<br>&emsp;return p.executable[:strings.LastIndex(p.executable, ".exe"))<br>}</pre> | <pre>struct Program {<br>&emsp;byte[...] executable<br>&emsp;string outputPath() {<br>&emsp;&emsp;return executable[:executable.LastIndex(".exe")]<br>&emsp;}<br>}</pre> |
