@@ -160,7 +160,7 @@ var kindNames = []string{
 	Func:          "func",
 	Interface:     "interface",
 	Map:           "map",
-	Set:           "hashset",
+	Set:           "set", // woset I think this is visual sided
 	Pointer:       "ptr",
 	Slice:         "slice",
 	String:        "string",

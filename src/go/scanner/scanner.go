@@ -134,7 +134,7 @@ func (s *Scanner) Init(file *token.File, src []byte, err ErrorHandler, mode Mode
 	s.dir, _ = filepath.Split(file.Name())
 	s.src = src
 	s.err = err
-	s.wo = false
+	s.wo = file.IsWo()
 	s.mode = mode
 
 	s.ch = ' '
@@ -815,7 +815,7 @@ scanAgain:
 		lit = s.scanIdentifier()
 		if len(lit) > 1 {
 			// keywords are longer than one letter - avoid lookup otherwise
-			tok = token.Lookup(lit)
+			tok = token.LookupWo(lit, s.IsWo())
 			switch tok {
 			case token.IDENT, token.BREAK, token.CONTINUE, token.FALLTHROUGH, token.RETURN:
 				insertSemi = true

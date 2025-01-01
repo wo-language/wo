@@ -81,22 +81,14 @@ relevant files structure:
 data graph:
 
 hset <- value
+hset, reflect.type.Set <- reflectdata
+
 abi.SetType <- settype, reflect.setType <- value <- rrtype
 abi.Type <- reflect.rtype
-hset, reflect.type.Set <- reflectdata
-TSET <- range
 SetType <- alg
+TSET <- range
 
 OMAKESET
-
-
-
-
-
-
-
-
-
 
 
 

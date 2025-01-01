@@ -1066,7 +1066,7 @@ func (p *Package) hasPointer(f *File, t ast.Expr, top bool) bool {
 			return true
 		}
 		return p.hasPointer(f, t.X, false)
-	case *ast.FuncType, *ast.InterfaceType, *ast.MapType, *ast.ChanType:
+	case *ast.FuncType, *ast.InterfaceType, *ast.MapType, *ast.SetType, *ast.ChanType:
 		return true
 	case *ast.Ident:
 		// TODO: Handle types defined within function.
@@ -1385,7 +1385,7 @@ func (p *Package) isType(t ast.Expr) bool {
 	case *ast.StarExpr:
 		return p.isType(t.X)
 	case *ast.ArrayType, *ast.StructType, *ast.FuncType, *ast.InterfaceType,
-		*ast.MapType, *ast.ChanType:
+		*ast.MapType, *ast.SetType, *ast.ChanType:
 
 		return true
 	}
@@ -3061,7 +3061,7 @@ func (c *typeConv) Struct(dt *dwarf.StructType, pos token.Pos) (expr *ast.Struct
 
 	if !*godefs {
 		for cid, goid := range ident {
-			if token.Lookup(goid).IsKeyword() {
+			if token.LookupWo(goid, false).IsKeyword() { // TODO(bran) C conversion?
 				// Avoid keyword
 				goid = "_" + goid
 

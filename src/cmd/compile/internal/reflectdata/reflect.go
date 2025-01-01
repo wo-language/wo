@@ -993,7 +993,7 @@ func needkeyupdate(t *types.Type, isSet bool) bool {
 	default:
 		var keyHolder string
 		if isSet {
-			keyHolder = "hashset"
+			keyHolder = "set" // woset
 		} else {
 			keyHolder = "map"
 		}

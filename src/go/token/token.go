@@ -221,9 +221,9 @@ var tokens = [...]string{
 	IF:     "if",
 	IMPORT: "import",
 
-	INTERFACE: "tie",
+	INTERFACE: "interface",
 	MAP:       "map",
-	SET:       "hashset",
+	SET:       "set", // woset
 	PACKAGE:   "package",
 	RANGE:     "range",
 	RETURN:    "return",
@@ -285,6 +285,9 @@ func (op Token) Precedence() int {
 
 var keywords map[string]Token
 
+var woKeywords = map[Token]struct{}{RARROW: {}, SET: {}} // excluded from Go TODO(bran) feature dependent
+var goKeywords = map[Token]struct{}{RANGE: {}}           // excluded from Wo
+
 func init() {
 	keywords = make(map[string]Token, keyword_end-(keyword_beg+1))
 	for i := keyword_beg + 1; i < keyword_end; i++ {
@@ -294,7 +297,27 @@ func init() {
 
 // Lookup maps an identifier to its keyword token or [IDENT] (if not a keyword).
 func Lookup(ident string) Token {
-	if tok, is_keyword := keywords[ident]; is_keyword {
+	//os.Getenv("WOFILE") // TODO(bran) should put this in env?
+	return LookupWo(ident, false)
+	//if tok, is_keyword := keywords[ident]; is_keyword {
+	//	return tok
+	//}
+	//return IDENT
+}
+
+// LookupWo maps an identifier to its keyword token or [IDENT] (if not a keyword) by its respective file kind.
+func LookupWo(ident string, isWo bool) Token { // TODO(bran) wasn't updated in external tools
+	tok, is_keyword := keywords[ident] // includes both go and wo keywords
+	if isWo {
+		if _, ok := goKeywords[tok]; ok {
+			return IDENT
+		}
+	} else {
+		if _, ok := woKeywords[tok]; ok {
+			return IDENT
+		}
+	}
+	if is_keyword {
 		return tok
 	}
 	return IDENT

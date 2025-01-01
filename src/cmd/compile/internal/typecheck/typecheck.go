@@ -122,7 +122,7 @@ var _typekind = []string{
 	types.TINTER:      "interface",
 	types.TCHAN:       "chan",
 	types.TMAP:        "map",
-	types.TSET:        "hashset",
+	types.TSET:        "set", // woset TODO(bran) is this checked on, or just visual?
 	types.TARRAY:      "array",
 	types.TSLICE:      "slice",
 	types.TFUNC:       "func",
