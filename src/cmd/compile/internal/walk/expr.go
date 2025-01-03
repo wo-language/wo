@@ -295,13 +295,13 @@ func walkExpr1(n ir.Node, init *ir.Nodes) ir.Node {
 		n := n.(*ir.MakeExpr)
 		return walkMakeChan(n, init)
 
-	case ir.OMAKESET:
-		n := n.(*ir.MakeExpr)
-		return walkMakeSet(n, init)
-
 	case ir.OMAKEMAP:
 		n := n.(*ir.MakeExpr)
 		return walkMakeMap(n, init)
+
+	case ir.OMAKESET:
+		n := n.(*ir.MakeExpr)
+		return walkMakeSet(n, init)
 
 	case ir.OMAKESLICE:
 		n := n.(*ir.MakeExpr)
@@ -813,6 +813,36 @@ func mapKeyArg(fast int, n, key ir.Node, assigned bool) ir.Node {
 		// fast version takes key by value.
 		return key
 	}
+}
+
+// walkIndexSet walks an OINDEXSET node.
+// It replaces m[k] with *map{access1,assign}(setype, m, &k)
+func walkIndexSet(n *ir.IndexExpr, init *ir.Nodes) ir.Node { // TODO(bran) to impl
+	n.X = walkExpr(n.X, init)
+	n.Index = walkExpr(n.Index, init)
+	map_ := n.X
+	t := map_.Type()
+	fast := mapfast(t)
+	key := mapKeyArg(fast, n, n.Index, n.Assigned)
+	args := []ir.Node{reflectdata.IndexMapRType(base.Pos, n), map_, key}
+
+	var mapFn ir.Node
+	switch {
+	case n.Assigned:
+		mapFn = mapfn(mapassign[fast], t, false)
+	case t.Elem().Size() > abi.ZeroValSize:
+		args = append(args, reflectdata.ZeroAddr(t.Elem().Size()))
+		mapFn = mapfn("mapaccess1_fat", t, true)
+	default:
+		mapFn = mapfn(mapaccess1[fast], t, false)
+	}
+	call := mkcall1(mapFn, nil, init, args...)
+	call.SetType(types.NewPtr(t.Elem()))
+	call.MarkNonNil() // mapaccess1* and mapassign always return non-nil pointers.
+	star := ir.NewStarExpr(base.Pos, call)
+	star.SetType(t.Elem())
+	star.SetTypecheck(1)
+	return star
 }
 
 // walkIndexMap walks an OINDEXMAP node.

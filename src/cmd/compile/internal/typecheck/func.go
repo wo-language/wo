@@ -591,6 +591,26 @@ func tcMake(n *ir.CallExpr) ir.Node {
 		nn = ir.NewMakeExpr(n.Pos(), ir.OMAKEMAP, l, nil)
 		nn.SetEsc(n.Esc())
 
+	case types.TSET:
+		if i < len(args) { // TODO(bran) analyze how this works
+			l = args[i]
+			i++
+			l = Expr(l)
+			l = DefaultLit(l, types.Types[types.TINT])
+			if l.Type() == nil {
+				n.SetType(nil)
+				return n
+			}
+			if !checkmake(t, "size", &l) {
+				n.SetType(nil)
+				return n
+			}
+		} else {
+			l = ir.NewInt(base.Pos, 0)
+		}
+		nn = ir.NewMakeExpr(n.Pos(), ir.OMAKESET, l, nil)
+		nn.SetEsc(n.Esc())
+
 	case types.TCHAN:
 		l = nil
 		if i < len(args) {

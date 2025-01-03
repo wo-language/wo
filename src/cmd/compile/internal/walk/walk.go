@@ -142,7 +142,7 @@ func chanfn(name string, n int, t *types.Type) ir.Node {
 	return nil
 }
 
-func mapfn(name string, t *types.Type, isfat bool) ir.Node {
+func mapfn(name string, t *types.Type, isfat bool) ir.Node { // TODO(bran) setfn
 	if !t.IsMap() {
 		base.Fatalf("mapfn %v", t)
 	}

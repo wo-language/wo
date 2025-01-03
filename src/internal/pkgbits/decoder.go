@@ -262,7 +262,7 @@ func readUvarint(r *strings.Reader) (uint64, error) {
 		b, err := r.ReadByte()
 		if err != nil {
 			if i > 0 && err == io.EOF {
-				err = io.ErrUnexpectedEOF
+				err = io.ErrUnexpectedEOF // could be for other reasons
 			}
 			return x, err
 		}

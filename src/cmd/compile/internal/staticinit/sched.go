@@ -870,7 +870,7 @@ func isSideEffect(n ir.Node) bool {
 
 	// Only possible side effect is panic on invalid size,
 	// but many makechan and makemap use size zero, which is definitely OK.
-	case ir.OMAKECHAN, ir.OMAKEMAP:
+	case ir.OMAKECHAN, ir.OMAKEMAP, ir.OMAKESET:
 		n := n.(*ir.MakeExpr)
 		if !ir.IsConst(n.Len, constant.Int) || constant.Sign(n.Len.Val()) != 0 {
 			return true
@@ -948,6 +948,7 @@ func canRepeat(n ir.Node) bool {
 		switch n.Op() {
 		case ir.OMAKECHAN,
 			ir.OMAKEMAP,
+			ir.OMAKESET,
 			ir.OMAKESLICE,
 			ir.OMAKESLICECOPY,
 			ir.OMAPLIT,

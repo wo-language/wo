@@ -788,10 +788,10 @@ func SubstAny(t *Type, types *[]*Type) *Type {
 		}
 
 	case TSET:
-		key := SubstAny(t.Elem(), types)
-		if key != t.Elem() {
+		elem := SubstAny(t.Elem(), types)
+		if elem != t.Elem() {
 			t = t.copy()
-			t.extra.(*Set).Elem = key
+			t.extra.(*Set).Elem = elem
 		}
 
 	case TFUNC:
@@ -1242,10 +1242,7 @@ func (t *Type) cmp(x *Type) Cmp {
 		}
 		return t.Elem().cmp(x.Elem())
 
-	case TSET:
-		return t.Elem().cmp(x.Elem())
-
-	case TPTR, TSLICE:
+	case TSET, TPTR, TSLICE:
 		// No special cases for these, they are handled
 		// by the general code after the switch.
 
@@ -1345,7 +1342,7 @@ func (t *Type) cmp(x *Type) Cmp {
 		panic(e)
 	}
 
-	// Common element type comparison for TARRAY, TCHAN, TPTR, and TSLICE.
+	// Common element type comparison for TARRAY, TSET, TCHAN, TPTR, and TSLICE.
 	return t.Elem().cmp(x.Elem())
 }
 

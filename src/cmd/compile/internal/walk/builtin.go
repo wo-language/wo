@@ -471,7 +471,7 @@ func walkMakeSet(n *ir.MakeExpr, init *ir.Nodes) ir.Node {
 		}
 		// Call runtime.makehset to allocate an
 		// hset on the heap and initialize hset's hash0 field.
-		fn := typecheck.LookupRuntime("makeset_small", t.Key(), t.Elem())
+		fn := typecheck.LookupRuntime("makeset_small", t.Elem())
 		return mkcall1(fn, n.Type(), init)
 	}
 
@@ -497,7 +497,7 @@ func walkMakeSet(n *ir.MakeExpr, init *ir.Nodes) ir.Node {
 		argtype = types.Types[types.TINT]
 	}
 
-	fn := typecheck.LookupRuntime(fnname, hsetType, t.Key(), t.Elem())
+	fn := typecheck.LookupRuntime(fnname, hsetType, t.Elem())
 	return mkcall1(fn, n.Type(), init, reflectdata.MakeMapRType(base.Pos, n), typecheck.Conv(hint, argtype), h)
 }
 

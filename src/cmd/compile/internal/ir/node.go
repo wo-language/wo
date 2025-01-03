@@ -102,8 +102,9 @@ func TakeInit(n Node) Nodes {
 	return init
 }
 
+// TODO(bran) must gen STRINGER after adding the nodes
+//
 //go:generate stringer -type=Op -trimprefix=O node.go
-
 type Op uint8
 
 // Node ops.
@@ -163,6 +164,7 @@ const (
 	OCLOSURE   // func Type { Func.Closure.Body } (func literal)
 	OCOMPLIT   // Type{List} (composite literal, not yet lowered to specific form)
 	OMAPLIT    // Type{List} (composite literal, Type is map)
+	OSETLIT    // Type{List} (composite literal, Type is set)  // TODO(bran) impl must gen STRINGER after adding the nodes
 	OSTRUCTLIT // Type{List} (composite literal, Type is struct)
 	OARRAYLIT  // Type{List} (composite literal, Type is array)
 	OSLICELIT  // Type{List} (composite literal, Type is slice), Len is slice length.
@@ -174,32 +176,66 @@ const (
 	ODCL       // var X (declares X of type X.Type)
 
 	// Used during parsing but don't last.
-	ODCLFUNC // func f() or func (r) f()
+	ODCLFUNC // func f() or func (r) f() // TODO(bran) export
 
-	ODELETE        // delete(Args)
-	ODOT           // X.Sel (X is of struct type)
-	ODOTPTR        // X.Sel (X is of pointer to struct type)
-	ODOTMETH       // X.Sel (X is non-interface, Sel is method name)
-	ODOTINTER      // X.Sel (X is interface, Sel is method name)
-	OXDOT          // X.Sel (before rewrite to one of the preceding)
-	ODOTTYPE       // X.Ntype or X.Type (.Ntype during parsing, .Type once resolved); after walk, Itab contains address of interface type descriptor and Itab.X contains address of concrete type descriptor
-	ODOTTYPE2      // X.Ntype or X.Type (.Ntype during parsing, .Type once resolved; on rhs of OAS2DOTTYPE); after walk, Itab contains address of interface type descriptor
-	OEQ            // X == Y
-	ONE            // X != Y
-	OLT            // X < Y
-	OLE            // X <= Y
-	OGE            // X >= Y
-	OGT            // X > Y
-	ODEREF         // *X
+	ODELETE   // delete(Args)
+	ODOT      // X.Sel (X is of struct type)
+	ODOTPTR   // X.Sel (X is of pointer to struct type)
+	ODOTMETH  // X.Sel (X is non-interface, Sel is method name)
+	ODOTINTER // X.Sel (X is interface, Sel is method name)
+	OXDOT     // X.Sel (before rewrite to one of the preceding)
+	ODOTTYPE  // X.Ntype or X.Type (.Ntype during parsing, .Type once resolved); after walk, Itab contains address of interface type descriptor and Itab.X contains address of concrete type descriptor
+	ODOTTYPE2 // X.Ntype or X.Type (.Ntype during parsing, .Type once resolved; on rhs of OAS2DOTTYPE); after walk, Itab contains address of interface type descriptor
+	OEQ       // X == Y
+	ONE       // X != Y
+	OLT       // X < Y
+	OLE       // X <= Y
+	OGE       // X >= Y
+	OGT       // X > Y
+	ODEREF    // *X
+	/*
+		   		OSOME               // some(X)
+		   		ONONE               // none
+		   		OENHANCEDFOR	    // for Key, Value : X { Body } variant of ORANGE
+		   		OUNWRAP				// X?
+		   		OOPTION	            // X.Type?
+		   		OUNWRAPERR          // X!
+		   		OERRABLE	        // X.Type!
+		   		OARROWCLOSURE       // Type -> { Func.Closure.Body } variant of OCLOSURE
+		   		ODCLFUNC 			// export? (r)? func f() - modification
+		   		OENUMLIT            // Type(List) (composite literal, Type is enum) - done in enum decl
+		   		ODCLSHADOW			// X; X := Y
+		   		OINTERFACETAGS      // <Type{List}>
+		   		ODEFAULTFIELD       // X=Y X.Type
+		   		OTERNARY			// if X then Y else Z
+		   	var file, log("Error:", err)   = os.Open("hi.wo")
+		OCALLVAR
+		   	var file, handle(err)          = os.Open("hi.wo")!  // handle and throw
+		   	var file, return(none, 3, err) = os.Open("hi.wo")   // with other return values
+		   	var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
+		   	if var file                    = os.Open("hi.wo") {  }    // Swift/Rust
+		OIFVAR // if (var)? X = Y { Body }
+		OPANIC // Errable[T]!! - if T is err panic else T
+		OORELSE // Option[X] | X - continue chain: someNilable(X or nil) | etc. | etc.
+		   var file                       = os.Open("hi.wo")? else newFile
+		   	conditional assignment
+		   	Type assertion	number as float32
+
+		   	OALGTYPE // X.Type | Y.Type
+
+
+
+	*/
 	OINDEX         // X[Index] (index of array or slice)
-	OINDEXMAP      // X[Index] (index of map)
+	OINDEXMAP      // X[Index] (index of map) - access
+	OINDEXSET      // X[Index] (index of set) - contains // TODO(bran) impl must gen STRINGER after adding the nodes
 	OKEY           // Key:Value (key:value in struct/array/map literal)
 	OSTRUCTKEY     // Field:Value (key:value in struct literal, after type checking)
 	OLEN           // len(X)
 	OMAKE          // make(Args) (before type checking converts to one of the following)
 	OMAKECHAN      // make(Type[, Len]) (type is chan)
 	OMAKEMAP       // make(Type[, Len]) (type is map) // TODO(bran) usages
-	OMAKESET       // make(Type[, Len]) (type is set)
+	OMAKESET       // make(Type[, Len]) (type is set) // TODO(bran) impl must gen STRINGER after adding the nodes
 	OMAKESLICE     // make(Type[, Len[, Cap]]) (type is slice)
 	OMAKESLICECOPY // makeslicecopy(Type, Len, Cap) (type is slice; Len is length and Cap is the copied from slice)
 	// OMAKESLICECOPY is created by the order pass and corresponds to:
@@ -309,6 +345,25 @@ const (
 
 	OEND
 )
+
+type Spec uint8
+
+const (
+	Both   Spec = iota // used in both kinds of code, could be split modified impl with same syntax
+	OnlyGo             // must be ignored in Wo code
+	OnlyWo             // must be ignored in Go code
+)
+
+func spec(op Op) Spec { // TODO(bran) do for LookupWo(...) too
+	switch op {
+	case OMAKESET, OSETLIT, OINDEXSET:
+		return OnlyWo
+	case ORANGE:
+		return OnlyGo
+	default:
+		return Both
+	}
+}
 
 // IsCmp reports whether op is a comparison operation (==, !=, <, <=,
 // >, or >=).

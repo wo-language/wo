@@ -6,6 +6,7 @@ package syntax
 
 import (
 	"fmt"
+	"strings"
 )
 
 // PosMax is the largest line or column value that can be represented without loss.
@@ -150,6 +151,10 @@ type PosBase struct {
 	filename  string
 	line, col uint32
 	trimmed   bool // whether -trimpath has been applied
+}
+
+func (pos *PosBase) IsWo() bool {
+	return strings.HasSuffix(pos.filename, ".wo")
 }
 
 // NewFileBase returns a new PosBase for the given filename.

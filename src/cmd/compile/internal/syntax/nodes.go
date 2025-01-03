@@ -41,7 +41,12 @@ type File struct {
 	DeclList  []Decl
 	EOF       Pos
 	GoVersion string
+	isWo      bool
 	node
+}
+
+func (f *File) IsWo() bool {
+	return f.isWo
 }
 
 // ----------------------------------------------------------------------------
@@ -301,6 +306,8 @@ type (
 		Key, Value Expr
 		expr
 	}
+
+	// TODO(bran) SET
 
 	//   chan Elem
 	// <-chan Elem

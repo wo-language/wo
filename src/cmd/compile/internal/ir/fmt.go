@@ -218,6 +218,7 @@ var OpPrec = []int{
 	OUNSAFESTRING:     8,
 	OUNSAFESTRINGDATA: 8,
 	OINDEXMAP:         8,
+	OINDEXSET:         8, // TODO(bran) impl
 	OINDEX:            8,
 	OSLICE:            8,
 	OSLICESTR:         8,

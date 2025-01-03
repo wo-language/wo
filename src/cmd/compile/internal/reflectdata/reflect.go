@@ -241,6 +241,98 @@ func MapType() *types.Type {
 	return hmap
 }
 
+// SetBucketType makes the set bucket type given the type of the set.
+func SetBucketType(t *types.Type) *types.Type {
+	// Builds a type representing a Bucket structure for
+	// the given set type. This type is not visible to users -
+	// we include only enough information to generate a correct GC
+	// program for it.
+	// Make sure this stays in sync with runtime/set.go.
+	//
+	//	A "bucket" is a "struct" {
+	//	      tophash [abi.MapBucketCount]uint8
+	//	      keys [abi.MapBucketCount]keyType
+	//	      elems [abi.MapBucketCount]elemType
+	//	      overflow *bucket
+	//	    }
+	if t.MapType().Bucket != nil {
+		return t.MapType().Bucket
+	}
+
+	elemtype := t.Elem()
+	types.CalcSize(elemtype)
+	if elemtype.Size() > abi.MapMaxElemBytes {
+		elemtype = types.NewPtr(elemtype)
+	}
+
+	field := make([]*types.Field, 0, 5)
+
+	// The first field is: uint8 topbits[BUCKETSIZE].
+	arr := types.NewArray(types.Types[types.TUINT8], abi.MapBucketCount)
+	field = append(field, makefield("topbits", arr))
+
+	arr = types.NewArray(elemtype, abi.MapBucketCount)
+	arr.SetNoalg(true)
+	elems := makefield("elems", arr)
+	field = append(field, elems)
+
+	// If keys and elems have no pointers, the map implementation
+	// can keep a list of overflow pointers on the side so that
+	// buckets can be marked as having no pointers.
+	// Arrange for the bucket to have no pointers by changing
+	// the type of the overflow field to uintptr in this case.
+	// See comment on hmap.overflow in runtime/map.go.
+	otyp := types.Types[types.TUNSAFEPTR]
+	if !elemtype.HasPointers() {
+		otyp = types.Types[types.TUINTPTR]
+	}
+	overflow := makefield("overflow", otyp)
+	field = append(field, overflow)
+
+	// link up fields
+	bucket := types.NewStruct(field[:])
+	bucket.SetNoalg(true)
+	types.CalcSize(bucket)
+
+	// Check invariants that map code depends on.
+	if !types.IsComparable(t.Key()) {
+		base.Fatalf("unsupported set key type for %v", t)
+	}
+	if abi.MapBucketCount < 8 {
+		base.Fatalf("bucket size %d too small for proper alignment %d", abi.MapBucketCount, 8)
+	}
+	if uint8(elemtype.Alignment()) > abi.MapBucketCount {
+		base.Fatalf("key align too big for %v", t)
+	}
+	if elemtype.Size() > abi.MapMaxElemBytes {
+		base.Fatalf("elem size too large for %v", t)
+	}
+	if t.Elem().Size() > abi.MapMaxElemBytes && !elemtype.IsPtr() {
+		base.Fatalf("elem indirect incorrect for %v", t)
+	}
+	if elemtype.Size()%elemtype.Alignment() != 0 {
+		base.Fatalf("elem size not a multiple of elem align for %v", t)
+	}
+	if uint8(bucket.Alignment())%uint8(elemtype.Alignment()) != 0 {
+		base.Fatalf("bucket align not multiple of elem align %v", t)
+	}
+	if elems.Offset%elemtype.Alignment() != 0 {
+		base.Fatalf("bad alignment of elems in bset for %v", t)
+	}
+
+	// Double-check that overflow field is final memory in struct,
+	// with no padding at end.
+	if overflow.Offset != bucket.Size()-int64(types.PtrSize) {
+		base.Fatalf("bad offset of overflow in bset for %v, overflow.Offset=%d, bucket.Size()-int64(types.PtrSize)=%d",
+			t, overflow.Offset, bucket.Size()-int64(types.PtrSize))
+	}
+
+	t.SetType().Bucket = bucket
+
+	bucket.StructType().Map = t
+	return bucket
+}
+
 var hsetType *types.Type
 
 // SetType returns a type interchangeable with runtime.hset.

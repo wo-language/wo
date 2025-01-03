@@ -308,15 +308,15 @@ func Lookup(ident string) Token {
 // LookupWo maps an identifier to its keyword token or [IDENT] (if not a keyword) by its respective file kind.
 func LookupWo(ident string, isWo bool) Token { // TODO(bran) wasn't updated in external tools
 	tok, is_keyword := keywords[ident] // includes both go and wo keywords
-	if isWo {
-		if _, ok := goKeywords[tok]; ok {
-			return IDENT
-		}
-	} else {
-		if _, ok := woKeywords[tok]; ok {
-			return IDENT
-		}
-	}
+	//if isWo {
+	//	if _, ok := goKeywords[tok]; ok {
+	//		return IDENT
+	//	}
+	//} else {
+	//	if _, ok := woKeywords[tok]; ok {
+	//		return IDENT
+	//	}
+	//}
 	if is_keyword {
 		return tok
 	}
