@@ -60,7 +60,9 @@ cd src
 
 ### current state
 
-running go on a .wo file seems to give "function main is undeclared in the main package"
+if you run the default go compiler on a wo main file, you'd probably get something like "runtime.main_main·f: function 
+main is 
+undeclared in the main package"
 
 compile errors about set
 
@@ -111,6 +113,8 @@ All of these should be updated, and it's not as simple as adding it to each list
 it is within that file.
 
 According to my current specifications,
+
+src/cmd/compile/internal/ir/node.go
 
 I want to add these tokens:
 `set`, `some()`, `none`, `->`,

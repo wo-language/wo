@@ -232,6 +232,9 @@ func (check *Checker) softErrorf(at poser, code Code, format string, args ...any
 	err := check.newError(code)
 	err.addf(at, format, args...)
 	err.soft = true
+	if check.pos.FileBase().IsWo() && code == UnusedVar { // TODO(bran) test
+		return // cancel
+	}
 	err.report()
 }
 

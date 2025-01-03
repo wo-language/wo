@@ -410,6 +410,7 @@ func (p *parser) fileOrNil() *File {
 		p.syntaxError("package statement must be first")
 		return nil
 	}
+	f.isWo = p.file.IsWo()
 	f.Pragma = p.takePragma()
 	f.PkgName = p.name()
 	//f.isWo = p.IsWo()

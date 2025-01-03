@@ -139,8 +139,9 @@ type Checker struct {
 	// information collected during type-checking of a set of package files
 	// (initialized by Files, valid only for the duration of check.Files;
 	// maps and lists are allocated on demand)
-	files         []*syntax.File              // list of package files
-	versions      map[*syntax.PosBase]string  // maps files to version strings (each file has an entry); shared with Info.FileVersions if present
+	files    []*syntax.File             // list of package files
+	versions map[*syntax.PosBase]string // maps files to version strings (each file has an entry); shared with Info.FileVersions if present
+	//isWo		  map[*syntax.PosBase]bool	  // maps files to whether it is a .wo // TODO(bran) is it needed
 	imports       []*PkgName                  // list of imported packages
 	dotImportMap  map[dotImportKey]*PkgName   // maps dot-imported objects to the package they were dot-imported through
 	recvTParamMap map[*syntax.Name]*TypeParam // maps blank receiver type parameters to their type
@@ -322,6 +323,8 @@ func (check *Checker) initFiles(files []*syntax.File) {
 	}
 	check.versions = versions
 
+	//check.isWo = make(map[*syntax.PosBase]bool) // TODO(bran)
+
 	pkgVersionOk := check.version.isValid()
 	if pkgVersionOk && len(files) > 0 && check.version.cmp(go_current) > 0 {
 		check.errorf(files[0], TooNew, "package requires newer Go version %v (application built with %v)",
@@ -358,6 +361,7 @@ func (check *Checker) initFiles(files []*syntax.File) {
 			}
 		}
 		versions[file.Pos().FileBase()] = v // file.Pos().FileBase() may be nil for tests
+		//check.isWo[file.Pos().FileBase()] = file.IsWo() // TODO(bran)
 	}
 }
 

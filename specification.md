@@ -216,3 +216,29 @@ Monday.working
 ### Scope control
 
 [] Not implemented
+
+## Operators List
+
+### Added
+
+| op            | syntax                                                           |
+|---------------|------------------------------------------------------------------|
+| SOME          | some(X)                                                          |
+| NONE          | none                                                             |
+| ENHANCEDFOR   | for Key, Value : X { Body } variant of ORANGE                    |
+| UNWRAP        | X?                                                               |
+| OPTION        | X.Type?                                                          |
+| UNWRAPERR     | X!                                                               |
+| ERRABLE       | X.Type!                                                          |
+| ARROWCLOSURE  | Type -> { Func.Closure.Body } variant of OCLOSURE                |
+| DCLFUNC       | export? (r)? func f() - modification                             |
+| ENUMLIT       | Type(List) (composite literal, Type is enum) - done in enum decl |
+| DCLSHADOW     | X; X := Y                                                        |
+| INTERFACETAGS | <Type{List}>                                                     |
+ // TODO(bran) 
+
+### Removed
+
+| op     | replacement |
+|--------|-------------|
+| ORANGE | ENHANCEDFOR |
