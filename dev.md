@@ -137,7 +137,30 @@ other:
 https://github.com/golang/go/blob/e6626dafa8de8a0efae351e85cf96f0c683e0a4f/doc/go_lang.txt
 
 
+#### Other soft errors
 
+[] Implemented - need to test
+- Only ignoring unused
+
+Any of these could be ignored easily in theory:
+
+unused var in switch
+no new variables on left side of :=
+generic function is missing function body
+label %s declared and not used
+main - func %s must have no type parameters, func %s must have no arguments and no return values
+init - missing function body
+%q imported and not used, %q imported as %s and not used
+can only use ... with final parameter in list
+cannot range over, range over %s permits no iteration variables, range over %s permits only one iteration variable, range clause permits at most two iteration variables
+cannot use iteration variable of type %s
+cannot use type %s outside a type constraint: interface is (or embeds) comparable
+in interface - overlapping terms %s and %s
+
+
+src/cmd/compile/internal/typecheck/stmt.go
+src/internal/types/errors/codes.go
+src/cmd/compile/internal/types2/errors.go
 
 
 

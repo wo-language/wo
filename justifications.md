@@ -4,18 +4,63 @@ In here, I give explain, argue for, and document Wo's design decisions. Maybe it
 
 ### Index
 
-- [Theory](#Theory)
-  1. The goals of code
-  2. To restrict or to follow
-  3. Conventions
-- Conventions
-  1. Variable naming
-- Features
-  1. variable
-  2. interface{}
-  2. set
+1. [Theory](#Theory)
+   1. [Background](#Background)
+   2. [The goals of code](#The goals of code)
+   3. [To restrict or to allow](#To restrict or to allow)
+   4. [Unpredictible usage](#Unpredictible usage)
+   5. [Go's design reasons](#Go's design reasons)
+   6. [Modularity](#Why modularity)
+2. [Syntax](#Syntax)
+   1. [Interface](#Interface)
+   2. [For range](#For range)
+   3. [Ternary](#Ternary)
+   4. [Array/Slice](#Array/Slice)
+   5. [Map](#Map)
+   6. [Function](#Function)
+   7. [Type keyword](#Type keyword)
+3. [Data Types](#Data Types)
+   1. [Set](#Set)
+   2. [Optional](#Optional)
+   3. [Complex](#i)
+4. [Data Models](#Data Models)
+   1. [Enum](#Enum)
+   2. [Flags](#Flags)
+   3. [Sum](#Sum)
+   4. [Union](#Union)
+   5. [Functional interface](#Functional interface)
+   6. [Overview](#Overview)
+   7. [Algebraic types](#Algebraic types)
+   8. [Pattern Matching](#Pattern Matching)
+5. [Generics](#Generics)
+   1. [Parameterized methods](#Parameterized methods)
+6. [Variables](#Variables)
+   1. [Unused variables](#Unused variables)
+   2. [Variable declaration](#Variable declaration)
+   3. [Multi variable declaration](#Multi variable declaration)
+7. [Error handling](#Error handling)
+   1. [nil](#nil)
+8. [Design](#Design)
+   1. [Standard library](#Standard library)
+   2. [Naming](#Naming)
+      1. [Variables](#Variables)
+      2. [Package methods](#Package methods)
+   3. [Overleading](#Overleading)
+      1. [Package names](#Package names)
+      2. [Reserved words](#Reserved words)
+      3. [Functions](#Functions)
+   4. [Keywords](#Keywords)
+   5. [Import compatibility](#Import compatibility)
+   6. [Export](#Export)
+   7. [Scope control](#Scope control)
+   8. [Array/Slice Clarity](#Array/Slice Clarity)
+   9. [Modularity](#Modularity)
+
+
 
 ## Theory
+
+### Background
 
 When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language and is based on C so it's fast.
 
@@ -109,120 +154,9 @@ For example, enforcing the type before the variable name is universally disagree
 
 That means there are these types of features: Those enforced without an option which are naturally optional, those that are on by default, those that are off by default. Experimental or "very indifferent" ones would be the ones that are disabled by default.
 
-## Conventions
+## Syntax
 
-### Variable naming
-
-One of the very first things I learned when I started programming is that using 1 or 2 length variable names in most situations was incredibly bad practice that leads to misunderstandings. You probably already know why, but in case you don't, I will explain below.
-
-Let's say you came across this, 40 lines deep into a function:
-
-```go
-t.leftBranch().cut()
-```
-
-What does this mean?
-
-You go check the definition:
-
-```go
-t := roleHierarchy()
-```
-
-What?
-
-You check the docs or source code for `roleHierarchy` and find out it returns a `Node`. And you check the `Node` struct, which contains a `val Role` a `left Node` and a `right Node`.
-
-It turns out, the `t` in `t.leftBranch().cut()` was just a tree.
-
-Why should I have to analyze any of this when 3 characters would have explained enough. If the code used `tree` as the variable name, none or almost none of this would have been necessary - even with better documentation. We would have read that single word, and moved on to the next thing, rather than being disrupted.
-
-> Good code is not overly vague.
-
-`t` is more objectively more vague than `tree`.
-
-`t` does not declare intent.
-
-```go
-tree.leftBranch().cut()
-```
-
-`tree` is vague to a certain level. If I'm talking about an abstract tree, then `tree` is the best name as it has an intentional amount of vagueness. Even then, I could be referring to a literal tree plant or a programmatic tree, but `t` still has much less meaning than that.
-
-Do removing characters improve readability and adding characters impede readability? Readability means **the ability to read**, which requires the existence of text to read. Cutting off the text makes it har
-
-Get it?
-
-You sacrificed about 5 characters, for what? But, then it suggests we do lengthen the code with `err != nil` instead of `!`. Do you see the double standard? I'm not even saying err check happens a lot, but even if it happens a few times, why not shorten it to a single character (just like with what is done with variables)
-
-The two principles of using more lines in code along with shortening variable names contradict each other.
-
-But there is a distinction here.
-
-Code either extends vertically (less functional abstraction) or horizontally (more function calls, longer names). Shortening names and using loads of null checking both go in the direction of vertical. Please, take your hand off the scroll wheel (or the `hjkl`). In between these two directions is a more square shaped code. And the other extreme typically happens with nested function calling, like some overly clever and lengthy Java streams solution.
-
-![Code that is tall, square, and wide](https://raw.githubusercontent.com/wo-language/wo-info/refs/heads/main/wo%20resources/code_rectangles_whiteborder.png)
-
-As you can see, the first code editor has 8 lines and reaches the first line, then compressed to 6 lines and reaches the second line, then to just 4 lines. I tried to make them each have the exact same "volume" of code.
-
-I find shortened variable names and repeated 3-4 line checking less readable, so I chose to make Wo more towards the square.
-
-There is one situation where shortened variable names might be acceptable, which is lambda function calls like `starfruits.map(s -> s.weight() * 2.2)`, or generally very short function calls, where you can easily see what `s` means.
-
-In the same realm is shadowing and keyword overloading, which I go into later.
-
-This abbreviation system and forcing functions to not have the same name is ironically avoided by importing from a package, which is basically the same thing as lengthening a function name anyway except with an extra `.`, like `stringsContains() -> strings.Contains()`.
-
-### Renaming package methods
-
-I also want to rename some common methods in the standard library. For example, I find `fmt`'s function names really vague.
-
-- `ConcatFormat` for `SprintF` in `fmt`
-
-`Print, Printf, Sprint, Sprintf, Fprint, Fprintf, Sscanf, Fscanf,` etc.
-
-I would have never had to carefully decode the tiny difference between their documentations either if they were just named something like
-
-`PrintFormat, Concat, ConcatFormat, FormatterPrint, ScanString, ScanReader` etc.
-
-or just leaving the varying arguments as optional parameters with the same function names
-
-`Scan(string), Scan(reader)`
-
-### type keyword
-
-Going for this syntax is a real possibility, but I don't see it necessary or too helpful (either way):
-`struct S {}`
-`interface I {}`,
-so I'm keeping that.
-
-### Overloading package names
-
-This is just allowed because a package could be called anything, but it shouldn't be allowed without some kind of error. I'm taking for granted people don't necessarily rely on IDEs here. For example,
-
-```go
-import { "strings" }
-
-func combineThem(strings /* Wo Error */ []string) string {
-    return strings.Join /* Go error */ (strings, ", ")
-}
-```
-
-would not compile in Go, but not because of the existence of the variable name `strings`, but because `Join` is being called on that variable, when the author intended for it to be `Join` from the `strings`. It is because `strings` is overloading the `"strings"` package from the `import`.
-
-By the way, in Wo, I plan to make it so that one could just skip importing `strings` and just be able to call `Join` on a `[]string` like `stringsVariable.Join(", ")`. This could help contribute to avoiding these situations, but it could still happen of course.
-
-One way around it is to rename the variable `strings`, but this is a perfectly good variable name that might be used frequently across the file. The solution is to use `string_util "strings"` syntax, or to have a feature that differentiates the formatting of packages used in code like `@strings.append` as a rudimentary example.
-
-This is already done with capitalized exports, so "Strings.append" also makes sense.
-
-By the way, I dream of a language where all the reserved words have some symbol, and you write all your own stuff like regular words and spaces like `bird $get color` for `bird.get(color)`, and you get to define the meaning of all your own sentences by token order like some declaration `String A "with" String B -> concat(A, B)` or `Number A (Number B) -> A * B`. Or maybe Haskell has invaded my subconsciousness?
-
-### Overloading reserved words
-
-I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, which means I don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is confusing. Enough said.
-
-### interface{}
+### Interface
 
 I chose `<T>` for `interface{T}`. I considered something like `~T`, but you can't wrap around with that. There was also `#{}`, but the shortness of `<>` was more attractive. Angled brackets are a symbol that are not used in Go and are already associated with types.
 
@@ -257,15 +191,205 @@ type floaty = float32 | float64
 
 Also see [union](#Union).
 
-### Unused variables
+### For range
 
+The default `for range` syntax is
 ```go
-func main() {
-    var x = 3 // error: Unused variable 'x'
+for i, v := range nums {
+    sum += v
 }
 ```
 
-Wo would simply allow this. It will become a warning and compiled away. The reason Go doesn't do this is probably because of how it optimizes variables. It does allow unused `const` for the same reason, since those are easier to optimize. However, it is not otherwise impossible to optimize unused variables away.
+It's basically an enhanced for loop. `range` isn't used anywhere else, and it's not like you can assign a variable as a range. I think they needed `range` because `i, v := nums` alone is misleading since that doesn't actually return the index and value, but we can just get around that by doing what Java did back when I was a baby:
+
+```go
+for i, v : nums {
+    sum += v
+}
+```
+as `:` is given a new meaning.
+
+Note that this will use the **value** by default for a single variable
+
+`for value : nums {}`
+
+In Go, when there is a single variable declared, it is for the index
+
+`for index := range nums {}`
+
+I see this as "memorized information"; it's arbitrary. There's no way of knowing whether it's "for the indices in the range of a collection" or "for the values in the range of a collection" without seeing it before. Since people are used to that way, switching it could be confusing, but I don't really want to rely on something like that when my goal is to offer an alternative design. Additionally, `for value : values` is the common pattern seen in other languages anyway, so it shouldn't really be surprising that `for i : values` isn't actually the index when taken out of the context of Go.
+
+I chose to make it the **value** by default as it would be more common and intuitive as one seems to want to ignore the index by nature of using the enhanced "for an item *in* items", possibly opting for a traditional `for i = 0; i < len; i++` otherwise, or just using `for i, _ : values {}` for access to the index.
+
+- That could be problematic when frequently using this when trying to modify arrays or slices by their index, so range could be kept to mean "range of indices over"
+
+### Ternary
+
+There is `?:` and `if else`, but let's look at more possibilities
+
+In Go,
+
+```go
+var hvac
+if indoorTemp < outdoorTemp {
+    hvac = heating
+} else {
+    hvac = ac
+}
+```
+
+could also be represented with
+
+```go
+var hvac = if indoorTemp < outdoorTemp { heating } else { ac } // no parens
+```
+
+or
+
+```go
+var hvac = if (indoorTemp < outdoorTemp) heating else ac
+```
+
+or
+
+```go
+var hvac = indoorTemp < outdoorTemp ? heating : ac
+```
+
+Despite the first one being the longest, I think I'll go for that one since it is consistent with the `if cond` no parentheses style that Wo already has (which was inherited from Go). Another way around the parentheses problem is to do something like this
+
+```go
+var hvac = if indoorTemp < outdoorTemp then heating else ac // imagine then is highlighted
+var hvac = if indoorTemp < outdoorTemp ? heating else ac
+var hvac = if indoorTemp < outdoorTemp ? heating : ac
+var hvac = heating if indoorTemp < outdoorTemp else ac
+```
+
+Since it is an expression, an important question is what these look like when applied at more depth
+
+```go
+var hvac
+if indoorTemp < outdoorTemp {
+    if thermostat > indoorTemp {
+        hvac = heating
+    }
+    hvac = none
+} else {
+    if thermostat < indoorTemp {
+        hvac = ac
+    }
+    hvac = none
+}
+
+var hvac = if indoorTemp < outdoorTemp { if thermostat > indoorTemp { heating } else { none } } else { if thermostat < indoorTemp { ac } else { none } }
+var hvac = if (indoorTemp < outdoorTemp) if (thermostat > indoorTemp) heating else none else if (thermostat < indoorTemp) ac else none
+var hvac = indoorTemp < outdoorTemp ? thermostat > indoorTemp ? heating : none : thermostat < indoorTemp ? ac : none
+var hvac = if indoorTemp < outdoorTemp THEN if thermostat > indoorTemp THEN heating else none else if thermostat < indoorTemp THEN ac else none
+var hvac = if indoorTemp < outdoorTemp ? if thermostat > indoorTemp ? heating else none else if thermostat < indoorTemp ? ac else none
+var hvac = if indoorTemp < outdoorTemp ? if thermostat > indoorTemp ? heating : none : if thermostat < indoorTemp ? ac : none
+var hvac = heating if thermostat > indoorTemp else none if indoorTemp < outdoorTemp else ac if thermostat < indoorTemp else none
+```
+
+and also with else if
+
+```go
+var hvac
+if indoorTemp == outdoorTemp {
+    hvac = off
+} else if indoorTemp < outdoorTemp {
+    hvac = heating
+} else {
+    hvac = ac
+}
+
+var hvac = if indoorTemp == outdoorTemp { off } else if indoorTemp < outdoorTemp { heating } else { ac }
+var hvac = if (indoorTemp == outdoorTemp) off else if (indoorTemp < outdoorTemp) heating else ac
+var hvac = indoorTemp == outdoorTemp ? off : indoorTemp < outdoorTemp ? heating : ac
+var hvac = if indoorTemp == outdoorTemp then off else if indoorTemp < outdoorTemp then heating else ac
+var hvac = if indoorTemp == outdoorTemp ? off else if indoorTemp < outdoorTemp ? heating else ac
+var hvac = if indoorTemp == outdoorTemp ? off : if indoorTemp < outdoorTemp ? heating : ac
+var hvac = off if indoorTemp == outdoorTemp else heating if indoorTemp < outdoorTemp else ac
+```
+
+Hmmmm... Surprisingly, I don't think any of these are vague to the compiler given you go by right to left associativity.
+
+And no, you really shouldn't be making ternary statements ridiculously complicated, but I need to make sure those are still parsable and still readable.
+
+I know the last one is weird, but it is actually very interesting. It goes like this: "if (A) {B} else {C}" -> "B if A else C". It ends up in a binary tree shape. You can still read it left to right in plain English. For example, "if you know C, your life is great" can also have it phrased as "your life is great if you know C", but places slightly more emphasis on the value than the condition.
+
+It also avoids some of the vagueness of
+
+`var hvac = indoorTemp == outdoorTemp...`
+
+seeming like `var (hvac = indoorTemp)` at first glance.
+
+I'll combine the `else if` with the further depth: `var hvac = off if indoorTemp == outdoorTemp else heating if thermostat > indoorTemp else none if indoorTemp < outdoorTemp else ac if thermostat < indoorTemp else none`
+
+The hvac is off if it's the same temperature indoors as it is outdoors, otherwise it's heating if the thermostat is higher than the indoor temperature, otherwise it's no hvac if the indoor temperature is lower than outdoor temperature, otherwise it's AC if the thermostat is lower than the indoor temperature, otherwise it's none.
+
+That syntax could also be nice for short assignments like
+
+`value = dereference(input) if input.isPtr() else input`
+
+I'm also kinda interested in the one with "then" since it does make reading it more obvious without requiring `()` or `{}`.
+
+However, I think that first basic option is the most readable since you can clearly see the depth level with the curly braces.
+
+But it's *just* the curly braces that make it easy to read for me. How about I apply them to the other ones despite being redundant (to be thorough):
+
+I'll combine the two: `var hvac = { off } if indoorTemp == outdoorTemp else { { heating } if thermostat > indoorTemp else { { none } if indoorTemp < outdoorTemp else { { ac } if thermostat < indoorTemp else { none } } } }`
+
+I find this kinda weird. Next:
+
+`var hvac = indoorTemp == outdoorTemp ? { off } : { indoorTemp < outdoorTemp ? { thermostat > indoorTemp ? { heating } : { none } } : { thermostat < indoorTemp ? { ac } : { none } }`
+
+That's ok, but why not just use `if`/`else` in place of those:
+
+`var hvac = indoorTemp == outdoorTemp if { off } else { indoorTemp < outdoorTemp if { thermostat > indoorTemp if { heating } else { none } } else { thermostat < indoorTemp if { ac } else { none } }`
+
+I should only stray from the most obvious variation of Go when it's a clear improvement over the status quo. Idk if these really are, I personally like them, but I can already hear the angry voices insisting any of these are evil. Which points to a bit of a reality here: nothing will only be praised, and nothing will only be shamed...
+
+I'm going with `v = 2 * (if cond { a } else { b }) + ` for now, despite the curly braces feeling EXASPERATING to add in.
+
+I'll do this by either adding an expression identical to the `if else` statement, or modify the statement to become an expression.
+
+### Array/Slice
+
+I've concluded that it's not feasible to use `arr[]` because of how it interacts with map.
+
+Map is declared and called like this:
+
+`m := map[k]v`
+
+`v := m[k]`
+
+but array is declared and called like this:
+
+`a := [x]arr`
+
+`x := a[i]`
+
+The odd one out is `[x]arr`, which has the array marks as a prefix. What if it were the suffix?
+
+For example, what about a slice of a map from keys of 4 bytes to values of (maps with keys of 2 bytes to values of slices of strings)
+```
+[]map[[4]byte]map[[2]byte][]string     // Go
+map[byte[4]]map[byte[2]]string[][]     // arr[] --- vague
+map[[4]byte, map[[2]byte, []string]][] // map[A, B]
+map[byte[4], map[byte[2], string[]]][] // map[A, B] and arr[]
+```
+
+The second one is ambiguous, since it could mean a double array of strings, which doesn't happen when we use `map[A, B]`
+
+The last one prefers depth, so it ends up pushing more symbols to the end.
+
+For arrays and slices, I say either keep [ ]arr with map[A, B], or just don't make any changes
+
+### Map
+
+I think `map[key]value` is supposed to reflect the `func(input) val` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
+
+I think this is too disruptive and unnecessary of a change as shown in the previous section, so I'll keep `map[key]value`
 
 ### Function
 
@@ -360,7 +484,6 @@ There's some serious potential with these other designs.
 `λ` is cool since you can easily count and see how many functions there are, and it doesn't need any indicator of a return type, like how `func()` was, but it is restrictive to Greek identifiers, and `λT` is even an identifier on its own already.
 
 Removing `func` allows stuff like `f(g(int) int)`. However, this means `T` and `(T)` have different meanings, but wrapped parens shouldn't change the meaning so easily for a single identifier.
-
 
 But I think these examples aren't as practical to show how some of these styles could shine.
 
@@ -474,9 +597,119 @@ var or(Opt) -> (() -> Opt) -> Opt = o -> other -> if o.isPresent() then o else o
 get().or(retrieve()).or(create()).orElse(none)
 ```
 
+### Type keyword
+
+Going for this syntax is a real possibility, but I don't see it necessary or too helpful (either way):
+`struct S {}`
+`interface I {}`,
+so I'm keeping that.
+
+## Data Types
+
+In general, having a term like `set` while also preventing reserved words from being overloading can make the language difficult to use. Especially since `set(v)` is a likely function name.
+
+> Why are maps built in?
+>
+> The same reason strings are: they are such a powerful and important data structure that providing one excellent implementation with syntactic support makes programming more pleasant. We believe that Go’s implementation of maps is strong enough that it will serve for the vast majority of uses. If a specific application can benefit from a custom implementation, it’s possible to write one but it will not be as convenient syntactically; this seems a reasonable tradeoff.
+
+There isn't anything inherently significant about a `map` or `len`; it can just be represented by a struct or function. So it's down to just making a language nicer. I'm also proposing `enum`, `some`, and `none`. I don't think this is crossing the line yet of having to consistently and annoyingly rename things like class to clazz yet, but that does feel like a dishonest representation of a program when renamings like that have to happen, since the restriction is coming from a meta syntactical problem, not a functional one.
+
+### Set
+
+Implementing this really wasn't too interesting or challenging, but it was tedious.
+
+Because of the way `map` is designed (a hashmap), the keys and values are stored rather insignificantly, and removing the values from its structure was pretty simple to do. There isn't anything special about the difference between key and value besides that one part gets hashed and one part doesn't. So, yes, I copied map and refactored it; I really don't think there is any faster way to do *this map* for *its* intended purposes without also improving hashmap. That wasn't really my intention with Wo, but if someone sees a way of seriously improving the native hashmap when it doesn't have values, or if I spot an obvious one, then let's go ahead. I haven't changed the time complexity, but it should technically be insignificantly faster than `map[]struct{}`.
+
+So I made `map`'s keys as `set`'s elements, wiping any functionality with `map`'s values.
+
+This does mean the removal of the `val = m[key]` method, as that doesn't really mean anything for sets. Instead, I modified and kept the `_, ok = m[key]` method, using it like `ok = s[elem]`.
+
+```go
+primes set[int] = { 2, 3, 5 }  // declaration
+ok = primes[4]                 // is ok if contains elem
+primes.insert[7]               // insert / add
+primes.delete[3]               // delete / remove
+```
+
+I prefer `add` and `remove`, but the naming (from `map`) uses `insert`, so I don't want it to get too inconsistent and therefore unpredictable. It's not an impossible consideration, however, but I'd prefer renaming the `map` methods too in that case.
+
+There are also fast versions of the map for `strings`, `int32`, and `int64`, which Wo also has implemented.
+
+And Wo also support a `sets` package in the same ways that the `maps` package does.
+
+Sets in math use `{ }` to mean "unordered, unique collection", but in Go, which uses EBNF, it means "ordered, repeatable collection". I think it is ok to use the curly brackets for sets, since it is programmatically ordered and repeatable data at first, but then it will become converted from that explicit representation into something which is guaranteed to be an actual set. I can actually still say `{ a, b, a, c }` in math, but it represents a set of `a`, `b` and `c` without order. It is also predictable with the formatting already used with arrays and maps. If someone made their own set or any kind of math collection, it'd use the curly brackets.
+
+### Optional
+
+// TODO(bran)  - split with err
+
+Here are a couple designs:
+```go
+type Option1[T any] interface {
+  none    // = some 0 sized type
+  some(T) // = T
+}
+
+type Option2[T any] struct {
+  exists bool
+  t T
+}
+```
+
+Option1 can't do type assertion or type switch, requiring some kind of handler like `errors.Is`. It can do `some` / `none` pattern matching easier. Option2 can do field embedding, which is pretty important to errors, but it could probably still work with some native implementation details. It also aligns more with the idea of returning structs, however that principle is not as strong for the case of this interface.
+
+It should support functional programing and error handling like [lo](https://github.com/samber/lo) and [mo](https://github.com/samber/mo)
+
+Once `enum` is implemented, then this should just be a sum.
+
+```go
+type Option[T] enum {
+  Some(T)
+  None
+}
+```
+
+#### ImpureOption vs Nilable Option
+
+nil/zero value can mean none or something special depending on your situation, so
+
+some(nil) could eval to none in some contexts  // TODO(bran) flesh concept out
+
+#### ok
+
+What I'll do is, if any function from the standard library or any Go file is like
+
+`func f() (T, bool)`
+
+It can be interpreted as an optional or not. It's impossible to know if that's what it was, though. So, in Wo code, it must explicitly be an optional to be treated like one, and this is just a problem with interoperating with vague Go code.
+
+```go
+func get() (int, bool) {} // std lib or Go file
+
+func use() { // 
+  fmt.PrintLn(get()?, get().isPresent(), get().) 
+}
+```
+
+In other languages, `?` is a way of unwrapping, so it could be confusing to use something like `func f() T?`, so I'll go with the more explicit `func f() Option[T]` for Wo.
+
+These ideas with err will also apply to ok, since this also represents an optional.
+
+I could also mirror errors with `func h() T!`, but they shouldn't be stacked with each other like `func j() T?!` since the `ok` pattern is like a softer version of an error. Errors imply existence of the values as do `ok`s, just without the implication of an error happening.
+
+### i
+
+`x := 5 - 3i`
+
+I vote to keep this since this is cool and kind of funny. It doesn't intersect with any other syntax.
+
+## Data Models
+
 ### Enum
 
-This is how it is replicated in Go:
+In reality, there will be 3 types of enums. This is the basic, common enumeration type to start.
+
+A typical enum is replicated in Go like this:
 
 ```go
 type Day uint8
@@ -518,7 +751,7 @@ func test() (string, uint8, string, bool) {
 }
 ```
 
-and with an `enum` type:
+To replicate this same thing with an enum model,
 
 ```go
 type Day enum {
@@ -567,7 +800,7 @@ The one problem with this is that you can and would create sum enum values anywh
 
 If there are loads of default values, and especially unused values, then it should probably be adapted to a sum type.
 
-#### Flags
+### Flags
 
 The `const` and `iota` syntax is also used to replicate flags with bit flipping. If the concept of `iota` is to be done by `enum`, then it should also be able to do flags.
 
@@ -610,9 +843,7 @@ It should still provide the type safety of not allowing the comparing of values 
 
 ### Sum
 
-I'm not sure what keyword to use, so I'm just using `sum` for now. Lots more details on it in #Data Models
-
-It could use `enum`, and the contents would determine if it's a `sum` like this:
+The sum type is like Rust's enum.
 
 ```go
 type Direction enum {
@@ -621,7 +852,11 @@ type Direction enum {
 }
 ```
 
-This is clearly different from the regular enum since it isn't just fields, and it's different from flags since the instances have fields.
+It can still use `enum` like the first two since this is clearly different from the regular enum as it isn't just fields, and it's different from flags since the instances have fields.
+
+Since these `enum` types share characteristics, their hierarchy would look like this:
+
+Sum <- Enum <- Flags
 
 ### Union
 
@@ -663,6 +898,7 @@ https://github.com/golang/go/issues/19412
 
 ### Functional interface
 
+`interface{f()}` -> `<f()>`
 
 ### Data Models
 
@@ -683,7 +919,7 @@ As long as they are each distinct and useful in their own circumstances for that
 | Inheritance              | None               | Yes, Embedded         | None                 | Yes, Embedded          | None                                          | None              | None                                 |
 | Comparable to            | Go                 | Go                    |                      | Go                     | Java Enum                                     |                   | Julia / Rust Enum                    |
 
-Here's a full example taking advantage of each of these types properly (Example [go](the person who made this link is stupid and didn't make it yet) and [wo]() file):
+Here's a full example taking advantage of each of these types properly (Example [go](https://github.com/wo-language/wo-info/blob/main/examples/go/datamodels.go) and [wo](https://github.com/wo-language/wo-info/blob/main/examples/datamodels.wo) file):
 
 ```go
 type Camera[I Image] struct {
@@ -692,9 +928,9 @@ type Camera[I Image] struct {
 }
 
 type CameraModel enum {
-  A7R_IV(Sony) //, Electronic(0.78, 1600, 1200)) // TODO(bran) 
-  D300S(Nikon(D | S, 500), Optical(0.94))
-  Z9(Nikon(Z, 9), Electronic(0.8, 1280, 960))
+  A7R_IV(Sony)
+  D300S(Nikon(D | S, 500))
+  Z9(Nikon(Z, 9))
 
   brand Brand
   ViewFinder
@@ -720,7 +956,7 @@ type Image interface {
 }
 ```
 
-Example usage of this system:
+And an example usage of this system:
 
 ```go
 func (camera *Camera) String() string {
@@ -742,7 +978,7 @@ In this case, it should probably be intentionally restricted, since there is pro
 
 And the same goes for structs since they similarly have fields.
 
-#### Algebraic types
+### Algebraic types
 
 What if we extend the Union type syntax with the other set symbols as above? Would it still make sense? would it be useful? Other languages can do this, but let's see how that would work with Go's system.
 
@@ -795,7 +1031,7 @@ A common thing done with sums is just wrapping a single type, when it could actu
 ```go
 type FiberCable, RJ45, CellTower // pre-existing types
 
-type Connection sum {
+type Connection enum {
   Fiber(FiberCable),
   Ethernet(RJ45),
   Cell(CellTower),
@@ -856,7 +1092,7 @@ It could be interesting to have a quick one line enum or within a simple field l
 It should use a symbol with a lower precedence than the rest so that it's contained to its own area. The only binary operators left below `+` are `* / & &^ << >>` or any of the unused ones if really needed.
 
 ```go
-type Flip = On / Off
+type Flip = On / Off // flags enum (can still work as a sum)
 type Grade(min int) = A(90) / B(80) / C(70)
 type Features = codeExample string, feature string | Generics(tokens "[]", version "1.18") / Sync("sync atomic", "1.22") / DateOnly("DateOnly", "1.20"), link URL | string
 ```
@@ -924,7 +1160,7 @@ This talk of sum and union begs the discussion of pattern matching.
 It should be supported.
 
 ```go
-type Length sum {
+type Length enum {
     Cm(float32)
     M(float32)
     FtInch(int, float32) 
@@ -942,15 +1178,7 @@ func (length Length) ToInches() float32 {
 Switch-case could also be an expression as shown here.
 
 
-
-```go
-func (camera *Camera) Details() string {
-  return fmt.Sprint(camera.model, " with ", memory.Len(), " images")
-}
-
-Camera{ A7R, []Image{} }.Details() // Sony A7R with 0 images
-```
-### Generics
+## Generics
 
 Here are some limitations of Go generics. These aren't necessarily unnecessary limitations, and they could be serving as something deliberately useful. If I change the rest of the type system, all of this does need to be looked at too though.
 
@@ -967,7 +1195,7 @@ https://github.com/golang/go/issues/57644#issuecomment-1372977273
 https://github.com/golang/go/issues/70752
 https://github.com/golang/go/issues/49085
 
-#### Parameterized methods
+### Parameterized methods
 
 The description [from Google](https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md#no-parameterized-methods) isn't entirely close ended:
 
@@ -981,41 +1209,22 @@ It provides some solutions: Instantiate it at link time. Instantiate it at runti
 
 Of course, we can just disable type casting if it really needs to be, or making it slow and safe at least, while still opting for whatever's left over.
 
-### For range
+## Variables
 
-The default `for range` syntax is
+### Unused variables
+
 ```go
-for i, v := range nums {
-    sum += v
+func main() {
+    var x = 3 // error: Unused variable 'x'
 }
 ```
 
-It's basically an enhanced for loop. `range` isn't used anywhere else, and it's not like you can assign a variable as a range. I think they needed `range` because `i, v := nums` alone is misleading since that doesn't actually return the index and value, but we can just get around that by doing what Java did back when I was a baby:
+Wo would simply allow this. It will become a warning and compiled away. The reason Go doesn't do this is probably because of how it optimizes variables. It does allow unused `const` for the same reason, since those are easier to optimize. However, it is not otherwise impossible to optimize unused variables away.
 
-```go
-for i, v : nums {
-    sum += v
-}
-```
-as `:` is given a new meaning.
-
-Note that this will use the **value** by default for a single variable
-
-`for value : nums {}`
-
-In Go, when there is a single variable declared, it is for the index
-
-`for index := range nums {}`
-
-I see this as "memorized information"; it's arbitrary. There's no way of knowing whether it's "for the indices in the range of a collection" or "for the values in the range of a collection" without seeing it before. Since people are used to that way, switching it could be confusing, but I don't really want to rely on something like that when my goal is to offer an alternative design. Additionally, `for value : values` is the common pattern seen in other languages anyway, so it shouldn't really be surprising that `for i : values` isn't actually the index when taken out of the context of Go.
-
-I chose to make it the **value** by default as it would be more common and intuitive as one seems to want to ignore the index by nature of using the enhanced "for an item *in* items", possibly opting for a traditional `for i = 0; i < len; i++` otherwise, or just using `for i, _ : values {}` for access to the index.
-
-- That could be problematic when frequently using this when trying to modify arrays or slices by their index, so range could be kept to mean "range of indices over"
-
-### The possibilities of variable declaration and assignment
+### Variable declaration
 
 Go offers these styles of declarations:
+
 ```go
 //z := 1 // not possible at package level
 func declares() {
@@ -1184,291 +1393,9 @@ a, b = 1, 2
 
 as this is tricky to read and unnecessarily horizontal.
 
-## Overloading functions
+## Error Handling
 
-> [Why does Go not support overloading of methods and operators?](https://go.dev/doc/faq#overloading)
-> 
-> Method dispatch is simplified if it doesn’t need to do type matching as well. Experience with other languages told us that having a variety of methods with the same name but different signatures was occasionally useful but that it could also be confusing and fragile in practice. Matching only by name and requiring consistency in the types was a major simplifying decision in Go’s type system.
-
-
-Preventing function overloading sounds like a good idea in theory, but in practice it results in artificially lengthening function names, when their original form was already the most descriptive. A description of something can be done by its contents; the parameters describe the function already, there is no necessity to change the name when the parameters change too. It aligns with language and nature.
-
-Without overloading, shortened function names:
-
-```go
-payWithC(cash)
-payWithCI(creditCardInfo)
-payWithCNZ(creditCardNumber, zipCode)
-payWithCNCS(creditCardNumber, city, state)
-```
-
-With long description function names (worst of both worlds):
-
-```go
-payWithCash(cash)
-payWithCreditInfo(creditCardInfo)
-payWithCreditNumberZip(creditCardNumber, zipCode)
-payWithCreditNumberCityState(creditCardNumber, city, state)
-```
-
-With the same function names:
-
-```go
-payWith(cash)
-payWith(creditCardInfo)
-payWith(creditCardNumber, zipCode)
-payWith(creditCardNumber, city, state)
-```
-
-which has much less redundant information.
-
-I have used this aspect of programming many, many times. It has been far from the top of the list of things that could make my code vague, and I'm not convinced that it's ever a primary culprit.
-
-The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis at compile time. It is very close to the line of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious thing to be would be some structures which are just unsafe pointers underneath. Type inference is possible, but it would require a bit of reworking. It's already safe for situations like `[3]int != [2]int != []int != []*int`, but not when it comes to generics and interfaces.
-
-
-
-Additionally, `[:]` already does this. It's equivalent to `slice(start=0, end=0, max=0)`.
-
-## i
-
-`x := 5 - 3i`
-
-I vote to keep this since this is cool and kind of funny. It doesn't intersect with any other syntax.
-
-## Ternary
-
-There is `?:` and `if else`, but let's look at more possibilities
-.
-In Go,
-
-```go
-var hvac
-if indoorTemp < outdoorTemp {
-    hvac = heating
-} else {
-    hvac = ac
-}
-```
-
-could also be represented with
-
-```go
-var hvac = if indoorTemp < outdoorTemp { heating } else { ac } // no parens
-```
-
-or
-
-```go
-var hvac = if (indoorTemp < outdoorTemp) heating else ac
-```
-
-or
-
-```go
-var hvac = indoorTemp < outdoorTemp ? heating : ac
-```
-
-Despite the first one being the longest, I think I'll go for that one since it is consistent with the `if cond` no parentheses style that Wo already has (which was inherited from Go). Another way around the parentheses problem is to do something like this
-
-```go
-var hvac = if indoorTemp < outdoorTemp then heating else ac // imagine then is highlighted
-var hvac = if indoorTemp < outdoorTemp ? heating else ac
-var hvac = if indoorTemp < outdoorTemp ? heating : ac
-var hvac = heating if indoorTemp < outdoorTemp else ac
-```
-
-Since it is an expression, an important question is what these look like when applied at more depth
-
-```go
-var hvac
-if indoorTemp < outdoorTemp {
-    if thermostat > indoorTemp {
-        hvac = heating
-    }
-    hvac = none
-} else {
-    if thermostat < indoorTemp {
-        hvac = ac
-    }
-    hvac = none
-}
-
-var hvac = if indoorTemp < outdoorTemp { if thermostat > indoorTemp { heating } else { none } } else { if thermostat < indoorTemp { ac } else { none } }
-var hvac = if (indoorTemp < outdoorTemp) if (thermostat > indoorTemp) heating else none else if (thermostat < indoorTemp) ac else none
-var hvac = indoorTemp < outdoorTemp ? thermostat > indoorTemp ? heating : none : thermostat < indoorTemp ? ac : none
-var hvac = if indoorTemp < outdoorTemp THEN if thermostat > indoorTemp THEN heating else none else if thermostat < indoorTemp THEN ac else none
-var hvac = if indoorTemp < outdoorTemp ? if thermostat > indoorTemp ? heating else none else if thermostat < indoorTemp ? ac else none
-var hvac = if indoorTemp < outdoorTemp ? if thermostat > indoorTemp ? heating : none : if thermostat < indoorTemp ? ac : none
-var hvac = heating if thermostat > indoorTemp else none if indoorTemp < outdoorTemp else ac if thermostat < indoorTemp else none
-```
-
-and also with else if
-
-```go
-var hvac
-if indoorTemp == outdoorTemp {
-    hvac = off
-} else if indoorTemp < outdoorTemp {
-    hvac = heating
-} else {
-    hvac = ac
-}
-
-var hvac = if indoorTemp == outdoorTemp { off } else if indoorTemp < outdoorTemp { heating } else { ac }
-var hvac = if (indoorTemp == outdoorTemp) off else if (indoorTemp < outdoorTemp) heating else ac
-var hvac = indoorTemp == outdoorTemp ? off : indoorTemp < outdoorTemp ? heating : ac
-var hvac = if indoorTemp == outdoorTemp then off else if indoorTemp < outdoorTemp then heating else ac
-var hvac = if indoorTemp == outdoorTemp ? off else if indoorTemp < outdoorTemp ? heating else ac
-var hvac = if indoorTemp == outdoorTemp ? off : if indoorTemp < outdoorTemp ? heating : ac
-var hvac = off if indoorTemp == outdoorTemp else heating if indoorTemp < outdoorTemp else ac
-```
-
-Hmmmm... Surprisingly, I don't think any of these are vague to the compiler given you go by right to left associativity.
-
-And no, you really shouldn't be making ternary statements ridiculously complicated, but I need to make sure those are still parsable and still readable.
-
-I know the last one is weird, but it is actually very interesting. It goes like this: "if (A) {B} else {C}" -> "B if A else C". It ends up in a binary tree shape. You can still read it left to right in plain English. For example, "if you know C, your life is great" can also have it phrased as "your life is great if you know C", but places slightly more emphasis on the value than the condition.
-
-It also avoids some of the vagueness of
-
-`var hvac = indoorTemp == outdoorTemp...`
-
-seeming like `var (hvac = indoorTemp)` at first glance.
-
-I'll combine the `else if` with the further depth: `var hvac = off if indoorTemp == outdoorTemp else heating if thermostat > indoorTemp else none if indoorTemp < outdoorTemp else ac if thermostat < indoorTemp else none`
-
-The hvac is off if it's the same temperature indoors as it is outdoors, otherwise it's heating if the thermostat is higher than the indoor temperature, otherwise it's no hvac if the indoor temperature is lower than outdoor temperature, otherwise it's AC if the thermostat is lower than the indoor temperature, otherwise it's none.
-
-That syntax could also be nice for short assignments like
-
-`value = dereference(input) if input.isPtr() else input`
-
-I'm also kinda interested in the one with "then" since it does make reading it more obvious without requiring `()` or `{}`.
-
-However, I think that first basic option is the most readable since you can clearly see the depth level with the curly braces.
-
-But it's *just* the curly braces that make it easy to read for me. How about I apply them to the other ones despite being redundant (to be thorough):
-
-I'll combine the two: `var hvac = { off } if indoorTemp == outdoorTemp else { { heating } if thermostat > indoorTemp else { { none } if indoorTemp < outdoorTemp else { { ac } if thermostat < indoorTemp else { none } } } }`
-
-I find this kinda weird. Next:
-
-`var hvac = indoorTemp == outdoorTemp ? { off } : { indoorTemp < outdoorTemp ? { thermostat > indoorTemp ? { heating } : { none } } : { thermostat < indoorTemp ? { ac } : { none } }`
-
-That's ok, but why not just use `if`/`else` in place of those:
-
-`var hvac = indoorTemp == outdoorTemp if { off } else { indoorTemp < outdoorTemp if { thermostat > indoorTemp if { heating } else { none } } else { thermostat < indoorTemp if { ac } else { none } }`
-
-I should only stray from the most obvious variation of Go when it's a clear improvement over the status quo. Idk if these really are, I personally like them, but I can already hear the angry voices insisting any of these are evil. Which points to a bit of a reality here: nothing will only be praised, and nothing will only be shamed...
-
-I'm going with `v = 2 * (if cond { a } else { b }) + ` for now, despite the curly braces feeling EXASPERATING to add in.
-
-I'll do this by either adding an expression identical to the `if else` statement, or modify the statement to become an expression.
-
-## Language features
-
-### set
-
-Implementing this really wasn't too interesting or challenging, but it was tedious.
-
-Because of the way `map` is designed (a hashmap), the keys and values are stored rather insignificantly, and removing the values from its structure was pretty simple to do. There isn't anything special about the difference between key and value besides that one part gets hashed and one part doesn't. So, yes, I copied map and refactored it; I really don't think there is any faster way to do *this map* for *its* intended purposes without also improving hashmap. That wasn't really my intention with Wo, but if someone sees a way of seriously improving the native hashmap when it doesn't have values, or if I spot an obvious one, then let's go ahead. I haven't changed the time complexity, but it should technically be insignificantly faster than `map[]struct{}`.
-
-So I made `map`'s keys as `set`'s elements, wiping any functionality with `map`'s values.
-
-This does mean the removal of the `val = m[key]` method, as that doesn't really mean anything for sets. Instead, I modified and kept the `_, ok = m[key]` method, using it like `ok = s[elem]`.
-
-```go
-primes hashset[int] = { 2, 3, 5 }  // declaration
-ok = primes[4]                 // is ok if contains elem
-primes.insert[7]               // insert / add
-primes.delete[3]               // delete / remove
-```
-
-I prefer `add` and `remove`, but the naming (from `map`) uses `insert`, so I don't want it to get too inconsistent and therefore unpredictable. It's not an impossible consideration, however, but I'd prefer renaming the `map` methods too in that case.
-
-There are also fast versions of the map for `strings`, `int32`, and `int64`, which Wo also has implemented.
-
-And Wo also support a `sets` package in the same ways that the `maps` package does.
-
-Sets in math use `{ }` to mean "unordered, unique collection", but in Go, which uses EBNF, it means "ordered, repeatable collection". I think it is ok to use the curly brackets for sets, since it is programmatically ordered and repeatable data at first, but then it will become converted from that explicit representation into something which is guaranteed to be an actual set. I can actually still say `{ a, b, a, c }` in math, but it represents a set of `a`, `b` and `c` without order. It is also predictable with the formatting already used with arrays and maps. If someone made their own set or any kind of math collection, it'd use the curly brackets.
-
-### Slices / Arrays
-
-I've concluded that it's not feasible to use `arr[]` because of how it interacts with map.
-
-Map is declared and called like this:
-
-`m := map[k]v`
-
-`v := m[k]`
-
-but array is declared and called like this:
-
-`a := [x]arr`
-
-`x := a[i]`
-
-The odd one out is `[x]arr`, which has the array marks as a prefix. What if it were the suffix?
-
-For example, what about a slice of a map from keys of 4 bytes to values of (maps with keys of 2 bytes to values of slices of strings)
-```
-[]map[[4]byte]map[[2]byte][]string     // Go
-map[byte[4]]map[byte[2]]string[][]     // arr[] --- vague
-map[[4]byte, map[[2]byte, []string]][] // map[A, B]
-map[byte[4], map[byte[2], string[]]][] // map[A, B] and arr[]
-```
-
-The second one is ambiguous, since it could mean a double array of strings, which doesn't happen when we use `map[A, B]`
-
-The last one prefers depth, so it ends up pushing more symbols to the end.
-
-For arrays and slices, I say either keep [ ]arr with map[A, B], or just don't make any changes
-
-### Map[K, V]
-
-I think `map[key]value` is supposed to reflect the `func(input) val` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
-
-I think this is too disruptive and unnecessary of a change as shown in the previous section, so I'll keep `map[key]value`
-
-### on adding keywords
-
-In general, having a term like `set` while also preventing reserved words from being overloading can make the language difficult to use. Especially since `set(v)` is a likely function name.
-
-> Why are maps built in?
-> 
-> The same reason strings are: they are such a powerful and important data structure that providing one excellent implementation with syntactic support makes programming more pleasant. We believe that Go’s implementation of maps is strong enough that it will serve for the vast majority of uses. If a specific application can benefit from a custom implementation, it’s possible to write one but it will not be as convenient syntactically; this seems a reasonable tradeoff.
-
-There isn't anything inherently significant about a `map` or `len`; it can just be represented by a struct or function. So it's down to just making a language nicer. I'm also proposing `enum`, `some`, and `none`. I don't think this is crossing the line yet of having to consistently and annoyingly rename things like class to clazz yet, but that does feel like a dishonest representation of a program when renamings like that have to happen, since the restriction is coming from a meta syntactical problem, not a functional one.
-
-## About Error handling
-
-### Optional
-
-Here are a couple designs:
-```go
-type Option1[T any] interface {
-  none    // = some 0 sized type
-  some(T) // = T
-}
-
-type Option2[T any] struct {
-  exists bool
-  t T
-}
-```
-
-Option1 can't do type assertion or type switch, requiring some kind of handler like `errors.Is`. It can do `some` / `none` pattern matching easier. Option2 can do field embedding, which is pretty important to errors, but it could probably still work with some native implementation details. It also aligns more with the idea of returning structs, however that principle is not as strong for the case of this interface.
-
-It should support functional programing and error handling like [lo](https://github.com/samber/lo) and [mo](https://github.com/samber/mo)
-
-#### ImpureOption vs Nilable Option
-
-nil/zero value can mean none or something special depending on your situation, so
-
-some(nil) could eval to none in some contexts  // TODO(bran) flesh concept out
-
-### Meaning of "Null"
+### nil
 
 Before talking about error handling, I'll brief about `nil` in general.
 
@@ -1493,9 +1420,6 @@ if pkg == nil {
 ```
 
 This has happened with error handling, although it is an agreed upon standard.
-
-### Error Handling
-
 > We believe that coupling exceptions to a control structure, as in the try-catch-finally idiom, results in convoluted code. It also tends to encourage programmers to label too many ordinary errors, such as failing to open a file, as exceptional.
 
 Sure, but you don't need to overcompensate. An error doesn't deserve multiple extra lines to remind you, even more than the main plot. Errors are still secondary, basically an after-thought, for better or for worse (Yes, I dream of a language with errors in mind first). A miniscule check is actually enough, since you don't need to be constantly reminded by it as it is not essential to the flow of the logic of your code, while still letting you ask "is this error checked?" and then easily seeing that it is because you're looking for it. This situation is not one typical of over abstraction, it's a perfect example of something that should be reduced to improve readability by highlighting what matters
@@ -1575,7 +1499,8 @@ if var file                    = os.Open("hi.wo") { /*main code*/ }    // Swift/
 var file                       = os.Open("hi.wo")!! // panic
 var file                       = os.Open("hi.wo")?  // unwrap or panic
 var file                       = os.Open("hi.wo").orElse(newFile)
-var file                       = os.Open("hi.wo")? else newFile
+var file                       = os.Open("hi.wo")? else newFile // experimental
+var file                       = if os.Open("hi.wo")? else newFile // experimental
 ```
 
 The ultra-shortened version removes some choice you get with error-handling, but you can still shorten that pattern as well as having this option.
@@ -1722,53 +1647,7 @@ And the same thing is true for Errable too: `func GoDiv() (int, error)` can be i
 
 And finally Go files compiled with the Wo compiler will interpret these in reverse from a Wo file as how Go typically does it, however it can share the same underlying `Option` and `Errable` types.
 
-
-### ok
-
-These ideas with err will also apply to ok, since this also represents an optional.
-
-What I'll do is, if any function from the standard library or any Go file is like
-
-`func f() (T, bool)`
-
-It can be interpreted as an optional or not. It's impossible to know if that's what it was, though. So, in Wo code, it must explicitly be an optional to be treated like one, and this is just a problem with interoperating with vague Go code.
-
-```go
-func get() (int, bool) {} // std lib or Go file
-
-func use() { // 
-  fmt.PrintLn(get()?, get().isPresent(), get().) 
-}
-```
-
-In other languages, `?` is a way of unwrapping, so it could be confusing to use something like `func f() T?`, so I'll go with the more explicit `func f() Option[T]` for Wo.
-
-I could also mirror errors with `func h() T!`, but they shouldn't be stacked with each other like `func j() T?!` since the `ok` pattern is like a softer version of an error. Errors imply existence of the values as do `ok`s, just without the implication of an error happening.
-
-### import compatibility
-
-To support interoperability with Go files, restricted function names in Wo should still be allowed in Go, but also importable in some way. If one is importing a function called `set`, I don't think this collides with the `set` type, but it would still be odd if someone made a `func map()`, so it'll have to be imported in a special way:
-
-`$set` is my main option for now.
-
-### export
-
-In fact, they have to do a similar thing in other scripts with exported functions since they don't have capitals. Wo could do something about that, like by allowing any case, just excluding lowercase characters from scripts that have a mixed case ([e.g.](https://www.compart.com/en/unicode/category/Lu) Latin, Cyrillic, Greek, Coptic, Armenian, some symbols like ℇ𝞥𝙰𝔛𐲖, although some of these are not recommended by unicode to be used as identifiers), and languages without any capitals wouldn't have that restriction.
-
-
-
-## Scope control
-
-There are over 100 "halls of shame" in Go's source code, which is a kind of comment they have that links to repos that used a function that it "shouldn't have".
-
-It's not really a laughing matter at that point, programs should be able to represent who gets access to what. Or, they should be given proper solutions to the work-arounds that they had to use.
-
-### other
-
-
-> Type conversions between slices and array pointers can fail at runtime and don’t support the comma ok idiom, so be careful when using them!
-> 
-> Learning Go
+## Design
 
 ### Standard library
 
@@ -1780,110 +1659,183 @@ however, if an addition to the library contributes to all of the same goals (i.e
 Another example is [DebugString()](https://www.dolthub.com/blog/2025-01-03-gos-debug-string-pseudo-standard/). Not only could I have this as a default, but I could add it to existing native types, so it's a stronger contender than something that could just be an import.
 I've yet to fully explore wihch packages should be included, but it should only be something needed or utterly wanted.
 
-All the packages/files to be added: `sets`, `set`, `option`, `enum`, and collections
+All the packages/files to be added: [sets](/src/sets/sets.go), [set](/src/runtime/set.go), option, enum, and collections
 
-Added, but are meant to be private: `set_fast32`, `set_fast64`, `set_faststr`
+Added, but are meant to be private: [set_fast32](/src/runtime/set_fast32.go), [set_fast64](/src/runtime/set_fast64.go), [set_faststr](/src/runtime/set_faststr.go)
 
-## Code example
+### Variable naming
 
-### Go
+One of the very first things I learned when I started programming is that using 1 or 2 length variable names in most situations was incredibly bad practice that leads to misunderstandings. You probably already know why, but in case you don't, I will explain below.
+
+Let's say you came across this, 40 lines deep into a function:
 
 ```go
-import { "strings" }
-type FilePath interface {
-  string | url
-}
-
-type Program struct {
-  executable [...]byte
-}
-
-func (p Program*) output() string {
-  return p.executable[:strings.LastIndex(p.executable, ".exe"))
-}
-
-func (p Program*) length() int {
-  return len(p.executable)
-}
-
-func runProgram() string {
-  output, err = runProgram("/")
-  if err != nil {
-    log(err)
-  }
-  return output
-}
-
-var fs = map[FilePath]string{"/app/host": "server.ts", "/": "Main.java"}
-
-func runProgramO(dir interface{string|url}) (int, *string, error) {
-  f, ok = fs[dir]
-  if (!ok) {
-    return nil, errors.New("invalid filepath")
-  }
-
-  r, err := os.Open(f)
-  if err != nil {
-    return nil, err
-  }
-
-  defer func() {
-    if err := r.Close(); err != nil {
-      return nil, err
-    }
-  }()
-
-  if err := reader.Sync(); err != nil {
-    return nil, err
-  }
-
-  p := myCompiler.build(reader)
-
-  return p.length(), *p.outputPath(), nil
-}
+t.leftBranch().cut()
 ```
-### A possible design for Wo
+
+What does this mean?
+
+You go check the definition:
+
 ```go
-func runProgram(directory <string|url>) (int, string)! { // members reversed to order by relevancy
-  if !var fileName = runnableFiles[directory] {
-    return errors.New("invalid filepath")
-  }
-  var reader = os.Open(fileName)!
-  defer reader.Close()!
-  reader.Sync()!
-  var program = myCompiler.build(reader)
-  return program.length(), program.outputPath() // converts it to some(int, string) and error as nil/none
-}
+t := roleHierarchy()
+```
 
-runnableFiles map[FilePath]string = {"/app/host": "server.ts", "/": "Main.java"}
+What?
 
-func runProgram() string {
-  output, log(err) = runProgram("/")
-  return output
-}
+You check the docs or source code for `roleHierarchy` and find out it returns a `Node`. And you check the `Node` struct, which contains a `val Role` a `left Node` and a `right Node`.
 
-struct Program {
-  byte[...] executable
-  func outputPath() string {
-    return executable[:executable.LastIndex(".exe")]
-  }
+It turns out, the `t` in `t.leftBranch().cut()` was just a tree.
 
-  func length() int {
-    len(executable)
-  }
-}
+Why should I have to analyze any of this when 3 characters would have explained enough. If the code used `tree` as the variable name, none or almost none of this would have been necessary - even with better documentation. We would have read that single word, and moved on to the next thing, rather than being disrupted.
 
-interface FilePath {
-  string | url
+> Good code is not overly vague.
+
+`t` is more objectively more vague than `tree`.
+
+`t` does not declare intent.
+
+```go
+tree.leftBranch().cut()
+```
+
+`tree` is vague to a certain level. If I'm talking about an abstract tree, then `tree` is the best name as it has an intentional amount of vagueness. Even then, I could be referring to a literal tree plant or a programmatic tree, but `t` still has much less meaning than that.
+
+Do removing characters improve readability and adding characters impede readability? Readability means **the ability to read**, which requires the existence of text to read. Cutting off the text makes it har
+
+Get it?
+
+You sacrificed about 5 characters, for what? But, then it suggests we do lengthen the code with `err != nil` instead of `!`. Do you see the double standard? I'm not even saying err check happens a lot, but even if it happens a few times, why not shorten it to a single character (just like with what is done with variables)
+
+The two principles of using more lines in code along with shortening variable names contradict each other.
+
+But there is a distinction here.
+
+Code either extends vertically (less functional abstraction) or horizontally (more function calls, longer names). Shortening names and using loads of null checking both go in the direction of vertical. Please, take your hand off the scroll wheel (or the `hjkl`). In between these two directions is a more square shaped code. And the other extreme typically happens with nested function calling, like some overly clever and lengthy Java streams solution.
+
+![Code that is tall, square, and wide](https://raw.githubusercontent.com/wo-language/wo-info/refs/heads/main/wo%20resources/code_rectangles_whiteborder.png)
+
+As you can see, the first code editor has 8 lines and reaches the first line, then compressed to 6 lines and reaches the second line, then to just 4 lines. I tried to make them each have the exact same "volume" of code.
+
+I find shortened variable names and repeated 3-4 line checking less readable, so I chose to make Wo more towards the square.
+
+There is one situation where shortened variable names might be acceptable, which is lambda function calls like `starfruits.map(s -> s.weight() * 2.2)`, or generally very short function calls, where you can easily see what `s` means.
+
+In the same realm is shadowing and keyword overloading, which I go into later.
+
+This abbreviation system and forcing functions to not have the same name is ironically avoided by importing from a package, which is basically the same thing as lengthening a function name anyway except with an extra `.`, like `stringsContains() -> strings.Contains()`.
+
+### Renaming package methods
+
+I also want to rename some common methods in the standard library. For example, I find `fmt`'s function names really vague.
+
+- `ConcatFormat` for `SprintF` in `fmt`
+
+`Print, Printf, Sprint, Sprintf, Fprint, Fprintf, Sscanf, Fscanf,` etc.
+
+I would have never had to carefully decode the tiny difference between their documentations either if they were just named something like
+
+`PrintFormat, Concat, ConcatFormat, FormatterPrint, ScanString, ScanReader` etc.
+
+or just leaving the varying arguments as optional parameters with the same function names
+
+`Scan(string), Scan(reader)`
+
+### Overloading
+
+#### Overloading package names
+
+This is just allowed because a package could be called anything, but it shouldn't be allowed without some kind of error. I'm taking for granted people don't necessarily rely on IDEs here. For example,
+
+```go
+import ( "strings" )
+
+func combineThem(strings /* Wo Error */ []string) string {
+    return strings.Join /* Go error */ (strings, ", ")
 }
 ```
 
+would not compile in Go, but not because of the existence of the variable name `strings`, but because `Join` is being called on that variable, when the author intended for it to be `Join` from the `strings`. It is because `strings` is overloading the `"strings"` package from the `import`.
 
-| Go                                                                                                                                                                                     | Wo with types before name                                                                                                                                                |
-|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <pre>var fs = map[FilePath]string</pre>                                                                                                                                                | <pre>map[FilePath, string] runnableFiles</pre>                                                                                                                           |
-| <pre>func runProgramO(dir interface{string:url})</pre>                                                                                                                                 | <pre>runProgram(<string:url> directory)</pre>                                                                                                                            |
-| <pre>&emsp;f, ok = fs[dir]<br>&emsp;if (!ok) {<br>&emsp;&emsp;return nil, errors.New("invalid filepath")<br>&emsp;}</pre>                                                              | <pre>&emsp;fileName, if(!ok) = runnableFiles[directory] {<br>&emsp;&emsp;throw error("invalid filepath")<br>&emsp;}<br><br></pre>                                        |
-| <pre>&emsp;r, err := os.Open(f)<br>&emsp;if err != nil {<br>&emsp;&emsp;return nil, err<br>&emsp;}                                                                                     | <pre>&emsp;*File reader = os.Open(fileName)!<br><br><br><br></pre>                                                                                                       |
-| <pre>&emsp;defer func() {<br>&emsp;&emsp;if err := r.Close(); err != nil {<br>&emsp;&emsp;&emsp;return nil, err<br>&emsp;&emsp;}<br>&emsp;}()</pre>                                    | <pre>&emsp;defer reader.Close()!<br><br><br><br><br></pre>                                                                                                               |
-| <pre>type Program struct {<br>&emsp;executable [...]byte<br>}<br>func (p Program*) output() string {<br>&emsp;return p.executable[:strings.LastIndex(p.executable, ".exe"))<br>}</pre> | <pre>struct Program {<br>&emsp;byte[...] executable<br>&emsp;string outputPath() {<br>&emsp;&emsp;return executable[:executable.LastIndex(".exe")]<br>&emsp;}<br>}</pre> |
+By the way, in Wo, I plan to make it so that one could just skip importing `strings` and just be able to call `Join` on a `[]string` like `stringsVariable.Join(", ")`. This could help contribute to avoiding these situations, but it could still happen of course.
+
+One way around it is to rename the variable `strings`, but this is a perfectly good variable name that might be used frequently across the file. The solution is to use `string_util "strings"` syntax, or to have a feature that differentiates the formatting of packages used in code like `@strings.append` as a rudimentary example.
+
+This is already done with capitalized exports, so "Strings.append" also makes sense.
+
+By the way, I dream of a language where all the reserved words have some symbol, and you write all your own stuff like regular words and spaces like `bird $get color` for `bird.get(color)`, and you get to define the meaning of all your own sentences by token order like some declaration `String A "with" String B -> concat(A, B)` or `Number A (Number B) -> A * B`. Or maybe Haskell has invaded my subconsciousness?
+
+#### Overloading reserved words
+
+I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, which means I don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is confusing. Enough said.
+
+#### Overloading functions
+
+> [Why does Go not support overloading of methods and operators?](https://go.dev/doc/faq#overloading)
+>
+> Method dispatch is simplified if it doesn’t need to do type matching as well. Experience with other languages told us that having a variety of methods with the same name but different signatures was occasionally useful but that it could also be confusing and fragile in practice. Matching only by name and requiring consistency in the types was a major simplifying decision in Go’s type system.
+
+Preventing function overloading sounds like a good idea in theory, but in practice it results in artificially lengthening function names, when their original form was already the most descriptive. A description of something can be done by its contents; the parameters describe the function already, there is no necessity to change the name when the parameters change too. It aligns with language and nature.
+
+Without overloading, shortened function names:
+
+```go
+payWithC(cash)
+payWithCI(creditCardInfo)
+payWithCNZ(creditCardNumber, zipCode)
+payWithCNCS(creditCardNumber, city, state)
+```
+
+With long description function names (worst of both worlds):
+
+```go
+payWithCash(cash)
+payWithCreditInfo(creditCardInfo)
+payWithCreditNumberZip(creditCardNumber, zipCode)
+payWithCreditNumberCityState(creditCardNumber, city, state)
+```
+
+With the same function names:
+
+```go
+payWith(cash)
+payWith(creditCardInfo)
+payWith(creditCardNumber, zipCode)
+payWith(creditCardNumber, city, state)
+```
+
+which has much less redundant information.
+
+I have used this aspect of programming many, many times. It has been far from the top of the list of things that could make my code vague, and I'm not convinced that it's ever a primary culprit.
+
+The real problem is that, when it comes to compiling, we can't just know which one you're referring to when the type parameters are vague. It requires some type analysis at compile time. It is very close to the line of inheritance making sense, as a type being vague with another one implies some shared classification. The most obvious thing to be would be some structures which are just unsafe pointers underneath. Type inference is possible, but it would require a bit of reworking. It's already safe for situations like `[3]int != [2]int != []int != []*int`, but not when it comes to generics and interfaces.
+
+Additionally, `[:]` already does this. It's equivalent to `slice(start=0, end=0, max=0)`.
+
+### Import compatibility
+
+To support interoperability with Go files, restricted function names in Wo should still be allowed in Go, but also importable in some way. If one is importing a function called `set`, I don't think this collides with the `set` type, but it would still be odd if someone made a `func map()`, so it'll have to be imported in a special way:
+
+`$set` is my main option for now.
+
+### Export
+
+`export func Sew(string) {}`
+
+In fact, they have to do a similar thing in other scripts with exported functions since they don't have capitals. // TODO(bran) incoherent
+
+Wo could do something about that, like by allowing any case, just excluding lowercase characters from scripts that have a mixed case ([e.g.](https://www.compart.com/en/unicode/category/Lu) Latin, Cyrillic, Greek, Coptic, Armenian, some symbols like ℇ𝞥𝙰𝔛𐲖, although some of these are not recommended by unicode to be used as identifiers), and languages without any capitals wouldn't have that restriction.
+
+### Scope control
+
+There are over 100 "halls of shame" in Go's source code, which is a kind of comment they have that links to repos that used a function that it "shouldn't have".
+
+It's not really a laughing matter at that point, programs should be able to represent who gets access to what. Or, they should be given proper solutions to the work-arounds that they had to use.
+
+### Array/Slice Clarity
+
+> Type conversions between slices and array pointers can fail at runtime and don’t support the comma ok idiom, so be careful when using them!
+>
+> Learning Go
+
+// TODO(bran) 

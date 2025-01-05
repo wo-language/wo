@@ -14,11 +14,7 @@ if err != nil {
 could be done like this in Wo:
 
 ```go
-var file = os.Open("hi.wo")
-
-
-
-
+var file = os.Open("hi.wo")!
 ```
 
 (Pending decisions here. It's a WIP)
@@ -41,15 +37,6 @@ The point of these features is to look beyond banter and theories, such as how m
 |  Single line function literal  |               `func(v) bool -> { return v == 0 }`               |                   `v -> v == 0`, `() -> effects()`                   |
 | `func` for multi line or `{ }` | `func() int {`<br/>`unlock()\open()`<br/>`return getFunds()\}`  |    `func() int {`<br/>`unlock()\open()`<br/>`return getFunds()\}`    |
 
-## Language Design
-
-| Design                                    | Go Usage                                                                                                                                    | Wo Usage                                                                                            |
-|:------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| Doesn't prefer **name shortenings**       | `f`<br/>`SprintF`                                                                                                                           | `file`<br/>`ConcatFormat`                                                                           |
-| Allows **function overloading**           | `print(string)`<br/>`printF(formatter, string)`<br/>`printOF(stdout, formatter, string)`                                                    | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`               |
-| Allows **default arguments** in functions | `print(string, stdout, fmt) {`<br/>&emsp;&emsp;`if fmt == nil {formatter = defFmt}`<br/>&emsp;&emsp;`if stdout == nil {stdout = console} }` | `print(string,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`stdout = console)` |
-
-Wo could also address **null checking** somehow (e.g. `nonnil`) and pointer/value receivers. And as for error handling, maybe take inspiration from Rust's [result](https://doc.rust-lang.org/std/result/) or Scala's [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html).
 
 ## Types & Data
 
@@ -60,7 +47,7 @@ Wo could also address **null checking** somehow (e.g. `nonnil`) and pointer/valu
 |                         Functional interface                          | wrap interface with function type                                    | `type Doer funcinter {do()}; func(d Doer) {d.do()}`                                                                                  |
 |                              `enum` type                              | `iota` and switch case                                               | `type E enum {A(true), B(false); b bool}`<br/>`A.b`=true, `B.name`="B", `A.pos`=0                                                    |
 |                              flags type                               | `1 << iota` and bit operations                                       | `type F enum {R, W, E}` and bit operations                                                                                           |
-|                                sum type                               | `struct` state management                                            | `type File enum { Closed, Open(contents string) }`                                                                                   |
+|                               sum type                                | `struct` state management                                            | `type File enum { Closed, Open(contents string) }`                                                                                   |
 |                         Functional interface                          |                                                                      |                                                                                                                                      |
 |                          Algebraic data type                          | `type A interface { int \| string }`                                 | `(num int64 \| ByteNum(set[byte]) + Infinity(bool sign), size int8)` struct(union(type, sum), type)                                  |
 |            Native `strings`, `maps`, and slice operations             | `strings.Contains(str, substr)`                                      | `str.Contains(substr)`                                                                                                               |
@@ -81,17 +68,22 @@ Wo could also address **null checking** somehow (e.g. `nonnil`) and pointer/valu
 |         Initialize with type with **only** `=` and no `var`         | `var i int = 2`                                                                 | `i int = 2`                            |
 |                         No multi assignment                         | `p, q = 20, 30`                                                                 | *compile error*                        |
 
-## Language Features
+## Language Design
 
 Features that change the functionality of the language beyond syntax and design principles.
 
-| Feature                                | Go Method                                                                             | Wo Usage                                                      |
-|:---------------------------------------|---------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| Export explicitly                      | `func Export() // apital`, `func Xแมว() // add "X"`<br/>`func private()` `func แมว()` | `func export แมว()`, `export const Kilo`<br/>`func private()` |
-| Export to the package but not globally | *none*                                                                                | `func pkg Get()`, `type pkg Bog struct`                       |
-| Make slice append more predictable     | Overrides / Resizes                                                                   | Indicates new allocs                                          |
-| Run other functions besides main       | `func main() { other() }`                                                             | `func otherMain() { }`                                        |
-| More liberal folder structure          | main, mod                                                                             | TBD                                                           |
+| Design                                    | Go Method                                                                                                                                   | Wo Usage                                                                                            |
+|:------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| Doesn't prefer **name shortenings**       | `f`<br/>`SprintF`                                                                                                                           | `file`<br/>`ConcatFormat`                                                                           |
+| Allows **function overloading**           | `print(string)`<br/>`printF(formatter, string)`<br/>`printOF(stdout, formatter, string)`                                                    | `print(string)`<br/>`print(formatter, string)`<br/>`print(stdout, formatter, string)`               |
+| Allows **default arguments** in functions | `print(string, stdout, fmt) {`<br/>&emsp;&emsp;`if fmt == nil {formatter = defFmt}`<br/>&emsp;&emsp;`if stdout == nil {stdout = console} }` | `print(string,`<br/>&emsp;&emsp;`formatter = defaultFormatter,`<br/>&emsp;&emsp;`stdout = console)` |
+| Export explicitly                         | `func Export() // apital`, `func Xแมว() // add "X"`<br/>`func private()` `func แมว()`                                                       | `func export แมว()`, `export const Kilo`<br/>`func private()`                                       |
+| Export to the package but not globally    | *none*                                                                                                                                      | `func pkg Get()`, `type pkg Bog struct`                                                             |
+| Make slice append more predictable        | Overrides / Resizes                                                                                                                         | Indicates new allocs                                                                                |
+| Run other functions besides main          | `func main() { other() }`                                                                                                                   | `func otherMain() { }`                                                                              |
+| More liberal folder structure             | main, mod                                                                                                                                   | TBD                                                                                                 |
+
+Wo could also address **null checking** somehow (e.g. `nonnil`) and pointer/value receivers. And as for error handling, maybe take inspiration from Rust's [result](https://doc.rust-lang.org/std/result/) or Scala's [canthrow](https://docs.scala-lang.org/scala3/reference/experimental/canthrow.html).
 
 ### To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md).
 
