@@ -6,8 +6,8 @@ package parser
 
 import (
 	"fmt"
-	"std/go/ast"
-	"std/go/token"
+	"go/ast"
+	"go/token"
 	"strings"
 )
 
@@ -268,8 +268,6 @@ func (r *resolver) Visit(node ast.Node) ast.Visitor {
 		ast.Walk(r, n.X)
 		// Note: don't try to resolve n.Sel, as we don't support qualified
 		// resolution.
-	case *ast.BangSelectorExpr:
-		ast.Walk(r, n.X) // TODO
 
 	case *ast.StructType:
 		r.openScope(n.Pos())

@@ -90,10 +90,6 @@ func Walk(v Visitor, node Node) {
 		Walk(v, n.X)
 		Walk(v, n.Sel)
 
-	case *BangSelectorExpr:
-		Walk(v, n.X)
-		Walk(v, n.Sel)
-
 	case *IndexExpr:
 		Walk(v, n.X)
 		Walk(v, n.Index)

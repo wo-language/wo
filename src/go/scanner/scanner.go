@@ -10,8 +10,8 @@ package scanner
 import (
 	"bytes"
 	"fmt"
+	"go/token"
 	"path/filepath"
-	"std/go/token"
 	"strconv"
 	"unicode"
 	"unicode/utf8"
@@ -32,7 +32,7 @@ type Scanner struct {
 	dir  string       // directory portion of file.Name()
 	src  []byte       // source
 	err  ErrorHandler // error reporting; or nil
-	wo   bool         // if scanning .wo
+	wo   bool		  // if scanning .wo
 	mode Mode         // scanning mode
 
 	// scanning state
@@ -45,10 +45,6 @@ type Scanner struct {
 
 	// public state - ok to modify
 	ErrorCount int // number of errors encountered
-}
-
-func (s *Scanner) IsWo() bool {
-	return s.wo
 }
 
 const (
@@ -892,7 +888,7 @@ scanAgain:
 		case '-':
 			if s.wo && s.ch == '>' {
 				s.next()
-				tok = token.RARROW
+				tok = token.RIGHT_ARROW
 			} else {
 				tok = s.switch3(token.SUB, token.SUB_ASSIGN, '-', token.DEC)
 				if tok == token.DEC {
