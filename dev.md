@@ -28,6 +28,9 @@ Development steps:
 - perhaps offering an online playground
 - a transpiler that converts them between each other
 
+There is a priority to features. First: ones that allow experimenting, then by the most important / needed ones.
+I'll indicate it in the specification.
+
 ###
 
 versioning:

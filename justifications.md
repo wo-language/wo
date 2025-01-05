@@ -1,6 +1,6 @@
-In here, I give explain, argue for, and document Wo's design decisions. Maybe it could be interesting to some people, but it serves as an important documentation to me, so I know what has already been considered and tested.
+In here, I give explain, argue for, and document Wo's design decisions. Maybe it could be interesting to some people, but it serves as an important documentation, so I know what has already been considered and tested.
 
-#### *Remember, many of these things are pending, and waiting to be tested properly, and any of these could be scrapped or altered!*
+## *Remember, many of these things are pending, and waiting to be tested properly, and any of these could be scrapped or altered!*
 
 ### Index
 
@@ -17,31 +17,33 @@ In here, I give explain, argue for, and document Wo's design decisions. Maybe it
 
 ## Theory
 
-When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language is based on C so it's fast.
+When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language and is based on C so it's fast.
 
-A similar situation was Scala over Java. It clearly improved the syntax and design, especially with pattern matching,
-and, importantly, interoped with Java. This project goes deeper than that by modifying the same compiler.
+A similar situation was Scala over Java. It clearly improved the syntax and design, especially with pattern matching, and, importantly, interoped with Java. This project goes deeper than that by modifying the same compiler.
 
-I have not seen anything in the programming language landscape like that - a direct child of Go that addresses its design.
+I have not seen anything in the programming language landscape like that: a direct child of Go that addresses design.
 
-And let it be known, the internet is full of needless speculation as to "why Go did this and not that?", so I'll also make this transparent and be skeptical of any justification that people give to Go, instead prioritizing the objective best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
+And let it be known, the internet is full of needless speculation as to "why Go did this and not that?". I'll make this design process transparent and be skeptical of any justification that people give to Go, instead, prioritizing the "objective" best way of doing something regardless of what the theories originally purported. In other words, this is about what happens in practice, not how logically sound or nice the theory is behind it. Or, how bad you think it would be, which is just obstinance without actually trying it. For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice. Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
 
-Additionally, the entire band of questions like "wasn't it designed for bad programmers?" are almost entirely 
-irrelevent here. Whataboutisms like that which lead one astray from the real goals of programming language design are 
-not the main topic here. Tip: it's a fallacy because something is what it is whether someone intended for it to be 
-something or not.
+Obviously, the design I end up going with is going to be heavily influenced by my opinions, but I'm actually trying to base it on what I percieve as the average universal preference.
+
+Additionally, the entire band of questions such as "wasn't it designed for bad programmers?" are irrelevent here. Whataboutisms like that which lead one astray from the real goals of programming language design are not the main topic here. Tip: it's a fallacy because something is what it is whether someone intended for it to be something or not (but it could give clues into its design as it is anyway, but people don't ask that question for that reason).
 
 Ultimately, certain improvements can be more valuable in different circumstances, while it doesn't matter in others. For example, I had a Java program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) into Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
 
 So it is just nice to have the option of a design that is attuned to your circumstances, as opposed to some forced grifting replacement for all of Go that must be better because the author thinks so.
 
-This is also why I am planning to make the features modular / able to be swapped in and out.
+That's why I am planning to make the features modular / able to be swapped in and out with some kind of attribute.
+
+Despite my use of the first person, this is not really my project. I'll eventually put it in the third person if others begin to contribute a lot. Anyone can contribute with issues, pull requests, or even maintaining. I will be trigger-happy to accept pull requests even if I don't like the change, in order to be iterative and experimental (branches exist). We will finalize on something as long as it is democratically liked and clearly follows good language design. If it's something controversial, then it can just be a feature that's off by default - who cares?
+
+And yes, this project should be very unbackwards-compatible during its infancy at least. Syntax versions could be adapted, though, by appending letters to the base version like Go1.23.4 -> Wo1.23.4B
 
 ### The goals of code
 
 Code communicates and guarantees that it achieves something when ran by a computer. These two fight with each other in ways I won't be able to describe fully here. Intention seems to be an important part of Go's design, and I believe it is important. Just keep this in mind for later.
 
-I believe that adding comments is to compensate for code that doesn't communicate. They should be rarely used in practice, only for things like magic constants and documentation. Even with documentation, it should be obvious what a function is going to do from its name. The syntax and style of a language along with the programmer's design of the code, such as identifier names and logical design, all contribute to the given "intent" of the program. Therefore:
+I believe that adding comments is to compensate for code that doesn't communicate. They should be rarely used in practice, only used deliberately for things like magic constants and documentation. Even with documentation, it should be obvious what a function is going to do from its name. The syntax and style of a language along with the programmer's design of the code, such as identifier names and logical design, all contribute to the given "intent" of the program. Therefore:
 
 - The compiler should not force you to be vague.
   - and preferably should help you to be clear.
@@ -52,27 +54,11 @@ It's our job to pay attention to details, but let's still make it as easy on our
 
 The current state of Go's compiler forces you to be vague, and their style designs recommend using vague variable and function names. This isn't exactly a criticism, but just a description of how Go appears to me.
 
-Boilerplate actually is good by the way, but only when it is holding up to our regular standards: readable, giving intent, functional, etc. It's stupid to make 5 functions with a string inside different rather than making it a parameter. However, code isn't meant to just be run, it's meant to be used and edited - the code base grows, and it grows off of the previously placed boilerplate in occasionally unpredictable directions.
-
-the `if err != nil {}` pattern doesn't really satisfy that description.
-
-Boilerplate actually is good by the way, but only when it holds up to our regular code standards: readable, giving intent, functional, etc. It's stupid to make 5 functions with a single string inside different rather than just making it a parameter. However, code isn't meant to be just run, it's meant to be used and edited - the code base grows, and it grows off of the previously placed boilerplate in occasionally unpredictable directions. It also serves to not overly compress useful language.
+Boilerplate actually is good by the way, but only when it holds up to our regular code standards: readable, giving intent, functional, etc. It's one extreme to make 5 functions with the only difference being a string literal inside rather than making that a parameter. However, code isn't meant to be just run, it's meant to be used and edited - the code base grows, and it grows off of the previously placed boilerplate in occasionally unpredictable directions. It also serves to not overly compress useful language.
 
 The `if err != nil {}` pattern doesn't really satisfy that description of a useful boilerplate above.
 
-A Similar thing is true with `set`s. You will very rarely need a modified implementation, so it should be a standard. How many times have you had to create your own set implementation when it wasn't for a data structures class or for fun?
-
-### Why modularity
-
-I am considering making different language features **modular**. That is, they can be enabled or disabled either through a compiler flag, in the module file, or with some header.
-
-This isn't the newest idea, as languages all have versions one can choose of their liking. Rust has that capability with something like `#![allow(unused)]` which allows unused variables in the entire file.
-
-If someone just likes only the interface syntax, and that's all they want, then they can still use Wo in that way without dealing with the parts they don't like.
-
-For example, enforcing the type before the variable name is universally disagreed on, so this could just be an additional option, not the Wo default. If a feature isn't restrictive, then it doesn't need a flag.
-
-That means there are these types of features: Those enforced without an option, those that are on by default, those that are off by default. All of them except experimental or "indifferent" ones would be enabled by default.
+A Similar thing is true with `set`s. You will very rarely need a modified implementation, so it should be a standard type. How many times have you had to create your own set implementation when one was already provided when it wasn't for a data structures class or for fun? Personally, exactly once, which was when I implemented it here in this project.
 
 ### To restrict or to allow
 
@@ -88,7 +74,7 @@ This is backwards logic to me from the compiler's perspective. It shouldn't allo
 
 ### Unpredictible usage
 
-I want to eliminate "memorized info". We should learn what `.` and `if` mean, but some things are completely arbitrary given the context. It's not obvious that `map`s and slices are pointers, it's not obvious what zero values are, and there is unexpected slice appending behavior. These situations should be intuitive based on their appearance, otherwise `slice` should return extra information about what has happened for example.
+I want to eliminate "memorized arbitrary facts". We should learn what `.` and `if` mean to start since the base components of language aren't going to be intuitive, but some things are completely arbitrary given the context. It's not obvious that `map`s and slices are pointers, it's not obvious what zero values are, and there is unexpected slice appending behavior. Obviously, you have to learn this from a book, documentation, or experimenting, just like a lot of other things in programming, but I'm saying you shouldn't have to for very certain unobvious things. These situations should be intuitive based on their appearance and programmatic context, otherwise, `slice` would return extra information about what has happened during a vague operation for example.
 
 ### Go's design reasons
 
@@ -109,7 +95,19 @@ Besides the obvious reasons of "having a good feature that lets you program", [t
   1. Was fine in practice
   2. To replace a prevented feature
 
-They don't go too far into depth on what exactly makes something readable or not, but I'm going to painstakingly analyze it for each feature.
+They don't go too far into depth on what exactly makes something readable or not, but I'm going to analyze it for each syntactical design feature.
+
+### Why modularity
+
+I am considering making different language features **modular**. That is, they can be enabled or disabled either through a compiler flag, in the module file, or with some file header.
+
+This isn't the newest idea, as languages all have versions one can choose of their liking. Rust has that capability with something like `#![allow(unused)]` which allows unused variables in the entire file.
+
+If someone just likes only the interface syntax, and that's all they want, then they can still use Wo in that way without dealing with the parts they don't like.
+
+For example, enforcing the type before the variable name is universally disagreed on, so this could just be an additional option, not the Wo default. If a feature isn't restrictive, then it doesn't need a flag.
+
+That means there are these types of features: Those enforced without an option which are naturally optional, those that are on by default, those that are off by default. Experimental or "very indifferent" ones would be the ones that are disabled by default.
 
 ## Conventions
 
@@ -139,7 +137,7 @@ It turns out, the `t` in `t.leftBranch().cut()` was just a tree.
 
 Why should I have to analyze any of this when 3 characters would have explained enough. If the code used `tree` as the variable name, none or almost none of this would have been necessary - even with better documentation. We would have read that single word, and moved on to the next thing, rather than being disrupted.
 
-> Good code is not vague.
+> Good code is not overly vague.
 
 `t` is more objectively more vague than `tree`.
 
@@ -149,9 +147,7 @@ Why should I have to analyze any of this when 3 characters would have explained 
 tree.leftBranch().cut()
 ```
 
-`tree` is vague to a certain level, as I could be referring to a literal tree or a programmatic tree, but `t` has much less meaning.
-
-Working with Go code is that same situation of searching for the meaning of shortened names over again.
+`tree` is vague to a certain level. If I'm talking about an abstract tree, then `tree` is the best name as it has an intentional amount of vagueness. Even then, I could be referring to a literal tree plant or a programmatic tree, but `t` still has much less meaning than that.
 
 Do removing characters improve readability and adding characters impede readability? Readability means **the ability to read**, which requires the existence of text to read. Cutting off the text makes it har
 
@@ -165,7 +161,7 @@ But there is a distinction here.
 
 Code either extends vertically (less functional abstraction) or horizontally (more function calls, longer names). Shortening names and using loads of null checking both go in the direction of vertical. Please, take your hand off the scroll wheel (or the `hjkl`). In between these two directions is a more square shaped code. And the other extreme typically happens with nested function calling, like some overly clever and lengthy Java streams solution.
 
-![Image of 3 code editors of code that's tall, square, and wide](https://raw.githubusercontent.com/wo-language/wo-info/refs/heads/main/wo%20resources/code_rectangles_whiteborder.png)
+![Code that is tall, square, and wide](https://raw.githubusercontent.com/wo-language/wo-info/refs/heads/main/wo%20resources/code_rectangles_whiteborder.png)
 
 As you can see, the first code editor has 8 lines and reaches the first line, then compressed to 6 lines and reaches the second line, then to just 4 lines. I tried to make them each have the exact same "volume" of code.
 
@@ -197,8 +193,8 @@ or just leaving the varying arguments as optional parameters with the same funct
 
 Going for this syntax is a real possibility, but I don't see it necessary or too helpful (either way):
 `struct S {}`
-`interface I {}`
-so I'm going with Go's way for now.
+`interface I {}`,
+so I'm keeping that.
 
 ### Overloading package names
 
@@ -216,27 +212,22 @@ would not compile in Go, but not because of the existence of the variable name `
 
 By the way, in Wo, I plan to make it so that one could just skip importing `strings` and just be able to call `Join` on a `[]string` like `stringsVariable.Join(", ")`. This could help contribute to avoiding these situations, but it could still happen of course.
 
-One way around it is to rename `strings`, but this is a perfectly good variable name that might be used frequently across the file. The solution is to use `string_util "strings"` syntax, or to differentiate the formatting of packages used in code like `@strings.append` as a rudimentary example.
+One way around it is to rename the variable `strings`, but this is a perfectly good variable name that might be used frequently across the file. The solution is to use `string_util "strings"` syntax, or to have a feature that differentiates the formatting of packages used in code like `@strings.append` as a rudimentary example.
 
-In fact, they have to do a similar thing in other scripts with exported functions since they don't have capitals. Wo could do something about that, like by allowing any case, just excluding lowercase characters from scripts that have a mixed case ([e.g.](https://www.compart.com/en/unicode/category/Lu) Latin, Cyrillic, Greek, Coptic, Armenian, some symbols like ℇ𝞥𝙰𝔛𐲖, although some of these are not recommended by unicode to be used as identifiers), and languages without any capitals wouldn't have that restriction.
-
-Another way of doing it is to always export packages capitalized like `Strings "strings"` as a naming standard.
+This is already done with capitalized exports, so "Strings.append" also makes sense.
 
 By the way, I dream of a language where all the reserved words have some symbol, and you write all your own stuff like regular words and spaces like `bird $get color` for `bird.get(color)`, and you get to define the meaning of all your own sentences by token order like some declaration `String A "with" String B -> concat(A, B)` or `Number A (Number B) -> A * B`. Or maybe Haskell has invaded my subconsciousness?
 
 ### Overloading reserved words
 
-I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, but I simply don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is confusing. Enough said.
-
-## Syntax Features
+I assume one of the reasons it allows overloading reserved words (`int`, `nil`) is because of backwards compatability, which means I don't need that since this is a fresh start for syntax. Allowing the ability to override those is always confusing and unsafe. Words spelled the same with different meanings used in the same exact contexts, which can be done by accident, is confusing. Enough said.
 
 ### interface{}
 
-I chose `<T>` for `interface{T}`. I considered something like `~`, but you can't wrap around with that. There was also `#{}`, but the shortness of `<>` was more attractive. Tags are a symbol that are not used in Go and is already associated with types.
+I chose `<T>` for `interface{T}`. I considered something like `~T`, but you can't wrap around with that. There was also `#{}`, but the shortness of `<>` was more attractive. Angled brackets are a symbol that are not used in Go and are already associated with types.
 
 ```go
-func f(a <>, b <bool>) {
-}
+func f[T <>, S <bool>]() { }
 ```
 
 As for
@@ -256,7 +247,15 @@ type I <
 ```
 which is a bit weird unless you really like C++. Using `interface` in the type declaration doesn't feel exasperating anyway.
 
-So I'll keep `type NAME interface` for now.
+So I'll keep `type Name interface {}` for now.
+
+For the union syntax, the `<>`, let alone the `interface{}` around some union type can just be dropped:
+
+```go
+type floaty = float32 | float64
+```
+
+Also see [union](#Union).
 
 ### Unused variables
 
@@ -266,12 +265,722 @@ func main() {
 }
 ```
 
-Wo simply allows this. It will become a warning and compiled away. The reason Go doesn't do this is probably because of how it optimizes variables. It does allow unused `const` for the same reason, since those are easier to optimize. However, it is not otherwise impossible to optimize unused variables away.
+Wo would simply allow this. It will become a warning and compiled away. The reason Go doesn't do this is probably because of how it optimizes variables. It does allow unused `const` for the same reason, since those are easier to optimize. However, it is not otherwise impossible to optimize unused variables away.
+
+### Function
+
+The `func(P) R` syntax is fine at fixing C's spiriling function types, and, in the case of its instantiation, takes up a lot of space for minimal meaning when it's being used in function arguments.
+
+People often cite `->`, but I looked at other styles later. There are way more variations than you'd expect, so don't spend too much time thinking about that.
+
+I want to keep `func` for multi line function calls, since that is much more similar to what functions actually look like anyway, as functions have multiple lines and curly braces while the anonymous function doesn't.
+
+```go
+s -> {
+  s.bury(nuts)
+  return s.runUpATree()
+}
+```
+
+is just a bit awkward in comparison to
+
+```go
+func s() {
+  s.bury(nuts)
+  return s.runUpATree()
+}
+```
+
+since the first line of the function doesn't need to be shorter with `->` since it has already been split up into multiple lines anyway.
+
+Now, for the simple case, which:
+
+`map(c -> c + 1)`
+
+in comparison to
+
+`map(func(c int) { return c + 1 }`
+
+This requires: `func`, the parameter types (`int`), curly brackets `{}`, and the `return` keyword, while the right arrow syntax requires `->`.
+
+Of course, for Wo's function literal syntax, it will not require the types unless it's absolutely needed. In this case, the compiler knows `c` is an `int` in the same way that it knows what it is in the body of `func f(c int) { c + 1 }`.
+
+There is also wishes to keep `func` in the lambda. This option wouldn't change any of the analysis below, so it can be considered. Also see https://github.com/golang/go/issues/21498#issuecomment-2477240860
+
+For function types, the only problem I've noticed with it so far is that the parameterless returnless type is longer and the tuple type can look like arguments, except this is never syntactically vague to the compiler since the tuple can only be the last thing in any series of parameters and returns.
+
+Here are a lot of different cases:
+
+| `func`                                 | `->`                                 |
+|----------------------------------------|--------------------------------------|
+| `func()`                               | `() -> ()`                           |
+| `func(T)`                              | `T -> ()`                            |
+| `func() T`                             | `() -> T`                            |
+| `func(T) T`                            | `T -> T`                             |
+| `func(func())`                         | `(() -> ()) -> ()`                   |
+| `func(a A) (b B)`                      | `(a A) -> (b B)`                     |
+| `func(func(T) T) T`                    | `(T -> T) -> T`                      |
+| `func(T) func(T) T`                    | `T -> T -> T`                        |
+| `func() func(T) T`                     | `() -> T -> T`                       |
+| `func() func()`                        | `() -> () -> ()`                     |
+| `func(a A) func(b B)`                  | `(a A) -> (b B) -> ()`               |
+| `func() func() func()`                 | `() -> () -> () -> ()`               |
+| `func(func()) func()`                  | `(() -> ()) -> () -> ()`             |
+| `func(func(T) T) func(T) T`            | `(T -> T) -> T -> T`                 |
+| `func() (T, T)`                        | `() -> (T, T)`                       |
+| `func(func() (T, T))`                  | `(() -> (T, T)) -> ()`               |
+| `func(T, T) (T, T)`                    | `(T, T) -> (T, T)`                   |
+| `func(T) (func(T) T, func(T) T)`       | `T -> (T -> T, T -> T )`             |    
+| `func(a T) (func(b T) T, func(c T) T)` | `(a T) -> ((b T) -> T, (c T) -> T )` |    
+| `func() (func(), func())`              | `() -> (() -> (), () -> () )`        |
+
+I'm using `->` to replicate "returning" and so `=>` could be reserved for pattern matching, but here are some other styles I kinda like:
+
+| `func`                             | `->`                              | `:`                               | `_`                             | `λ`                          | Remove `func`             | No arrow                    |
+|------------------------------------|:----------------------------------|:----------------------------------|:--------------------------------|------------------------------|---------------------------|-----------------------------|
+| `func()`                           | `() -> ()`                        | `() : ()`                         | `_ : _`                         | `λ`                          | `()`                      | `_ _`                       |
+| `func(T) T`                        | `T -> T`                          | `T : T`                           | `T : T`                         | `λT T`                       | `(T) T`                   | `T T`                       |
+| `func(f func())`                   | `(f() -> ()) -> ()`               | `(f() : ()) : ()`                 | `(f _ : _) : _`                 | `λ(f λ)`                     | `(f())`                   | `(f _ _) _`                 |
+| `func(func(T) func()) T`           | `(T -> () -> ()) -> ()`           | `(T : () : ()) : ()`              | `(T : _ : _) : _`               | `λ(λT λ)`                    | `((T) ()) T`              | `(T _ _) _`                 |
+| `func(T, T) func(T) T`             | `(T, T) -> T -> T`                | `(T, T) : T : T`                  | `(T, T) : T : T`                | `λ(T, T) λT T`               | `(T, T) (T) T`            | `(T, T) T T`                |
+| `func(a A) func(b B) (c C)`        | `(a A) -> (b B) -> (c C)`         | `(a A) : (b B) : (c C)`           | `(a A) : (b B) : (c C)`         | `λ(a A) λ(b B) (c C)`        | `(a A) (b B) (c C)`       | `(a A) (b B) (c C)`         |
+| `func(func(T) T) func(T)`          | `(T -> T) -> T -> ()`             | `(T : T) : T : ()`                | `(T : T) : T : _`               | `λ(λT T) λT`                 | `((T) T) (T)`             | `(T T) T _`                 |
+| `func() (T, T)`                    | `() -> (T, T)`                    | `() : (T, T)`                     | `_ : (T, T)`                    | `λ() (T, T)`                 | `() (T, T)`               | `_ (T, T)`                  |
+| `func(L) (func(M) N, func(O) P)`   | `L -> (M -> N, O -> P)`           | `L : (M : N, O : P)`              | `L : (M : N, O : P )`           | `λL (λM N, λO P)`            | `(L) ((M) N, (O) P)`      | `L (M N, O P)`              |
+| `func c(d func(x, y int)) (z int)` | `c(d(x, y int) -> ()) -> (z int)` | `c(d(x, y int) -> ()) -> (z int)` | `c(d(x, y int) : ()) : (z int)` | `λ c(d λ(x, y int)) (z int)` | `c(d (x, y int)) (z int)` | `c(d(x, y int) ()) (z int)` |
+
+For completion, Js does `function(a){}`, Python does `lambda a: a`, C++ does `[](T t) -> R {}`, Rust does `Fn(T) -> T`, `|a: i32| a`. There are still many, many other ways it could be done.
+
+There's some serious potential with these other designs.
+
+`:` reduces the arrow by a character, but it can be conflated with tags like in maps or slicing.
+
+`_` takes away a char from `()`, but it looks similar to the "unused signifier", like `_ -> int` could mean "ignore the input". I would have to disable `_` as a variable name.
+
+`λ` is cool since you can easily count and see how many functions there are, and it doesn't need any indicator of a return type, like how `func()` was, but it is restrictive to Greek identifiers, and `λT` is even an identifier on its own already.
+
+Removing `func` allows stuff like `f(g(int) int)`. However, this means `T` and `(T)` have different meanings, but wrapped parens shouldn't change the meaning so easily for a single identifier.
+
+
+But I think these examples aren't as practical to show how some of these styles could shine.
+
+To eliminate them carefully, the removed `func` and lambda symbols are too impractical. The `:` and `_`'s are fine really, I just need to make sure it can compile that. Without any arrows, `x Type` is conflated with `x -> Type`.
+
+Therefore, my favorite is `_ :`, but I do miss not having to specify the void return type. I like that because you don't actually "`return`" in the function itself, so the function signature need not say something like `void`. Maybe in those cases, you should just use `func()`.
+
+Through testing, I've discovered that it's better if you can tell the difference between empty parameters and an empty return, since they are fundamentally different. In literals, the empty return changes, while the empty parameter doesn't.
+
+With some function with side effects, `e(...)` and a function that creates a `T`, `ter()`, here are examples with literals.
+
+| `func()`         | `_ -> _`          | `_ ->`         | `() -> _`         | `() -> {}`          | `() ->`       | `fn()`      | ` -> `       | `_ -> e()`          | 
+|------------------|-------------------|----------------|-------------------|---------------------|---------------|-------------|--------------|---------------------|
+| `func(T)`        | `T -> _`          | `T -> `        | `T -> _`          | `T -> {}`           | `T ->`        | `fn(T)`     | `T -> `      | `T -> e()`          |
+| `func() T`       | `_ -> T`          | `_ -> T`       | `() -> T`         | `() -> T`           | `() -> T`     | `fn() T`    | ` -> T`      | `_ -> ter()`        |
+| `func(T) T`      | `t T -> _`        | `t T -> `      | `t T -> _`        | `t T -> {}`         | `t T ->`      | `fn(t T)`   | `t T -> `    | `t -> ter(t)`       |
+| `func(func())`   | `(_ -> _) -> _`   | `(_ -> ) -> `  | `(() -> _) -> _`  | `(() -> {}) -> {}`  | `(() ->) ->`  | `fn(fn())`  | `( -> ) -> ` | `(_ -> e()) -> e()` |
+| `func() func()`  | `_ -> _ -> _`     | `_ -> _ -> `   | `() -> () -> _`   | `() -> () -> {}`    | `() -> () ->` | `fn() fn()` | ` -> -> `    | `_ -> _ -> e()`     |
+| `func(a func())` | `(a _ -> _) -> _` | `(a _ -> ) ->` | `(a() -> _) -> _` | `(a() -> {}) -> {}` | `(a() ->) ->` | `fn(a())`   | `(a -> ) ->` | `(a -> e()) -> e()` |
+
+I like how `()` as the parameters lets the variable name work like the name of the function, which matches how it's called. Therefore, `() :` is my favorite.
+As cool as `->` is, having an empty paramater type could be really weird with names like in the last row.
+The main problem is that when they are named, like `var a ->`, `a` is too similar to a parameter.
+As well as `func(f T)` and `f func(T)`, both looking like `f T -> T` But, I think it's fine with the return empty removed if we use `f(T)` for function names and `f T` for parameters.
+Except, it feels very vague whether it's returning anything like that with no return symbol, so I say `() ->`.
+
+| `func()`                               | `() ->`                            | `_ : _`                             | `_ : e()`                                       |
+|----------------------------------------|------------------------------------|-------------------------------------|-------------------------------------------------|
+| `func(T)`                              | `T ->`                             | `T : _`                             | `t : e(t)`                                      |
+| `func() T`                             | `() -> T`                          | `_ : T`                             | `_ : ter()`                                     |
+| `func(T) T` with func                  | `func T -> T`                      | `func T : T`                        | `func t : ter(t)`                               |
+| `a func(b T) T`                        | `a(b) -> T`                        | `a(b) : T`                          | `t : ter(t)`                                    |
+| `func(func())`                         | `(() ->) ->`                       | `(_ : _) : _`                       | `(_ : _) : e()`                                 |
+| `func(a A) (b B)`                      | `a A -> b B`                       | `a A : b B`                         | `a : ber(a)`                                    |
+| `func(func(T) T) T`                    | `(g(T) -> T) -> T`                 | `(g T : T) : T`                     | `f(t : ter(t)) : f(unwrap)`                     |
+| `func(T) func(T) T`                    | `T -> T -> T`                      | `T : T : T`                         | `q : r : ter(q, r)`                             |
+| `func() func()`                        | `() -> () ->`                      | `_ : _ : _`                         | `_ : _ : e()`                                   |
+| `func(a A) func(b B)`                  | `a A -> b B ->`                    | `a A : b B : _`                     | `a : b : e(a, b)`                               |
+| `func() func() func()`                 | `() -> () -> () ->`                | `_ : _ : _ : _`                     | `_ : _ : _ : e()`                               |
+| `func(f func()) func()`                | `(f() -> ()) -> () ->`             | `(f _ : _) : _ : _`                 | `(_ : e()) : _ : e()`                           |
+| `func() func(func())`                  | `() -> (() ->) ->`                 | `_ : (_ : _) : _`                   | `_ : (_ : e()) : e()`                           |
+| `x func(y func(z func()))`             | `x(y(z() ->) ->) ->`               | `x(y(z _ : _) : _) : _`             | `((_ : e()) : e2()) : e3()`                     |
+| `func(func(T) T) func(T) T`            | `(T -> T) -> T -> T`               | `(T : T) : T : T`                   | `(t : ter(t)) : s : ter(s)`                     |
+| `func(interface{T \| S}) interface{}`  | `T \| S -> <>`                     | `T \| S : <>`                       | `ts : xer(ts)`                                  |
+| `f func() (T, T)`                      | `f() -> (T, T)`                    | `f _ : (T, T)`                      | `_ : (t, s)`                                    |
+| `func(func() (T, T))`                  | `(() -> (T, T)) ->`                | `(_ : (T, T)) : _`                  | `(_ : (t, s)) : _`                              |
+| `func(T, T) (T, T)`                    | `(T, T) -> (T, T)`                 | `(T, T) : (T, T)`                   | `(t, s) : (s, t)`                               |
+| `func(T) func(T) (T, T)`               | `T -> (T -> (T, T))`               | `T : (T : (T, T))`                  | `t : (s : ter(s), ter(t))`                      |
+| `func() (p func(), q func())`          | `() -> (p() ->, q() -> )`          | `_ : (p _ : _, q _ : _ )`           | `_ : (_ : e(), _ : e())`                        |
+| `func(T) (func(T) T, func(T) T)`       | `T -> (T -> T, T -> T)`            | `T : (T : T, T : T)`                | `t : (s : ter(t, s), u : ter(t, u))`            |
+| `func(a T) (func(b T) T, func(c T) T)` | `a T -> (b T -> T, c T -> T)`      | `a T : (b T : T, c T : T)`          | `a : (b : ter(a, b), c : ter(a, c))`            |
+| `func(T, T) (func(T, T), func(T, T))`  | `(T, T) -> ((T, T) ->, (T, T) ->)` | `(T, T) : ((T, T) : _, (T, T) : _)` | `(p, q) : ((t, s) : e(p, t), (x, y) : e(p, y))` |
+
+For literals, if it actually wants to return nothing like `->_` or `->` instead of an explicit call like `noop()` in the literals, it could be a no-op by default to have it empty.
+
+In a similar way, it's hard to tell between parameters and tuples. I tried to distinguish between them by dropping the parantheses on the tuple, but leads to impossible situations.
+And, I noticed that it was interesting to type using this style since I did have to think about types and literals very carefully, but it did feel unnecessarily weird at times.
+
+Mandatory check, is it literally readable? I think you can. For example, `_ : T : T` means like `take nothing and return a function that takes T and returns T` and `(sa T) : ((ri T) : T, (ga T) : T )` is like "take sa which is a T and return a pair of a func that takes ri which is a T and gives a T with a func that takes ga which is a T and returns a T"
+, but I would still say that `(sa T) -> ((ri T) -> T, (ga T) -> T )` is clearer.
+
+After trying out `_ : _`, it was actually kind of hard to get used to, so I like `(A, B) -> (_ -> R, S) -> _` the most. It feels the most simple and obvious when reading it.
+
+In terms of implementation, I am not worried about this, since I can easily change that once I figure out how to do it, so I will just implement `_ -> _` and if it obviously becomes annoying, then come back to this.
+
+---
+
+How should generics interact with shortened function types? Well, how do they interact with Go's types? It doesn't really given that we are only shortening function types as they are used in values, since generics are only used in actual `func f()` declarations. There is nothing that says we can't use this syntax with func declarations, but the limitation is that you can't put type parameters in function types. Besides that, a shortened literal could be passed into a type that was declared as a function, however, so I don't think this is a big problem right now.
+
+Let's get some fuller examples to get a feel of this syntax when the symbols have significant meaning.
+
+Simple example:
+
+```go
+var wrap func() = func() { op() }
+var wrap() -> = () -> op()
+wrap()
+```
+
+Map:
+
+```go
+var Map func(string) int = func(s string) int { return s.Length() }
+var Map string -> int = s -> s.Length()
+```
+Optional, based around monad pattern:
+
+```go
+// without currying
+var or = func(o Opt, other func() Opt) Opt {
+    if o.isPresent() {
+      return o
+    } else {
+      return other()
+  }
+}
+var or(Opt, () -> Opt) -> Opt = (o, other) -> if o.isPresent() then o else other()
+or(get() -> or(retrieve() -> or(create() -> orElse(none))))
+
+// with currying
+var or = func(o Opt) func(func() Opt) Opt {
+  return other func(func() Opt) Opt {
+    if o.isPresent() {
+      return o
+    } else {
+      return other()
+    }
+  }
+}
+var or(Opt) -> (() -> Opt) -> Opt = o -> other -> if o.isPresent() then o else other()
+get().or(retrieve()).or(create()).orElse(none)
+```
+
+### Enum
+
+This is how it is replicated in Go:
+
+```go
+type Day uint8
+
+const (
+  Sunday Day = 1 + iota
+  Monday
+)
+
+var names = [...]string {
+  Sunday: "Sunday",
+  Monday: "Monday",
+}
+
+func (day Day) root() string {
+  switch day {
+    case Sunday:
+      return "sun"
+    case Monday:
+      return "moon"
+    default:
+      panic("not a day of the week")
+  }
+}
+
+func (day Day) working() bool {
+  switch day {
+    case Sunday:
+      return false
+    case Monday:
+      return true
+    default:
+      panic("not a day of the week")
+  }
+}
+
+func test() (string, uint8, string, bool) {
+  return names[Monday], Sunday, Monday.root(), Sunday.working()
+}
+```
+
+and with an `enum` type:
+
+```go
+type Day enum {
+    Sunday("sun", false)
+    Monday("moon", true)
+
+    root    string
+    workday bool
+}
+
+func test() (string, uint8, string, bool) {
+ return Monday.name, Sunday.val(), Monday.root, Sunday.working
+}
+```
+
+It should maybe be `name()` and `pos()` or `position`.
+
+In order to separate the instances from the fields, I could either use commas, which is inconsistent, or it could be two blocks:
+
+Default values also have to be addressed for the case of enums.
+
+```go
+type Day enum { // matches the other definition styles
+    string // untagged type
+    workday=true bool // default value
+}
+
+const ( // based on iota decl block
+  Sunday("sun", false) Day
+  Monday("moon")
+)
+
+```
+
+Usually, I'd imagine that the enum instances have to all be declared in the same block or at least the same file.
+But, I guess they technically don't as long as there are no overlapping names in scope and their order isn't being relied on, which would either give some useful control or remove some necessary restriction.
+
+In my case, I do want their order to matter, and Go's current strategy allows you to have multiple enum constants declared as the same value and in different places.
+They could also be `var`, but I want enum logic to happen statically, purely at compile time.
+
+The idea is that the actual values of the constants are hidden to the programmer since they are magic numbers that don't really have much meaning,
+and we are just replicating flags by the underlying type of some unsigned int. It could also be represented with an actual set of values or an array of booleans for example.
+It could even be "compiled away" completely. The underlying implementation details aren't important to the general user.
+
+The one problem with this is that you can and would create sum enum values anywhere else dynamically, unlike flags or enum constants. I will just have them work differently there.
+
+If there are loads of default values, and especially unused values, then it should probably be adapted to a sum type.
+
+#### Flags
+
+The `const` and `iota` syntax is also used to replicate flags with bit flipping. If the concept of `iota` is to be done by `enum`, then it should also be able to do flags.
+
+There does exist a syntax for that in C#:
+
+```cs
+[Flags]
+enum Permissions {
+  Execute = 1,
+  Write   = 2,
+  Read    = 4
+}
+```
+
+It also lets you choose the type of the number, like `enum Settings : byte {}`. In my case, I will make the default the smallest possible unsigned int, but maybe they should be allowed to change it like by declaring `val int32`. It should be an implentation detail though, so it'd make more sense for them to use their own definition like `func (e E) MyVal() { 2 * e.val() - 1 }`.
+
+I can not think of any good syntax for flags other than just doing what all the other types do.
+
+```go
+type Permissions enum {
+  Execute
+  Write
+  Read    // = 4
+}
+```
+
+If an enum has no fields, then it should be assumed to also be flags. I could also do `type Permissions flags`, but it is unnecessary here, as this is a distinct form of `enum`. I'm not really a fan of using `interface` for different types, but at least you can tell them apart still.
+If the enum has more fields than its int type can hold, then it'd have to be represented differently either by the compiler or programmer.
+
+They should probably just be evaluated to their regular number type and have bit operations done on them as usual.
+Taking for granted that you already know how bit math works,
+if there are any cases that bit operations are not necessarily intuitive regarding the concept of flags,
+then other syntax could be used besides the bit operations.
+
+Some utility could be provided so that something like `if perms == 0b111 {}` could have an alias `Permissions.All` which just fills every bit for every constant.
+
+It should still provide the type safety of not allowing the comparing of values across different flag types.
+
+`Execute | Write` and `Read & (ReadWrite)` make sense on their own, and Go even has `ExecuteRead &^ Read`, so I think it is fine.
+
+### Sum
+
+I'm not sure what keyword to use, so I'm just using `sum` for now. Lots more details on it in #Data Models
+
+It could use `enum`, and the contents would determine if it's a `sum` like this:
+
+```go
+type Direction enum {
+  Cardinal(int8)
+  Vector(x float32, y float32)
+}
+```
+
+This is clearly different from the regular enum since it isn't just fields, and it's different from flags since the instances have fields.
 
 ### Union
 
-| ["Sum" type with `union`](https://github.com/golang/go/issues/19412) | `interface { \| }` and switch case | `type U 
-union {int \| string}`                                                                                                      
+First, there is alse the question of whether the `union` keyword is needed, since these two are equal:
+
+```go
+type pos = int | [2]int
+
+type pos union {
+  int | [2]int
+}
+```
+
+If `type t =` is to maintain not allowing generics, then the full union syntax could be used.
+
+However, a concern with unions and the sum type is generics. This could use the same format that `struct` does:
+
+```go
+type list[T: int | rune] union { // there are technically 2 unions here
+  []T | string
+}
+```
+
+It is difficult to handle internally since an array of ints and an array of strings are just different things. Julia accomplishes this by nesting the types in the union's type like so:
+
+```go
+type list union {
+  []int | []rune | string
+}
+```
+
+since the types of `int` and `string` are distinct.
+
+```go
+func calcBMI[T int | string, S int](height T, weight S)
+```
+
+https://github.com/golang/go/issues/19412
+
+### Functional interface
+
+
+### Data Models
+
+Currently, this overall design has lead to 7 different data models. For reference (depending on how you count it), Go has 3, Rust has 3, C has 4, and Java has 5, so it is certainly more than average. However, the goal isn't to have a lot of types of course.
+As long as they are each distinct and useful in their own circumstances for that language with barely any overlapping meaning, then this is fine and actually good. Especially when it's replacing a common pattern or not-very-extendable boilerplate that's already done in that language often, which would result in less complexity.
+
+| Property                 | `struct`/tuple     | `interface`           | Union `interface`    | Functional `interface` | `enum` (Wo)                                   | Flags `enum` (Wo) | Sum `enum` (Wo)                      |
+|--------------------------|--------------------|-----------------------|----------------------|------------------------|-----------------------------------------------|-------------------|--------------------------------------|
+| Tagged                   | Optional           | Optional              | No                   | Optional               | Optional                                      | Only names        | Yes                                  |
+| Inner Type Decl Content  | Types              | Methods/Types         | Untaggedt Variant    | Method                 | Final Instances and Methods/Types             | `uint`s           | Tagged Variants                      |
+| Inner Decl `type X _`... | `{ int\ *string }` | `{ int\func walk() }` | `{ int16 \| int64 }` | `{ hash() int }`       | `{ moons int } const X { Earth(1), Mars(2) }` | `{ R\W\Ex }`      | `{ None\Num(int)\Big(string) }`      |
+| Value `var t = `...      | `{5, &"C++"}`      | `3` or `walkable`     | `10`                 | `func hash() ...`      | `Earth`                                       | `Wood \| Brick`   | `None` or `Big("999")`               |
+| Algebraic Symbol Usage   | `([]int, string)`  | `<Walk(), Find()>`    | `float32 \| int32`   | `func()` or `<f()>`    | `Arabic(false) + Latin(true) + Greek(true)`   | `N + S + W + E`   | `Out(sea int) + In(mountain string)` |
+| Algebraic Concept        | Product `×` AND    | Abstract Product?     | Union `∪` OR         | Abstract Product?      |                                               |                   | Sum                                  |
+| Mutability               | Mutable Fields     | Immutable Methods     | None                 | Immutable Method       | None                                          | None              | None                                 |
+| Ordered                  | Partially          | Unordered             | Unordered            | N/A                    | Ordered                                       | Ordered           | Ordered                              |
+| Polymorphic              | None               | Subtypes              | From Variant         | Subtype                | None                                          | None              | From Variant                         |
+| Inheritance              | None               | Yes, Embedded         | None                 | Yes, Embedded          | None                                          | None              | None                                 |
+| Comparable to            | Go                 | Go                    |                      | Go                     | Java Enum                                     |                   | Julia / Rust Enum                    |
+
+Here's a full example taking advantage of each of these types properly (Example [go](the person who made this link is stupid and didn't make it yet) and [wo]() file):
+
+```go
+type Camera[I Image] struct {
+  model  CameraModel
+  memory []I // can't be enum field since it's mutable and instance specific
+}
+
+type CameraModel enum {
+  A7R_IV(Sony) //, Electronic(0.78, 1600, 1200)) // TODO(bran) 
+  D300S(Nikon(D | S, 500), Optical(0.94))
+  Z9(Nikon(Z, 9), Electronic(0.8, 1280, 960))
+
+  brand Brand
+  ViewFinder
+}
+
+type Brand enum {
+  Sony
+  Nikon(NikonSeries, level uint8)
+}
+
+type NikonSeries enum { // e.g. Nikon D70, D300S, D2XS, E2NS
+	Z, D, H, X, A, E, N, S // 1, 2, 4, 8...
+}
+
+type ViewFinder enum { // can be any of these with the values filled in, if there are any
+  None
+  Optical(magnification float32)
+  Electronic(magnification float32, height, width int)
+}
+
+type Image interface {
+  [][]uint32 | [][]uint8
+}
+```
+
+Example usage of this system:
+
+```go
+func (camera *Camera) String() string {
+  return fmt.Sprint(camera.model, " with ", memory.Len(), " images")
+}
+
+Camera{ A7R, []Image{} } // "Sony A7R with 0 images"
+```
+
+In an interface type that targets Camera's model field, CameraModel can't be abstracted since it's that unique enum type, but union and interface can be embedded contracts.
+That is, some enum instance from some other enum with a `Brand` and `ViewFinder` fields can't be used as the type of `CameraModel`,
+while some other union that isn't called `pixelGrid` with a satisfying type can still be used for some `Image` instance, or even anything included in the type of `pixelGrid` such as `type bitmap = [][]uint8` or just `[][]uint32` itself.
+
+However, it should be possible to achieve some sort of generic enum, or perhaps enum could satisfy some other generic, besides just the easy case of its methods in the same way that a struct can do it.
+
+Enums already have shared behavior: the `name` and `position` fields/methods. Writing utility for enums in general could be desired.
+
+In this case, it should probably be intentionally restricted, since there is probably something pretty wrong with your own program if you are abstracting different enums being used in place of one another. However, if it turns out that this is a common and needed feature with more mileage, then obviously it should be implemented.
+
+And the same goes for structs since they similarly have fields.
+
+#### Algebraic types
+
+What if we extend the Union type syntax with the other set symbols as above? Would it still make sense? would it be useful? Other languages can do this, but let's see how that would work with Go's system.
+
+Also see: https://go.dev/ref/spec#Type_unification
+
+It is already possible with union, but I think it can be done with structs and sums. Enum could be weird as that would require some sort of field info.
+
+I'll start with `interface`. The only way this exists as a shortened algebraic type is as a union, but not for its other mode of method contracts.
+
+```go
+type Node interface {
+  next Node
+  val() int
+}
+
+type Siner = <Sin() float64>
+type Node = <Node, func() int>
+```
+
+Combining just union and sum:
+
+In the same way that `&&` < `||`... `+` < `|` < `,` in Go's precedence.
+So `A || B && C` means `A || (B && C)` and same for `A | B + C, D` = `(A | (B + C)), D`
+
+```go
+type Singleton = int                         // type
+type LowInt    = int8 | int16                // union
+type BigInt    = Num(string) + Inf(neg bool) // sum
+type LowBigInt = LowInt | BigInt             // union(union, sum)
+   []LowBigInt{int8(5), Num("-0.1111"), Inf(false)}
+type DynInt    = BigInt + Low(LowInt)        // sum
+type SuperInt  = DynInt | [4]int64           // union(sum, type)
+type Combo     = Singleton | BigInt | (NaN + Float(float32 | float64)) // union(type, type, sum)
+   []Combo{9, Singleton(-9), Num("9"), NaN, Float(9)}
+type NoParens  = []int | A + B               // union(type, sum) + is lower precedence
+
+type Parens    = A + (int | float)   // sum(tagged, union) - compile error, sum(untagged union)
+type SumPrece  = []int | float + B   // union(type, sum(type, B) - compile error, type is not tagged
+type SingleSum = SoloSum(error)      // solo sum - compile error
+type OrSum     = int | Tagged(float) // union(type, solo sum) - compile error
+type PlusSum   = int + Tagged(float) // sum(untagged, tagged) - compile error
+```
+
+All of this actually makes a lot of sense to me. It's really easy to read when you comprehend what union and sum mean.
+
+#### Wrapping types in a sum
+
+A common thing done with sums is just wrapping a single type, when it could actually be just fine being untagged, like so:
+
+```go
+type FiberCable, RJ45, CellTower // pre-existing types
+
+type Connection sum {
+  Fiber(FiberCable),
+  Ethernet(RJ45),
+  Cell(CellTower),
+  LAN(port uint16),
+  WAN(port uint16),
+  Unconnected,
+}
+type ConnectionUnwrap = FiberCable | RJ45 | CellTower | LAN(port uint16) + WAN(port uint16) + Unconnected
+```
+
+These two represent the same thing, and since something like `FiberCable` is unique and obviously corresponds to its own unique member within the different kinds of `Connection`s, they can be unwrapped. The `port` was not unique, though, and had to be contained or wrapped around a higher tagged sum type along with the `Unconnected` option.
+
+#### Algebraic struct
+
+Here's with the "cartesian product", `struct`, which should use `,`. The type `struct{...,}` and literal `struct{...,}{...,}` already exist, but let's drop the `struct{}` and combine it with the other types.
+
+```go
+type Version = name string, code, year int8 // product
+type Model   = Regular(Version) + Unversioned(alt string) // sum
+type Unit    = mileage DynInt, model Model
+type Expand  = mileage Km(int) + Miles(int) + Num(string) | float32, model string | Reg(Version) + Unversioned // struct(union, union)
+```
+
+The last one is a bit excessive and is probably better as a full `struct`.
+
+This is just like the tuple type but without parens, which makes perfect sense. This is basically just allowing tuples as a type beyond the return type. All the same logic would follow; tuples can also be null and have methods.
+
+I think it should always have parantheses. This also differentiates it with tuple literals.
+
+```go
+type Walk = (distance float32, StayedHome + Outdoors(destinations ...string))
+var a Walk = (4.4, Outdoors("Crystal Cave", "Sepia Shop", "Clastic Cliff"))
+var b Walk = (0.2, StayedHome)
+```
+
+```go
+type Point1 struct {
+  x, y int
+}
+type Point2 = (x, y int)
+
+func (point *Point1) mag() { x, y = point }
+func (point *Point2) mag() { x, y = point.x, point.y }
+var p1 = Point1{2, 4}
+var p2 Point2 = (2, 4)
+```
+
+As you can see, these function in the same way with the difference being the unwrapping and creation syntax.
+
+There may also have to be a generic type for them like `(int, int)` to go with `struct{ fields }`.
+
+#### Algebraic regular Enum
+
+Recapping, there are three kinds of enums. The typical enum is the most complex, so should it be allowed in shortened algebraic type notation?
+
+It could be interesting to have a quick one line enum or within a simple field like `Reader(In + Out)`, but it will probably be awkward as something embedded in the rest of the types.
+
+It should use a symbol with a lower precedence than the rest so that it's contained to its own area. The only binary operators left below `+` are `* / & &^ << >>` or any of the unused ones if really needed.
+
+```go
+type Flip = On / Off
+type Grade(min int) = A(90) / B(80) / C(70)
+type Features = codeExample string, feature string | Generics(tokens "[]", version "1.18") / Sync("sync atomic", "1.22") / DateOnly("DateOnly", "1.20"), link URL | string
+```
+
+The single type one is ok, but it being combined with others is really pushing it, and it doesn't have an identifier. If there ends up being a very good way to write it, then fine.
+
+To reflect how they are both declared with `enum`, they should just both use `+` like this
+
+```go
+type FlipFlag = On + Off
+type Flip = On() + Off()
+type Test = (unit int, A(90) + B(80) + C(70))
+```
+
+which is the same thing as
+
+```go
+type FlipFlag enum { // flags
+    On, Off
+}
+type Flip enum { // sum
+    On(), Off()
+    // no fields
+}
+type Flip struct {
+    unit int
+    Grade 
+}
+type Grade enum {// was previously anonymous
+    A(90), B(80), C(70)
+    int // anonymous
+}
+type 
+```
+
+Note that, in the same way that a struct can't have two anonymous string fields, it can't have two anonymous enum fields. It is fixed by just naming it.
+
+I'm tempted to enforce it in the multi line declaration when the values are all on one line, since that's how interface union already works, like
+
+```go
+type NikonSeries enum {
+  Z + D + H + X + A + E + N + S
+}
+```
+
+I feel like a concern is, "what if the programmer puts a ton of really long names on the same line?". They could do that, but they can already do that with structs and interfaces, and they can also name things terribly as they wish. They can also just write bad code.
+In this case, I think it's not the compiler's responsibility to determine if the length of the number of identifiers or arguments is readable or not.
+
+#### Example
+
+Here's the section earlier with the types that can be shorthanded:
+
+```go
+type Camera[I Image] = (model CameraModel, memory []I)
+type Branded = <brand Brand, name String>
+type Brand = Sony + Nikon(NikonSeries, level uint8)
+type NikonSeries = Z, D, H, X, A, E, N, S
+type Image = [][]uint32 | [][]uint8
+```
+
+### Pattern Matching
+
+This talk of sum and union begs the discussion of pattern matching.
+
+It should be supported.
+
+```go
+type Length sum {
+    Cm(float32)
+    M(float32)
+    FtInch(int, float32) 
+}
+
+func (length Length) ToInches() float32 {
+    return switch length {
+        case Cm(cm) => cm / 2.54
+        case M(m) => m / 0.0254
+        case FtInch(ft, in) => float32(ft) * 12 + in
+    }
+}
+```
+
+Switch-case could also be an expression as shown here.
+
+
+
+```go
+func (camera *Camera) Details() string {
+  return fmt.Sprint(camera.model, " with ", memory.Len(), " images")
+}
+
+Camera{ A7R, []Image{} }.Details() // Sony A7R with 0 images
+```
+### Generics
+
+Here are some limitations of Go generics. These aren't necessarily unnecessary limitations, and they could be serving as something deliberately useful. If I change the rest of the type system, all of this does need to be looked at too though.
+
+- Generics type params for struct or interface methods
+- Generic struct, e.g. `interface{int, string}`
+- Variadic generic `[T ...int]`
+- Interface constraints as types
+- Covariance
+- Overload/implement methods by different constraints
+- Default type params
+- Embedding type params
+
+https://github.com/golang/go/issues/57644#issuecomment-1372977273
+https://github.com/golang/go/issues/70752
+https://github.com/golang/go/issues/49085
+
+#### Parameterized methods
+
+The description [from Google](https://go.googlesource.com/proposal/+/refs/heads/master/design/43651-type-parameters.md#no-parameterized-methods) isn't entirely close ended:
+
+> This design does not permit methods to declare type parameters that are specific to the method. The receiver may have type parameters, but the method may not add any type parameters.
+> 
+> In Go, one of the main roles of methods is to permit types to implement interfaces. It is not clear whether it is reasonably possible to permit parameterized methods to implement interfaces.
+
+It then gives an example that makes this argument: A type `S` with a `Func[any]` that matches an interface `H` with a parameterized method `Func[any]` could be called in a different scope than `S.Func` as: `S.(H).Func[int]`, which needs to be instatiated.
+
+It provides some solutions: Instantiate it at link time. Instantiate it at runtime, which may use JIT. And, make it not implement the matching interfaces. Out of all of these, the last seems the most sensible.
+
+Of course, we can just disable type casting if it really needs to be, or making it slow and safe at least, while still opting for whatever's left over.
+
 ### For range
 
 The default `for range` syntax is
@@ -657,45 +1366,11 @@ I'm going with `v = 2 * (if cond { a } else { b }) + ` for now, despite the curl
 
 I'll do this by either adding an expression identical to the `if else` statement, or modify the statement to become an expression.
 
-### Util
-
-The point here is to avoid package calls like
-
-`strings.contains(str, sub)`
-
-vs
-
-`str.contains(sub)`.
-
-From go's source code,
-
-```go
-func equal(x, y []string) bool {
-  if len(x) != len(y) {
-    return false
-  }
-  for i, xi := range x {
-    if xi != y[i] {
-      return false
-    }
-  }
-  return true
-}
-
-x.equals(y)
-```
-vs
-```go
-x === y
-```
-
-These could be stored in a `comparisons` or `arrays` package?
-
 ## Language features
 
 ### set
 
-Implementing this really wasn't all that interesting or challenging.
+Implementing this really wasn't too interesting or challenging, but it was tedious.
 
 Because of the way `map` is designed (a hashmap), the keys and values are stored rather insignificantly, and removing the values from its structure was pretty simple to do. There isn't anything special about the difference between key and value besides that one part gets hashed and one part doesn't. So, yes, I copied map and refactored it; I really don't think there is any faster way to do *this map* for *its* intended purposes without also improving hashmap. That wasn't really my intention with Wo, but if someone sees a way of seriously improving the native hashmap when it doesn't have values, or if I spot an obvious one, then let's go ahead. I haven't changed the time complexity, but it should technically be insignificantly faster than `map[]struct{}`.
 
@@ -709,8 +1384,6 @@ ok = primes[4]                 // is ok if contains elem
 primes.insert[7]               // insert / add
 primes.delete[3]               // delete / remove
 ```
-
-I had to name it `hashset` because `set` covers up too many existing methods, but now I have to do file dependent token reading.
 
 I prefer `add` and `remove`, but the naming (from `map`) uses `insert`, so I don't want it to get too inconsistent and therefore unpredictable. It's not an impossible consideration, however, but I'd prefer renaming the `map` methods too in that case.
 
@@ -788,6 +1461,12 @@ type Option2[T any] struct {
 Option1 can't do type assertion or type switch, requiring some kind of handler like `errors.Is`. It can do `some` / `none` pattern matching easier. Option2 can do field embedding, which is pretty important to errors, but it could probably still work with some native implementation details. It also aligns more with the idea of returning structs, however that principle is not as strong for the case of this interface.
 
 It should support functional programing and error handling like [lo](https://github.com/samber/lo) and [mo](https://github.com/samber/mo)
+
+#### ImpureOption vs Nilable Option
+
+nil/zero value can mean none or something special depending on your situation, so
+
+some(nil) could eval to none in some contexts  // TODO(bran) flesh concept out
 
 ### Meaning of "Null"
 
@@ -1068,76 +1747,15 @@ I could also mirror errors with `func h() T!`, but they shouldn't be stacked wit
 
 ### import compatibility
 
-To support interoperability with Go files, restricted function names in Wo should still be allowed in Go, but also 
-importable in some way. If one is importing a function called `set`, I don't think this collides with the `set` type,
-but it would still be odd if someone made a `func map()`, so it'll have to be imported in a special way:
+To support interoperability with Go files, restricted function names in Wo should still be allowed in Go, but also importable in some way. If one is importing a function called `set`, I don't think this collides with the `set` type, but it would still be odd if someone made a `func map()`, so it'll have to be imported in a special way:
 
-`$set` is an option.
+`$set` is my main option for now.
 
 ### export
 
+In fact, they have to do a similar thing in other scripts with exported functions since they don't have capitals. Wo could do something about that, like by allowing any case, just excluding lowercase characters from scripts that have a mixed case ([e.g.](https://www.compart.com/en/unicode/category/Lu) Latin, Cyrillic, Greek, Coptic, Armenian, some symbols like ℇ𝞥𝙰𝔛𐲖, although some of these are not recommended by unicode to be used as identifiers), and languages without any capitals wouldn't have that restriction.
 
 
-### Enum
-
-This is how it is replicated in Go:
-
-```go
-const (
-  Sunday = 1 + iota
-  Monday
-)
-
-const (
-  Sunday = "Sunday"
-  Monday = "Monday"
-)
-func root(day int) string {
-  switch day {
-    case Sunday:
-      return "sun"
-    case Monday:
-      return "moon"
-    default:
-      panic("not a day of the week")
-  }
-}
-
-func working(day int) bool {
-  switch day {
-    case Sunday:
-      return false
-    case Monday:
-      return true
-    default:
-      panic("not a day of the week")
-  }
-}
-
-func test() (string, int, string, bool) {
-  return Monday, Sunday, root(Monday), working(Sunday)
-}
-```
-
-and with an `enum` type:
-
-```go
-type Day enum {
-    Sunday("sun", false),
-    Monday("moon", true)
-
-    root    string,
-    workday bool
-}
-
-(day Day) func val() {
-  return 1 + day.pos // 1 + iota
-}
-
-func test() (string, int, string, bool) {
- return Monday.name, Sunday.val(), Monday.root, Sunday.working
-}
-```
 
 ## Scope control
 
@@ -1151,6 +1769,21 @@ It's not really a laughing matter at that point, programs should be able to repr
 > Type conversions between slices and array pointers can fail at runtime and don’t support the comma ok idiom, so be careful when using them!
 > 
 > Learning Go
+
+### Standard library
+
+Some functions will be added as a side effect of adding in types, like the `sets` package to match the `maps` one or an option type. I also implement reflection for all of the types, so that counts too.
+
+Should Wo also have standard library functions? It was originally meant to just focus on language features, as opposed to something one could just import,
+however, if an addition to the library contributes to all of the same goals (i.e. readability) that everything else was, then it should be considered.
+
+Another example is [DebugString()](https://www.dolthub.com/blog/2025-01-03-gos-debug-string-pseudo-standard/). Not only could I have this as a default, but I could add it to existing native types, so it's a stronger contender than something that could just be an import.
+I've yet to fully explore wihch packages should be included, but it should only be something needed or utterly wanted.
+
+All the packages/files to be added: `sets`, `set`, `option`, `enum`, and collections
+
+Added, but are meant to be private: `set_fast32`, `set_fast64`, `set_faststr`
+
 ## Code example
 
 ### Go

@@ -19,7 +19,7 @@ file, fileName
 
 ### interface{}
 
-[] Not implemented
+Not implemented. Priority: 
 
 ```go
 func f(a <>, b <bool>) {
@@ -28,7 +28,7 @@ func f(a <>, b <bool>) {
 
 ### Unused variables
 
-[] Not implemented
+Not implemented. Priority: 
 
 ```go
 func main() {
@@ -63,7 +63,7 @@ src/cmd/compile/internal/types2/errors.go
 
 ### For range
 
-[] Not implemented
+Not implemented. Priority: 
 
 ```go
 for i, v : nums {
@@ -73,7 +73,7 @@ for i, v : nums {
 
 ### Variable declaration
 
-[] Not implemented
+Not implemented. Priority: 
 
 ```go
 x int = 8
@@ -88,7 +88,7 @@ const ( b string = "永", e error = nil )
 
 ### Multi variable declaration
 
-[] Not implemented
+Not implemented. Priority: 
 
 ```go
 getPoint := func() (x int, y int) { return 1, 2 }
@@ -108,11 +108,11 @@ a, b = 1, 2
 
 ### Overloading reserved words
 
-[] Not implemented
+Not implemented. Priority: 
 
 ### Overloading package names
 
-[] Not implemented
+Not implemented. Priority: 
 
 ```go
 import { "strings" }
@@ -124,7 +124,7 @@ func combineThem(strings /* Wo Error */ []string) string {
 
 ## Overloading functions
 
-[] Not implemented
+Not implemented. Priority: 
 
 With the same function names:
 
@@ -138,16 +138,7 @@ payWith(creditCardNumber, city, state)
 
 ### Ternary
 
-[] Not implemented
-
-```go
-if indoorTemp == outdoorTemp {
-    hvac = off
-} else if indoorTemp < outdoorTemp {
-    hvac = heating
-} else {
-    hvac = ac
-}
+Not implemented. Priority: 
 
 var hvac = if indoorTemp == outdoorTemp { off } else if indoorTemp < outdoorTemp { heating } else { ac }
 
@@ -191,7 +182,7 @@ type Errable[T] interface {
 
 ### enum
 
-[] Not implemented
+Not implemented. Priority: 
 
 ```go
 type Days enum {
@@ -208,14 +199,14 @@ Monday.working
 
 ### type
 
-[] Not implemented
+Not implemented. Priority: 
 
 `struct S {}`
 `interface I {}`
 
 ### Scope control
 
-[] Not implemented
+Not implemented. Priority: 
 
 ## Operators List
 

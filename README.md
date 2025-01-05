@@ -1,8 +1,8 @@
 ### Wo is a fork of Go
 
-The Wo language is an interoperable successor to Go that offers alternative syntax and language features aimed at readability.
+The Wo language is an interoperable successor to Go that offers alternative syntax and language features aimed at readability. To accomodate preference and situation, features will be modular - to be removed at will during compilation.
 
-For example,
+For example, Go's error handling
 
 ```go
 f, err := os.Open("hi.wo")
@@ -14,26 +14,32 @@ if err != nil {
 could be done like this in Wo:
 
 ```go
-var file = os.Open("hi.wo")!
+var file = os.Open("hi.wo")
+
+
+
+
 ```
 
 (Pending decisions here. It's a WIP)
 
-The point of these features is to look beyond the banter of theories like how much to boilerplate or whether to do what people have been used to, and to just **try it out** to really see what works well before judgement. I've tried iterations of these features, and these were the most notable options. I hope you find them interesting - feel free to give us your own suggestions.
+The point of these features is to look beyond banter and theories, such as how much to boilerplate, or whether to do what people are just used to or not - and to instead just **try it out** to really see what works well before judgement. I try iterations of these features, and these were the most notable options. I hope you find them interesting - definitely feel free to give your own suggestions.
 
-### *Currently, this is a <u>proof of concept</u>, and none of these necessarily work yet.*
+## *Currently, this is a <u>proof of concept</u>, and none of these necessarily work yet. (None do currently, this project is like a couple weeks old)*.
 
 ## Syntax
 
-|         Syntax Feature         |                                                     Go Syntax | Wo Example                                                                |
-|:------------------------------:|--------------------------------------------------------------:|---------------------------------------------------------------------------|
-|      `interface{}` syntax      |              `f(a interface{})`<br/>`interface{Length() int}` | `f(a <>)`<br/>`<Length() int>`                                            |
-|       Enhanced for loops       | `for i, v := range nums {}` <br/> `for _, v := range nums {}` | `for i, v : nums {}`<br/>`for v : nums`                                   |
-|       Ternary expression       |                `var v int; if high { v = 99 } else { v = 1 }` | `var v = if high { 99 } else { 1 }`                                       |
-|   Has conditional assignment   |                               `if a, cond := call(); cond {}` | `if var a = call() {}`                                                    |
-|  `_` for multi return values   |                                                `_, val = f()` | `func f() (skip, val)` Match name:<br/>`val = f()` (unless it's an error) |
-| Lambda arrow in function types |                          `var f func(func(int) int, int) int` | `var f(int -> int, int) -> int`                                           |
-|         Type assertion         |                                            `number.(float32)` | `number as float32`                                                       |
+|         Syntax Feature         |                            Go Syntax                            |                              Wo Example                              |
+|:------------------------------:|:---------------------------------------------------------------:|:--------------------------------------------------------------------:|
+|         `interface{}`          |         `interface{Length(interface{}) interface{int}}`         |                         `<Length(<>) <int>>`                         |
+|     `interface{\|}` union      |                   `interface{int8 \| int16}`                    |                           `int8 \| int16`                            |
+|       Enhanced for loop        |  `for i, v := range nums {}` <br/> `for _, v := range nums {}`  |               `for i, v : nums {}`<br/>`for v : nums`                |
+|       Ternary expression       |         `var v int; if high { v = 99 } else { v = 1 }`          |                 `var v = if high { 99 } else { 1 }`                  |
+|   Has conditional assignment   |                 `if a, cond := call(); cond {}`                 |           `if var a = call() {}`<br/>(casted to optional)            |
+|   `_` for multi return value   |                         `_, val = f()`                          | `func f() (skip, val, skip2)`<br/>`val = f()` (unless it's an error) |
+|         Function type          |                 `func(int) func(int, int) int`                  |                      `int -> (int, int) -> int`                      |
+|  Single line function literal  |               `func(v) bool -> { return v == 0 }`               |                   `v -> v == 0`, `() -> effects()`                   |
+| `func` for multi line or `{ }` | `func() int {`<br/>`unlock()\open()`<br/>`return getFunds()\}`  |    `func() int {`<br/>`unlock()\open()`<br/>`return getFunds()\}`    |
 
 ## Language Design
 
@@ -47,17 +53,20 @@ Wo could also address **null checking** somehow (e.g. `nonnil`) and pointer/valu
 
 ## Types & Data
 
-|                                          Feature                                          |                                                            Go Method | Wo Example                                                                                                                           |
-|:-----------------------------------------------------------------------------------------:|---------------------------------------------------------------------:|--------------------------------------------------------------------------------------------------------------------------------------|
-|                                       Native `set`                                        |                        `map[int]struct{}` and/or self-implementation | `var s = set[int] { 2, 7 }; ok = s[2]; s.delete(7)`                                                                                  |
-|           Other native collections like stack, list, treeset, and their atomics           |                                                  self-implementation | `stack.pop()`, `tree.remove(n)`                                                                                                      |
-|                                        `enum` type                                        |                                               `iota` and switch case | `type E enum {A(true), B(false); b bool}`<br/>`A.b`=true, `B.name`="B", `A.pos`=0                                                    |
-| [Algebraic data types](https://github.com/golang/go/issues/57644#issuecomment-1372977273) |                                 `type A interface { int \| string }` | `type A int64 \| set[byte]`                                                                                                          |
-|              [Nested union types](https://github.com/golang/go/issues/70752)              |                                 `type A interface { int \| string }` | `type A int \| string`                                                                                                               |
-|                      Native `strings`, `maps`, and slice operations                       |                                      `strings.Contains(str, substr)` | `str.Contains(substr)`                                                                                                               |
-|                                  Optional type with `?`                                   |              `v, ok := m[k]; if ok { }`<br/>`func Get() (int, bool)` | `v int? = m[k]; v?`<br/>`v int = m[k]?`<br/>`func Get() int?`<br/>`.OrElse(v2)`, `.IsPresent()`, etc.                                |
-|                               Errable/Result type with `!`                                | `f, err := Open(n); if err == nil { }`<br/>`func Div() (int, error)` | `file *File! = Open(n); file!`<br/>`file *File = Open(n)!` (must check)<br/>`func Div() int!`<br/>`.OrElse(file2)`, `.Erred()`, etc. |
-|            [Method type parameters](https://github.com/golang/go/issues/49085)            |                                                                      |                                                                                                                                      |
+|                                Feature                                | Go Method                                                            | Wo Example                                                                                                                           |
+|:---------------------------------------------------------------------:|:---------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+|                             Native `set`                              | `map[int]struct{}` and/or self-implementation                        | `var s = set[int] { 2, 7 }; exists = s[2]; s.delete(7)`                                                                              |
+| Other native collections like stack, list, treeset, and their atomics | self-implementation                                                  | `stack.pop()`, `tree.remove(n)`                                                                                                      |
+|                         Functional interface                          | wrap interface with function type                                    | `type Doer funcinter {do()}; func(d Doer) {d.do()}`                                                                                  |
+|                              `enum` type                              | `iota` and switch case                                               | `type E enum {A(true), B(false); b bool}`<br/>`A.b`=true, `B.name`="B", `A.pos`=0                                                    |
+|                              flags type                               | `1 << iota` and bit operations                                       | `type F enum {R, W, E}` and bit operations                                                                                           |
+|                                sum type                               | `struct` state management                                            | `type File enum { Closed, Open(contents string) }`                                                                                   |
+|                         Functional interface                          |                                                                      |                                                                                                                                      |
+|                          Algebraic data type                          | `type A interface { int \| string }`                                 | `(num int64 \| ByteNum(set[byte]) + Infinity(bool sign), size int8)` struct(union(type, sum), type)                                  |
+|            Native `strings`, `maps`, and slice operations             | `strings.Contains(str, substr)`                                      | `str.Contains(substr)`                                                                                                               |
+|                        Optional type with `?`                         | `v, ok := m[k]; if ok { }`<br/>`func Get() (int, bool)`              | `v int? = m[k]; v?`<br/>`v int = m[k]?`<br/>`func Get() int?`<br/>`.OrElse(v2)`, `.IsPresent()`, etc.                                |
+|                     Errable/Result type with `!`                      | `f, err := Open(n); if err == nil { }`<br/>`func Div() (int, error)` | `file *File! = Open(n); file!`<br/>`file *File = Open(n)!` (must check)<br/>`func Div() int!`<br/>`.OrElse(file2)`, `.Erred()`, etc. |
+|                    Method generic type parameters                     |                                                                      |                                                                                                                                      |
 
 ## Variables
 
@@ -81,8 +90,8 @@ Features that change the functionality of the language beyond syntax and design 
 | Export explicitly                      | `func Export() // apital`, `func Xแมว() // add "X"`<br/>`func private()` `func แมว()` | `func export แมว()`, `export const Kilo`<br/>`func private()` |
 | Export to the package but not globally | *none*                                                                                | `func pkg Get()`, `type pkg Bog struct`                       |
 | Make slice append more predictable     | Overrides / Resizes                                                                   | Indicates new allocs                                          |
-| Run other functions besides main       | `func main() { other() }`                                                             | `func otherMain()`                                            |
-| More liberal folder structure          | main, mod                                                                             | TODO(bran)                                                    |
+| Run other functions besides main       | `func main() { other() }`                                                             | `func otherMain() { }`                                        |
+| More liberal folder structure          | main, mod                                                                             | TBD                                                           |
 
 ### To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md).
 
@@ -114,9 +123,13 @@ Potential Features...
 
 ### How to install
 
-I'd rather `wo` were a lite CLI command that just uses the Go compiler that's already installed rather than needing a different build of the entire compiler, but I'm making it a separate build for now.
+I'd rather `wo` were a lite CLI command that just uses the Go compiler that's already installed rather than needing a different build of the entire compiler, but that'd make interoperability almost impossible, so it is its own compiler.
 
-You can install it by building it from this source checked out from the right version, as per https://go.dev/doc/install/source#bootstrapFromCrosscompiledSource. Currently, it likely doesn't compile.
+You can install it by building it from this source checked out from the right version, as per https://go.dev/doc/install/source#bootstrapFromCrosscompiledSource. Currently, it's not guaranteed to work.
+
+### Status
+
+To summarize which code has actually been written, I've implemented tiny parts of a couple things, and the inner functionality and tree structure of `set`, but not its operators yet to test it. I have gotten it (the compiler) to compile and run ".wo" files.
 
 ## Trademark disclaimer
 
