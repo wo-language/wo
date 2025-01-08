@@ -720,7 +720,7 @@ type Option[T] enum {
 
 (I picked `Option` instead of `Optional` because it's shorter, and they can both have booleany existence connotations)
 
-I originally thought about making `some` and `none` reserved words, but they already follow the common pattern of an enum, and they use capitalize
+I originally thought about making `some` and `none` reserved words, but they already follow the common pattern of an enum, and those are capitalized.
 
 There a lot more design decisions when it comes to this. This may imply the necessity of a Box.
 
@@ -731,6 +731,8 @@ nil/zero value can mean none or something special depending on your situation, s
 `Some(nil)` could eval to `None` in some contexts,
 
 but we have to detetrmine when that would happen like with `Option.OfNilable(nil)`
+
+Option and Result are a solution to the "nilable" problem.
 
 *To be continued*
 
@@ -851,7 +853,7 @@ var token = scanner.Scan()!
 
 I was originally considering `scanner!Scan()` since the actual symbol of `!` is like a variation of `.`, but the compiler got it confused with the not symbol without a package identifier: `!Scan()` looks too much like "Not (Result of Scan)".
 
-Now here's a bunch of other options:
+Now here are a bunch of other options:
 
 ```go
 var file, log("Error:", err)   = os.Open("hi.wo")
@@ -868,6 +870,25 @@ var file                       = if os.Open("hi.wo")? else newFile // experiment
 
 The ultra-shortened version removes some choice you get with error-handling, but you can still shorten that pattern as well as having this option.
 
+I'm going to decide against the single line function calls around the variable since this could just be on the next line. The reason I had that was to pair it with `!`, but it's still a bit odd to read.
+
+I'll settle with these:
+
+```go
+var file = os.Open("hi.wo")!
+try var file = os.Open("hi.wo") { /*main code*/ }
+try file.Close() { } // try without return value
+var file = os.Open("hi.wo")!! // panic
+var file = os.Open("hi.wo").orElse(newFile)
+var file = switch os.Open("hi.wo") {
+  case Ok(f) => f
+  case Err(err) => { handle(err); newFile }
+}
+
+if val, ok := table["e"] {}
+if var val = table["e"] {} // "try var" for err and "if var" for opt
+```
+
 I don't think `nil` should represent that an error didn't happen.
 
 A higher representation of the meaning of `nil` in the context of errors would be:
@@ -877,24 +898,11 @@ err == nil: no error occured
 err != nil: an error occured, and err is the description of the error
 ```
 
-It could be represented by calling something like this:
-
-```go
-func (err *error) errored() bool
-```
-
-or with an optional:
-
-```go
-Option[error]
-
-none:      no error occured
-some(err): an error occured, and it is err
-```
+It could be represented by calling something like "err.didError()".
 
 which aligns with the semantic meaning of "whether an error happened or not" more.
 
----
+#### Func signature
 
 Additionally, errors are bound to functions, as they are something that can happen when a function is ran. This means we could generalize it further by signifying that some function can return an error:
 
@@ -922,13 +930,17 @@ where ^ means xor, as in, either a result or an error.
 which is basically just an interface or struct like
 
 ```go
-type Errable[T any] struct {
-  err   error
+type Errable[T any] struct { // tell me if you miss "Result"
   value T
+  err   error
 }
 type Errable[T any] interface {
-  error
   value() T
+  error
+}
+type Errable[T, E error] enum {
+   Ok(T),
+   Err(E)
 }
 ```
 
@@ -946,18 +958,17 @@ if quotient, err := div(a, b); err != nil {
 in Wo, could be written as:
 
 ```go
-func div(a, b int) errable int {}
+func div(a, b int) Errable[int] {}
+func div(a, b int) int! {}
 quotient int = div(a, b)!
 	
 // or with more handling
 var quotient = div(a, b).orElse(NaN)
-var quotient = div(a, b)? else NaN // for fun
 
-// other ideas ........
-var quotient, if(err) = div(a, b) {
+if var quotient = div(a, b) {
   quotient = NaN
 }
-var quotient = match div(a, b) {
+var quotient = switch div(a, b) {
   case q   => q
   case err => NaN
 }
@@ -1820,7 +1831,7 @@ however, if an addition to the library contributes to all of the same goals (i.e
 Another example is [DebugString()](https://www.dolthub.com/blog/2025-01-03-gos-debug-string-pseudo-standard/). Not only could I have this as a default, but I could add it to existing native types, so it's a stronger contender than something that could just be an import.
 I've yet to fully explore wihch packages should be included, but it should only be something needed or utterly wanted.
 
-All the packages/files to be added: [sets](/src/sets/sets.go), [set](/src/runtime/set.go), option, enum, and collections
+All the packages/files to be added: [sets](/src/sets/sets.go), [set](/src/runtime/set.go), option, errable, enum, and collections
 
 Added, but are meant to be private: [set_fast32](/src/runtime/set_fast32.go), [set_fast64](/src/runtime/set_fast64.go), [set_faststr](/src/runtime/set_faststr.go)
 

@@ -69,22 +69,27 @@ The point of this file is to give a minimal depiction of each feature. See [just
 
 Operators added from Go base:
 
-| op            | syntax                                           |
-|---------------|--------------------------------------------------|
-| Set           |                                                  |
-| ENHANCEDFOR   | for Key, Value : X { Body } variant of RANGE     |
-| UNWRAP        | X?                                               |
-| OPTION        | X.Type?                                          |
-| UNWRAPERR     | X!                                               |
-| ERRABLE       | X.Type!                                          |
-| ARROWCLOSURE  | Type -> { Func.Closure.Body } variant of CLOSURE |
-| DCLFUNC       | export? (r)? func f() - modification             |
-| DCLSHADOW     | X; X := Y                                        |
-| INTERFACETAGS | <Type{List}>                                     |
-| ENUMDECL      | type X enum { ...ENUMLIT }                       |
-| ENUMLIT       | X(List) \| X                                     |
-| ENUMADD       | ENUMLIT + ENUMLIT \| ENUMADD + ENUMLIT           |
-| TUPLE         | (X, Y...)                                        |
+| op           | syntax                        |
+|--------------|-------------------------------|
+| SET          |                               |
+| ENHANCEDFOR  | for Key, Value : X { Body }   |
+| UNWRAP       | X?                            |
+| OPTION       | X.Type?                       |
+| UNWRAPERR    | X!                            |
+| ERRABLE      | X.Type!                       |
+| ORARROW      | Type -> { Func.Closure.Body } |
+| OEXPORT      | export ODCLFUNC               |
+| DCLSHADOW    | X; X := Y                     |
+| ITAGS        | <Type{List}>                  |
+| ENUMDECL     | type X enum { ...ENUMLIT }    |
+| ENUMLIT      | X(List) or X                  |
+| ENUMADD      | ENUMLIT/ENUMADD + ENUMLIT     |
+| TUPLE        | (X, Y...)                     |
+| OUNWRAP      | X?                            |
+| DCLSHADOW    | X; X := Y                     |
+| DEFAULTFIELD | X=Y X.Type                    |
+| UNWRAPPANIC  | Errable[T]!!                  |
+| ORELSE       | Option[X]                     |
 
 ### Replaced (Modified)
 
@@ -213,16 +218,18 @@ err: an error occured, err
 ```
 
 ```go
-var file                       = os.Open("hi.wo")!  // return err
-var file, log("Error:", err)   = os.Open("hi.wo")
-var file, handle(err)          = os.Open("hi.wo")!  // handle and throw
-var file, return(none, 3, err) = os.Open("hi.wo")   // with other return values
-var file, if(err)              = os.Open("hi.wo") { handle(err) } // similar to Swift's `try?`
-if var file                    = os.Open("hi.wo") { /*main code*/ }    // Swift/Rust
-var file                       = os.Open("hi.wo")!! // panic
-var file                       = os.Open("hi.wo")?  // unwrap or panic
-var file                       = os.Open("hi.wo").orElse(newFile)
-//var file                       = os.Open("hi.wo")? else newFile
+var file = os.Open("hi.wo")!
+try var file = os.Open("hi.wo") { /*main code*/ }
+try file.Close() { } // try without return value
+var file = os.Open("hi.wo")!! // panic
+var file = os.Open("hi.wo").orElse(newFile)
+var file = switch os.Open("hi.wo") {
+    case Ok(f) => f
+    case Err(err) => { handle(err); newFile }
+}
+
+if val, ok := table["e"] {}
+if var val = table["e"] {} // "try var" for err and "if var" for opt
 ```
 
 `func f() (T, err)` &#8594; `func f() T!` // formatting AND interpretation from .go functions
