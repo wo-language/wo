@@ -10,30 +10,39 @@ This file is meant to be changed per commit, associated with details that apply 
 
 For syntax linking in a code editor, it will depend on your IDE, but it wasn't hard to add ".wo" as a file type association in goland
 
-Development steps:
+#### Development timeline
 
-- running and testing this default repo [✅]
-- run a modified compiler [✅]
-    - run a .wo file (in a separate project) [✅]
-- modifying the compiler code to support each kind of syntax [Doing...]
-  - doing it for just one and test running it [Doing with set...]
-  - make code formatter detect it
-  - try to make some modular feature
-- modifying the runner to support that transformation [Next] [Doing with set...]
-- add appropriate tests
-- possibly making the `wo` command separate, or at least instructing on how to make it an alias.
-- checking if it still reaches all the targets
-- setting up the website in Go then Wo
-- dealing with versions and downloadable executable installations for other users to test
-- perhaps offering an online playground
-- a transpiler that converts them between each other
+- Compile, run, and test the default repo ✅
+- Run some modified compiler ✅
+  - run a .wo file (in a separate project) ✅
 
-There is a priority to features. First: ones that allow experimenting, then by the most important / needed ones.
-I'll indicate it in the specification.
+- For each feature in order of priority...
+  - Optional: make a separate branch for it
+  - Implement
+    - Add its syntax in the compiler
+      - With modularity
+      - See [Operators](#Operators)
+    - Reflection
+    - Runtime functionality [✅ Set]
+  - Create and run tests (for each target)
+  - Update code formatter / syntax highlighting
+  - Update specification and justifications
+  - Merge
 
-###
+- Possibly make it into a `wo` command
+  - or at least instructing on how to make an alias
+- Website
+  - Should showcase this project and just have the documentation
+  - Write in Go
+  - Then convert to Wo
+  - Maybe an online playground
+- Offer compiled binaries
+- Transpiler that converts between each other
 
-versioning:
+There is a priority to features to determine which ones to implement next. First: ones that allow experimenting, then by the most important / needed ones.
+It is indicated it in the specification.
+
+#### Versioning
 
 should have independent wo versions correlating to go ones like
 
@@ -44,7 +53,7 @@ offering them by major section
 
 letters separated for compatability
 
-### other todo
+### Other todo
 
 1. refactor test/wo/*.wo -> test/wo_*.wo if they don't get ran, also need to change some bat file to include it in the tests maybe
 2. add automated tests in my own run_wo.bat
@@ -54,22 +63,21 @@ letters separated for compatability
 100. better icon if anyone offers one
 
 
-### run without tests
+### Commands to run this proj without tests
 
 ```
 cd src
 ./make.bat
 ```
 
-### current state
+### Current state
 
-if you run the default go compiler on a wo main file, you'd probably get something like "runtime.main_main·f: function 
-main is 
-undeclared in the main package"
+If you run the default go compiler on a wo main file, you'd probably get something like "runtime.main_main·f: function main is undeclared in the main package"
 
-compile errors about set
+Compile errors about set
 
 ---
+
 I think the compiler runs in this order:
 build { serialize scanner parser resolver walk } -> make exe pkg/compiler -> compile /runtime -> go.exe
 creation of the compiler runs:
@@ -78,59 +86,50 @@ creation of the compiler runs:
 to create custom types
 which I probably must run too
 
-current commit syntax attempt to add:
+#### Operators
 
-`!ident()` - fails bc order of operations
-
-`interface` is `tie` - fails because token defined in multiple places
-
-recognizes `->` - fails bc doesn't belong anywhere
-
-`set`
-
-after adding/removing any fundamental types, you have to run
+After adding/removing any fundamental types, you have to run
 
 1. switch to default compiler or both root and path to this one
-  - don't install to /wo/scr/cmd/vendor, put it in default Go source
-  - otherwise, this means you're deploying the compiler with some extra tool that should be optional
+   - don't install to /wo/scr/cmd/vendor, put it in default Go source
+   - otherwise, this means you're deploying the compiler with some extra tool that should be optional
 2. go get -u golang.org/x/tools/cmd/stringer
 3. go mod vendor
 4. go install stringer
-4. switch back path
-5. run commands:
+5. switch back path
+6. run commands:
    - cmd\compile\internal\types $ stringer -type Kind -trimprefix T type.go
    - src/cmd/compile/internal/ir/ $ stringer -type=Op -trimprefix=O node.go
      - creates op_string.go
-6. switch back compiler
+7. switch back compiler
 
-### how I added another reserved word steps
+### How to add reserved words
 
 the locations of, say, "int8" and "interface" for compiling reasons don't really have a universal location.
-
 Those types, per the many steps and parts of the compiler, show up in many, many places that need to be accounted for.
 
-Some of them deal with errors, some deal with representing the structure of the syntax in the code, some deal with
-comparisons, and some deal with the actual functionality behind it.
+Some layers deal with errors, some deal with representing the structure of the syntax in the code, some deal with
+comparisons, some with reflection, and some deal with the actual functionality behind it.
 
 All of these should be updated, and it's not as simple as adding it to each list, as you'd have to implement it as how
-it is within that file.
+it is within that file. It is usually intuitive to model it off of how all the other types are being implemented.
 
 According to my current specifications,
 
 src/cmd/compile/internal/ir/node.go
 
 I want to add these tokens:
-`set`, `some()`, `none`, `->`,
-`enum`, `export`.
+`set`, `->`, `enum`, `export`.
 
 and modify the meaning of:
 `:`, `!`, `<`, `>`, `:=`, `var`, `?`.
 
 and possibly remove (ignore):
-`iota`, `range`, `any`.
+`iota`, `range`.
 
-however, I would actually keep these as tokens, as it should compile in both Go and Wo, and they share the same type specifications.
-This would also better allow errors like "Wo doesn't use the range syntax, try : " for example.
+However, still keep any removed ones as defined tokens as they already were.
+It should compile in both Go and Wo, and they share the same type files and specifications but react to it differently.
+This would also better allow compatibility tip errors like "Wo doesn't use `x := range xs` syntax, try `x : xs`" for example.
 
 other:
 
@@ -139,7 +138,6 @@ https://github.com/golang/go/blob/e6626dafa8de8a0efae351e85cf96f0c683e0a4f/doc/g
 
 #### Other soft errors
 
-[] Implemented - need to test
 - Only ignoring unused
 
 Any of these could be ignored easily in theory:
@@ -162,7 +160,9 @@ src/cmd/compile/internal/typecheck/stmt.go
 src/internal/types/errors/codes.go
 src/cmd/compile/internal/types2/errors.go
 
+#### More
 
+also see: [set.md](/set.md)
 
 
 
