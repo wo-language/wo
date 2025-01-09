@@ -17,23 +17,21 @@ could be done like this in Wo:
 var file = os.Open("hi.wo")!
 ```
 
-(Pending decisions here. It's a WIP)
-
-And similarly with the "ok" pattern:
+###### Pending decisions here. It's a WIP.
 
 The point of these features is to look beyond banter and theories, and to just **try it out** to really see what works well before judgement. I try iterations of these features before listing them, and these were the most notable options. I hope you find it interesting - definitely feel free to give your own suggestions.
 
-## *Currently, <u>none of these necessarily work yet</u>. It's more of a proof of concept*
+## *Currently, <u>none of these necessarily work yet</u>. It's more of a proof of concept.*
 
-### None are fully working currently, this project is like a few weeks old and I'm one person with a job
+### None are fully working currently, this project is like a few weeks old, and I'm one person with a job.
 
 Also see [justifications.md](/justifications.md) and [specification.md](/specification.md).
 ### Syntax
 
 |           Syntax Feature           |                          Go Method                          |                              Wo Example                              |
 |:----------------------------------:|:-----------------------------------------------------------:|:--------------------------------------------------------------------:|
-|           `interface{}`            |              `interface{Length(interface{})}`               |                         `<Length(<>) <int>>`                         |
-|       `interface{\|}` union        |                 `interface{int8 \| int16}`                  |                           `int8 \| int16`                            |
+|           `interface{}`            |              `interface{Length(interface{})}`               |                           `<Length(<>)>`                             |
+|       `interface{\|}` union        |                 `interface{int8 \| int16}`                  |                          `int8 \| int16`                             |
 |         Enhanced for loop          | `for i, v := range nums {}`<br/>`for _, v := range nums {}` |               `for i, v : nums {}`<br/>`for v : nums`                |
 |         Ternary expression         |       `var v int; if high { v = 99 } else { v = 1 }`        |                   `var v = if high then 99 else 1`                   |
 |     Has conditional assignment     |               `if a, cond := call(); cond {}`               |                        `if var a = call() {}`                        |
