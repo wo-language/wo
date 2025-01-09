@@ -87,7 +87,7 @@ func assign(stmt ir.Node, lhs, rhs []ir.Node) {
 			cr = rtyp.NumFields()
 		}
 	} else {
-		Exprs(rhs)
+		Exprs(rhs) // TODO(bran) prevent this feature
 	}
 
 	// x, ok = y
@@ -117,7 +117,7 @@ assignOK:
 		assignType(1, types.UntypedBool)
 		return
 	}
-
+    // TODO(bran) Option / Err return arg amount
 	if len(lhs) != cr {
 		if r, ok := rhs[0].(*ir.CallExpr); ok && len(rhs) == 1 {
 			if r.Type() != nil {

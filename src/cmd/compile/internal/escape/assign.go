@@ -22,6 +22,8 @@ func (e *escape) addr(n ir.Node) hole {
 	switch n.Op() {
 	default:
 		base.Fatalf("unexpected addr: %v", n)
+	case ir.OINDEXSET:
+		base.Fatalf("unexpected addr: %v (use Insert)", n)
 	case ir.ONAME:
 		n := n.(*ir.Name)
 		if n.Class == ir.PEXTERN {

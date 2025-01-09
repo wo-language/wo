@@ -2,7 +2,7 @@
 
 ### This doc is heavily subjected to change
 
-In here, I give explain, argue for, and document Wo's design decisions. Maybe it could be interesting to some people, but it serves as an important documentation, so I know what has already been considered and tested.
+In here, I explain and argue for Wo's design decisions. Maybe it could be interesting to some people, but it serves as an important documentation, so I know what has already been considered and tried.
 
 ### Index
 
@@ -82,13 +82,22 @@ or how bad you think it would be, which is just obstinance without actually tryi
 For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice.
 Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
 
-Obviously, the design I end up going with is going to be heavily influenced by my opinions, but I'm actually trying to base it on what I percieve as the average universal preference.
+Obviously, the design I end up going with is going to be heavily influenced by my opinions, but I'm actually trying to base it on what I percieve as universal as well as delicately balanced.
+
 
 Additionally, the entire band of questions such as "wasn't it designed for bad programmers?" are irrelevent here.
 Whataboutisms like that which lead one astray from the real goals of programming language design are not the main topic here.
 Tip: it's a fallacy because something is what it is whether someone intended for it to be something or not (but it could give clues into its design as it is anyway, but people don't ask that question for that reason).
 
-Ultimately, certain improvements can be more valuable in different circumstances, while it doesn't matter in others.
+In terms of design, positions like "we have to do something because it's... fast, short, nice, efficient, what I'm used to, what I'm not used to, new, follows a principle" are all invalid, non sequitur arguments.
+For example, there are times when being slow is the better decusion, such as to sacrifice for security.
+
+It's a massive balance that's hard to keep track of, but you should never have to rely on "only following an established principle". Obviously it's dogmatic and will just lead to a mess of inconsistency.
+Getting this right is actually a massive multidimensional game of minimax. You have to take a step back to see if we can redo everything for the better, if not then we pick the best option given our downsides, repeat for each option... in other words, we will have to sacrifice x for y. We HAVE to, and we do make decisions like that constantly.
+
+Please, I want any discussions about project and concept to be focused on design and programming. Even this introduction area is fringey. Some of these topics could even be contentious, but I don't want it to distract us from legit debate and discussion. Programming is what matters; don't let unfriendliness and grudges remove you from that. I want to be democratic, but I also want to be weary of the wisdom of the crowd effect fallacy. For example, it's hard to vote on which feature is better when you haven't even tried them, so polls should be done for a very particular kind of topic.
+
+However, ultimately, additional programming capabilities can be more valuable in some circumstances, while it doesn't matter in others.
 For example, I had a Java program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) into Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
 
 So it is just nice to have the option of a design that is attuned to your circumstances, as opposed to some forced grifting replacement for all of Go that must be better because the author thinks so.
@@ -96,15 +105,14 @@ So it is just nice to have the option of a design that is attuned to your circum
 That's why I am planning to make the features modular / able to be swapped in and out with some kind of attribute.
 
 Despite my use of the first person, that is just to make it easier to understand this situation.
-When in reality, **<ins>this is not really my project.
-It is open.</ins>** It'll eventually put into "we decided" and "Wo does" gradually if others begin to contribute a lot.
+When in reality, **<ins>this is not really my project. It's open.</ins>**
+It'll eventually be put into "we decided" and "Wo does" if others contribute.
 Anyone can contribute with issues, pull requests, or even maintaining.
-I will be trigger-happy to accept pull requests even if I don't like the change, in order to be iterative and experimental (branches exist).
-We will finalize on something as long as it is democratically liked and clearly follows good language design.
+I will never be dismissive with pull requests even if I don't like the change, in order to be iterative and experimental (branches exist).
+We will finalize on something as long as it is the best option granted the downsides. It should clearly follow good language design.
 If it's something controversial, then it can just be a feature that's off by default - who cares?
 
-This project should be very unbackwards-compatible during its infancy at least.
-Syntax versions could be adapted, though, by appending letters to the base version like Go1.23.4 &#8594; Wo1.23.4B
+This project should be very unbackwards-compatible during its infancy at least, but please try it out for the sake of interest.
 
 ### The goals of code
 
@@ -676,17 +684,45 @@ So I made `map`'s keys as `set`'s elements, wiping any functionality with `map`'
 This does mean the removal of the `val = m[key]` method, as that doesn't really mean anything for sets. Instead, I modified and kept the `_, ok = m[key]` method, using it like `ok = s[elem]`.
 
 ```go
-primes set[int] = { 2, 3, 5 }  // declaration
-ok = primes[4]                 // is ok if contains elem
-primes.insert[7]               // insert / add
-primes.delete[3]               // delete / remove
+primes set[int] = { 2, 3, 5 } // declaration
+has = primes[4]               // if has elem
 ```
 
-I prefer `add` and `remove`, but the naming (from `map`) uses `insert`, so I don't want it to get too inconsistent and therefore unpredictable. It's not an impossible consideration, however, but I'd prefer renaming the `map` methods too in that case.
+I am not sure about `s[e]` being on the left hand side. Removing it means removing something from what `map` could do, but at the same time, removing it implies that it has a removed functionality from `map`, which it does: it doesn't have values.
 
-There are also fast versions of the map for `strings`, `int32`, and `int64`, which Wo also has implemented.
+But why does `map` use specifically that syntax? Well, it matches what slices do, where the setter and getter follow the same pattern:
 
-And Wo also support a `sets` package in the same ways that the `maps` package does.
+```go
+val = wordMap["mel"] // getter
+wordMap["mel"] = val // setter
+
+delete(isPrime, "roc")
+```
+
+To avoid any unnecessarily unfamiliar syntax, we could model sets off of how they are usually achieved:
+
+```go
+booly = wordSet["sal"] // getter
+wordSet["sal"] = booly // setter/remover
+
+delete(wordSet, "apl") // also a remover
+```
+
+One problem is that it implies that the set is paired with booleans, when it really isn't. However, it could be more adaptable to pre-existing APIs and methods, although that shouldn't be our primary factor.
+
+I'm going to go ahead and keep it, but it's a hard call. Ultimately, it keeps that reflection with the getter and initializer, and I feel like this functionality would be missed. I would also say it is intuitive. It also can't really create bad or even unreadable code, it just seems a bit inconsistent with the meaning of a set.
+
+It makes sense to also the boolean as a remover, it's actually similiar to how maps originally did it.
+
+Although I prefer add and remove, I kept it as delete and insert for consistency.
+
+If I were crazy, I would use something like `s += elem` for adding an element.
+
+Technically, it is like this: `Add(primes, 7)`, but I plan to create shortcut "semi methods" to do that.
+
+There are also fast versions of the map for `string`, `int32`, and `int64`, which Wo also has.
+
+It also supports a `sets` package in the same way that `maps` works.
 
 Sets in math use `{ }` to mean "unordered, unique collection", but in Go, which uses EBNF, it means "ordered, repeatable collection". I think it is ok to use the curly brackets for sets, since it is programmatically ordered and repeatable data at first, but then it will become converted from that explicit representation into something which is guaranteed to be an actual set. I can actually still say `{ a, b, a, c }` in math, but it represents a set of `a`, `b` and `c` without order. It is also predictable with the formatting already used with arrays and maps. If someone made their own set or any kind of math collection, it'd use the curly brackets.
 
@@ -724,6 +760,10 @@ I originally thought about making `some` and `none` reserved words, but they alr
 
 There a lot more design decisions when it comes to this. This may imply the necessity of a Box.
 
+Another question is whether to allow `?` and `!`. The downside is that it's short, but I haven't had any troubles noticing it. It also implies that the optionality and errability of stuff is a native part of the language, and we should think about it in those terms. Which, it is, there are countless cases of `(T, bool)` and `(T, error)` being returned and unwrapped.
+
+A problem with it is that something like `*` and `&` are pairs. But these have no pairs, so the type is also the thing that unwraps its own type. As long as we don't use `val?` for initializing an Option and instead use initializers such as `Option.of`, `Some(T)`, `None`, `Ok(T)`, `Err.of`, or `Err(e)` (I haven't decided the function names yet), then I think nothing would overlap in meaning.
+
 #### ImpureOption vs Nilable Option
 
 nil/zero value can mean none or something special depending on your situation, so
@@ -742,7 +782,11 @@ To solve the problem of interoperating with Go code, if any function from the st
 
 `func f() (X, bool)`
 
-It can be _interpreted_ as an Option[X]. It's impossible to know if that's what it was without some code analysis, though. So, in Wo code, it must **explicitly** be an Option to be treated like one, not a tuple.
+It'd be really impractical to go through and change all of those, especially when it also exists in 3rd party packages and your own Go code in the same project.
+
+So, this can be _interpreted_ as an Option[X]. It's impossible to know if that's what it actually meant without some code analysis, but it can still be treated like a tuple anyway. 
+
+In Wo code, the type must **explicitly** be "`Option[X]`" or "`X?`" to be treated like one, and the tuples get treated only like tuples.
 
 ```go
 func get() (int, bool) {} // std lib or Go file
@@ -1825,13 +1869,15 @@ var x = point().0
 
 Some functions will be added as a side effect of adding in types, like the `sets` package to match the `maps` one or an option type. I also implement reflection for all of the types, so that counts too.
 
+A planned feature is to have shortcut semi-methods, where `Delete(m, e)` could be written as `m.Delete(e)`.
+
 Should Wo also have standard library functions? It was originally meant to just focus on language features, as opposed to something one could just import,
 however, if an addition to the library contributes to all of the same goals (i.e. readability) that everything else was, then it should be considered.
 
 Another example is [DebugString()](https://www.dolthub.com/blog/2025-01-03-gos-debug-string-pseudo-standard/). Not only could I have this as a default, but I could add it to existing native types, so it's a stronger contender than something that could just be an import.
 I've yet to fully explore wihch packages should be included, but it should only be something needed or utterly wanted.
 
-All the packages/files to be added: [sets](/src/sets/sets.go), [set](/src/runtime/set.go), option, errable, enum, and collections
+All the packages/files to be added: [sets](/src/sets/sets.go), [set](/src/runtime/set.go), [setiter](src/sets/iter.go), option, errable, enum, and collections
 
 Added, but are meant to be private: [set_fast32](/src/runtime/set_fast32.go), [set_fast64](/src/runtime/set_fast64.go), [set_faststr](/src/runtime/set_faststr.go)
 

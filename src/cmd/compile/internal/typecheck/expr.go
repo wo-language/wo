@@ -210,6 +210,21 @@ func tcCompLit(n *ir.CompLitExpr) (res ir.Node) {
 
 		n.SetOp(ir.OMAPLIT)
 
+	case types.TSET:
+		for i3, l := range n.List {
+			ir.SetPos(l)
+			if l.Op() != ir.OLITERAL {
+				n.List[i3] = Expr(l)
+				base.Errorf("missing literal in set literal")
+				continue
+			}
+
+			e := Expr(l)
+			l = AssignConv(e, t.Elem(), "set value")
+		}
+
+		n.SetOp(ir.OSETLIT)
+
 	case types.TSTRUCT:
 		// Need valid field offsets for Xoffset below.
 		types.CalcSize(t)
@@ -602,29 +617,36 @@ func tcIndex(n *ir.IndexExpr) ir.Node {
 		n.SetType(nil)
 		return n
 
-	case types.TSTRING, types.TARRAY, types.TSLICE:
+	case types.TSTRING:
 		n.Index = indexlit(n.Index)
-		if t.IsString() {
-			n.SetType(types.ByteType)
-		} else {
-			n.SetType(t.Elem())
-		}
-		why := "string"
-		if t.IsArray() {
-			why = "array"
-		} else if t.IsSlice() {
-			why = "slice"
-		}
-
+		n.SetType(types.ByteType)
 		if n.Index.Type() != nil && !n.Index.Type().IsInteger() {
-			base.Errorf("non-integer %s index %v", why, n.Index)
+			base.Errorf("non-integer string index %v", n.Index)
 			return n
 		}
-
+	case types.TARRAY:
+		n.Index = indexlit(n.Index)
+		n.SetType(t.Elem())
+		if n.Index.Type() != nil && !n.Index.Type().IsInteger() {
+			base.Errorf("non-integer array index %v", n.Index)
+			return n
+		}
+	case types.TSLICE:
+		n.Index = indexlit(n.Index)
+		n.SetType(t.Elem())
+		if n.Index.Type() != nil && !n.Index.Type().IsInteger() {
+			base.Errorf("non-integer slice index %v", n.Index)
+			return n
+		}
 	case types.TMAP:
 		n.Index = AssignConv(n.Index, t.Key(), "map index")
 		n.SetType(t.Elem())
 		n.SetOp(ir.OINDEXMAP)
+		n.Assigned = false
+	case types.TSET:
+		n.Index = AssignConv(n.Index, t.Key(), "set index")
+		n.SetType(types.UntypedBool)
+		n.SetOp(ir.OINDEXSET)
 		n.Assigned = false
 	}
 	return n

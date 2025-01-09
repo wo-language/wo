@@ -235,7 +235,7 @@ func (s *Schedule) staticcopy(l *ir.Name, loff int64, rn *ir.Name, typ *types.Ty
 	case ir.OPTRLIT:
 		r := r.(*ir.AddrExpr)
 		switch r.X.Op() {
-		case ir.OARRAYLIT, ir.OSLICELIT, ir.OSTRUCTLIT, ir.OMAPLIT:
+		case ir.OARRAYLIT, ir.OSLICELIT, ir.OSTRUCTLIT, ir.OMAPLIT, ir.OSETLIT:
 			// copy pointer
 			staticdata.InitAddr(l, loff, staticdata.GlobalLinksym(s.Temps[r]))
 			return true
@@ -332,7 +332,7 @@ func (s *Schedule) StaticAssign(l *ir.Name, loff int64, r ir.Node, typ *types.Ty
 	case ir.OPTRLIT:
 		r := r.(*ir.AddrExpr)
 		switch r.X.Op() {
-		case ir.OARRAYLIT, ir.OSLICELIT, ir.OMAPLIT, ir.OSTRUCTLIT:
+		case ir.OARRAYLIT, ir.OSLICELIT, ir.OMAPLIT, ir.OSETLIT, ir.OSTRUCTLIT:
 			// Init pointer.
 			a := StaticName(r.X.Type())
 
@@ -384,7 +384,7 @@ func (s *Schedule) StaticAssign(l *ir.Name, loff int64, r ir.Node, typ *types.Ty
 
 		return true
 
-	case ir.OMAPLIT:
+	case ir.OMAPLIT, ir.OSETLIT:
 		break
 
 	case ir.OCLOSURE:
@@ -520,6 +520,16 @@ func (s *Schedule) initplan(n ir.Node) {
 		for _, a := range n.List {
 			if a.Op() != ir.OKEY {
 				base.Fatalf("initplan maplit")
+			}
+			a := a.(*ir.KeyExpr)
+			s.addvalue(p, -1, a.Value)
+		}
+
+	case ir.OSETLIT:
+		n := n.(*ir.CompLitExpr)
+		for _, a := range n.List {
+			if a.Op() != ir.OLITERAL {
+				base.Fatalf("initplan setlit")
 			}
 			a := a.(*ir.KeyExpr)
 			s.addvalue(p, -1, a.Value)
@@ -826,6 +836,7 @@ func isSideEffect(n ir.Node) bool {
 		ir.OCAP,
 		ir.OCOMPLIT,
 		ir.OMAPLIT,
+		ir.OSETLIT,
 		ir.OSTRUCTLIT,
 		ir.OARRAYLIT,
 		ir.OSLICELIT,
@@ -952,6 +963,7 @@ func canRepeat(n ir.Node) bool {
 			ir.OMAKESLICE,
 			ir.OMAKESLICECOPY,
 			ir.OMAPLIT,
+			ir.OSETLIT,
 			ir.ONEW,
 			ir.OPTRLIT,
 			ir.OSLICELIT,

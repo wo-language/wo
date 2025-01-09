@@ -335,7 +335,7 @@ func walkExpr1(n ir.Node, init *ir.Nodes) ir.Node {
 		n := n.(*ir.ConvExpr)
 		return walkStringToRunes(n, init)
 
-	case ir.OARRAYLIT, ir.OSLICELIT, ir.OMAPLIT, ir.OSTRUCTLIT, ir.OPTRLIT:
+	case ir.OARRAYLIT, ir.OSLICELIT, ir.OMAPLIT, ir.OSETLIT, ir.OSTRUCTLIT, ir.OPTRLIT:
 		return walkCompLit(n, init)
 
 	case ir.OSEND:
@@ -824,7 +824,7 @@ func walkIndexSet(n *ir.IndexExpr, init *ir.Nodes) ir.Node { // TODO(bran) to im
 	t := map_.Type()
 	fast := mapfast(t)
 	key := mapKeyArg(fast, n, n.Index, n.Assigned)
-	args := []ir.Node{reflectdata.IndexMapRType(base.Pos, n), map_, key}
+	args := []ir.Node{map_, key}
 
 	var mapFn ir.Node
 	switch {

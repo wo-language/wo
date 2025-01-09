@@ -33,7 +33,7 @@ func walkAssign(init *ir.Nodes, n ir.Node) ir.Node {
 	// Recognize m[k] = append(m[k], ...) so we can reuse
 	// the mapassign call.
 	var mapAppend *ir.CallExpr
-	if left.Op() == ir.OINDEXMAP && right.Op() == ir.OAPPEND {
+	if (left.Op() == ir.OINDEXMAP || left.Op() == ir.OINDEXSET) && right.Op() == ir.OAPPEND { // TODO(bran) Set.Append?
 		left := left.(*ir.IndexExpr)
 		mapAppend = right.(*ir.CallExpr)
 		if !ir.SameSafeExpr(left, mapAppend.Args[0]) {
@@ -86,7 +86,7 @@ func walkAssign(init *ir.Nodes, n ir.Node) ir.Node {
 		// x = append(...)
 		call := as.Y.(*ir.CallExpr)
 		if call.Type().Elem().NotInHeap() {
-			base.Errorf("%v can't be allocated in Go; it is incomplete (or unallocatable)", call.Type().Elem())
+			base.Errorf("%v can't be allocated in this language; it is incomplete (or unallocatable)", call.Type().Elem())
 		}
 		var r ir.Node
 		switch {
@@ -202,6 +202,8 @@ func walkAssignMapRead(init *ir.Nodes, n *ir.AssignListStmt) ir.Node {
 	as := ir.NewAssignStmt(base.Pos, a, ir.NewStarExpr(base.Pos, var_))
 	return walkExpr(typecheck.Stmt(as), init)
 }
+
+// TODO(bran) OASSETR
 
 // walkAssignRecv walks an OAS2RECV node.
 func walkAssignRecv(init *ir.Nodes, n *ir.AssignListStmt) ir.Node {
@@ -358,7 +360,7 @@ func ascompatee(op ir.Op, nl, nr []ir.Node) []ir.Node {
 			base.Fatalf("unexpected lvalue %v", l.Op())
 		case ir.ONAME:
 			name = l.(*ir.Name)
-		case ir.OINDEX, ir.OINDEXMAP:
+		case ir.OINDEX, ir.OINDEXMAP, ir.OINDEXSET: // TODO(bran) not sure if to include set
 			l := l.(*ir.IndexExpr)
 			save(&l.X)
 			save(&l.Index)

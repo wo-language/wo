@@ -195,6 +195,7 @@ var OpPrec = []int{
 	OMAKESLICECOPY:    8,
 	OMAKE:             8,
 	OMAPLIT:           8,
+	OSETLIT:           8, // #wo
 	OMAX:              8,
 	OMIN:              8,
 	ONAME:             8,
@@ -218,7 +219,7 @@ var OpPrec = []int{
 	OUNSAFESTRING:     8,
 	OUNSAFESTRINGDATA: 8,
 	OINDEXMAP:         8,
-	OINDEXSET:         8, // TODO(bran) impl
+	OINDEXSET:         8, // #wo
 	OINDEX:            8,
 	OSLICE:            8,
 	OSLICESTR:         8,
@@ -631,7 +632,7 @@ func exprFmt(n Node, s fmt.State, prec int) {
 		n := n.(*AddrExpr)
 		fmt.Fprintf(s, "&%v", n.X)
 
-	case OCOMPLIT, OSTRUCTLIT, OARRAYLIT, OSLICELIT, OMAPLIT:
+	case OCOMPLIT, OSTRUCTLIT, OARRAYLIT, OSLICELIT, OMAPLIT, OSETLIT:
 		n := n.(*CompLitExpr)
 		if n.Implicit() {
 			fmt.Fprintf(s, "... argument")
@@ -674,7 +675,7 @@ func exprFmt(n Node, s fmt.State, prec int) {
 		exprFmt(n.X, s, nprec)
 		fmt.Fprintf(s, ".(%v)", n.Type())
 
-	case OINDEX, OINDEXMAP:
+	case OINDEX, OINDEXMAP, OINDEXSET:
 		n := n.(*IndexExpr)
 		exprFmt(n.X, s, nprec)
 		fmt.Fprintf(s, "[%v]", n.Index)

@@ -50,7 +50,35 @@ The point of this file is to give a minimal depiction of each feature. See [just
    7. [Export](#Export)
    8. [Scope control](#Scope-control)
    9. [Array/Slice clarity](#ArraySlice-clarity)
-   10. [Modularity](#Modularity)
+
+## Versions
+
+Since this project is new and will change a lot, each new version will be breaking. I will have some separation of versions since I am developing it somewhat feature by feature.
+There would be a many-many ratio with Go and Wo versions.
+
+Note, these are based on the priorities. It could change as the whole design could change.
+
+Current version: 0.0.0
+
+| Wo    | Features        | Go     |
+|-------|-----------------|--------|
+| 0.0.0 | Experimenting   | 1.23.4 |
+| 0.0.1 | Set             | 1.23.4 |
+| 0.0.2 | Ignore Unused   | ?      |
+| 0.1.1 | Sum/Enum        |        |
+| 0.1.2 | Option          |        |
+| 0.1.3 | Variable Basics |        |
+| 0.2.1 | Err Handling    |        |
+| 0.2.2 | Std Lib Basics  |        |
+| 0.3.1 | ->              |        |
+| 0.3.2 | Union Literal   |        |
+| 0.3.3 | Tuple Literal   |        |
+| 0.4.1 | Variable Decls  |        |
+| 0.4.2 | Import          |        |
+| 0.4.3 | Algebraic       |        |
+| 0.5.1 | Std Lib         |        |
+| 0.6   | Etc.            |        |
+| 1.0   | Nearly all      |        |
 
 ### Priorities
 
@@ -71,7 +99,6 @@ Operators added from Go base:
 
 | op           | syntax                        |
 |--------------|-------------------------------|
-| SET          |                               |
 | ENHANCEDFOR  | for Key, Value : X { Body }   |
 | UNWRAP       | X?                            |
 | OPTION       | X.Type?                       |
@@ -90,6 +117,9 @@ Operators added from Go base:
 | DEFAULTFIELD | X=Y X.Type                    |
 | UNWRAPPANIC  | Errable[T]!!                  |
 | ORELSE       | Option[X]                     |
+| SETLIT       | s[T]{List}                    |
+| ASSETR       | has = s[e]                    |
+
 
 ### Replaced (Modified)
 
@@ -99,9 +129,9 @@ Operators added from Go base:
 
 ### Modularity
 
-###### Not Implemented. Priority: 2
+###### Not Implemented. Priority: 1
 
-`Disable[Set]`
+(something like) `Disable[IgnoreUnused]` or `Enable[RemoveTypeKeyword]`
 
 ## Syntax
 
@@ -139,7 +169,7 @@ Also see [union](#Union).
 
 ### Function
 
-###### Not Implemented. Priority: 3
+###### Not Implemented. Priority: 2
 
 Multi line (no changes):
 
@@ -188,7 +218,7 @@ primes.delete[3]               // delete / remove
 
 ### Option
 
-###### Not Implemented. Priority: 3
+###### Not Implemented. Priority: 1
 
 `Some(v)`
 
@@ -208,7 +238,7 @@ primes.delete[3]               // delete / remove
 
 ### nil
 
-###### Not Implemented. Priority: 3
+###### Not Implemented. Priority: 2
 
 ```go
 type Errable[T] = T + error
@@ -246,7 +276,7 @@ Example [go](https://github.com/wo-language/wo-info/blob/main/examples/go/datamo
 
 ### Tab Enum
 
-###### Not Implemented. Priority: 3
+###### Not Implemented. Priority: 2
 
 ```go
 type Enum enum {
@@ -286,7 +316,7 @@ type Flags enum {
 
 ### Sum
 
-###### Not Implemented. Priority: 3
+###### Not Implemented. Priority: 1
 
 ```go
 type SumName enum {
@@ -313,7 +343,7 @@ return switch sumNameVal {
 
 ### Union
 
-###### Not Implemented. Priority: 4
+###### Not Implemented. Priority: 3
 
 `interface{A | B}` &#8594; `A | B`
 
@@ -327,7 +357,7 @@ return switch sumNameVal {
 
 ### Algebraic types
 
-###### Not Implemented. Priority: 5
+###### Not Implemented. Priority: 4
 
 Precedence: `+` < `|` < `,`
 
@@ -385,7 +415,6 @@ func main() {
 }
 ```
 
-
 ### Variable declaration
 
 ###### Not Implemented. Priority: 4
@@ -402,7 +431,7 @@ func main() {
 
 ### Standard library
 
-###### Not Implemented. Priority: 5
+###### Not Implemented. Priority: 4
 
 [sets](/src/sets/sets.go), [set](/src/runtime/set.go), option, enum, and collections
 
@@ -482,5 +511,6 @@ payWith(creditCardNumber, city, state)
 ### Array/Slice clarity
 
 ###### Not Implemented. Priority: 6
+
 
 

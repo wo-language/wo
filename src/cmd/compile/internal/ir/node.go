@@ -103,6 +103,8 @@ func TakeInit(n Node) Nodes {
 }
 
 // TODO(bran) must gen STRINGER after adding the nodes
+// for op_string
+// match fmt, escape/expr
 //
 //go:generate stringer -type=Op -trimprefix=O node.go
 type Op uint8
@@ -146,9 +148,10 @@ const (
     OAS2DOTTYPE // Lhs = Rhs (x, ok = I.(int))
     OAS2FUNC    // Lhs = Rhs (x, y = f())
     OAS2MAPR    // Lhs = Rhs (x, ok = m["foo"])
-    OAS2RECV    // Lhs = Rhs (x, ok = <-c)
-    OASOP       // X AsOp= Y (x += y)
-    OCALL       // X(Args) (function call, method call or type conversion)
+    // #wo There is no set version of the above since it's covered by OINDEX
+    OAS2RECV // Lhs = Rhs (x, ok = <-c)
+    OASOP    // X AsOp= Y (x += y)
+    OCALL    // X(Args) (function call, method call or type conversion)
 
     // OCALLFUNC, OCALLMETH, and OCALLINTER have the same structure.
     // Prior to walk, they are: X(Args), where Args is all regular arguments.
@@ -166,7 +169,7 @@ const (
 
     OCOMPLIT   // Type{List} (composite literal, not yet lowered to specific form)
     OMAPLIT    // Type{List} (composite literal, Type is map)
-    OSETLIT    // Type{List} (composite literal, Type is set) #wo  // TODO(bran) impl must gen STRINGER after adding the nodes
+    OSETLIT    // Type{List} (composite literal, Type is set) #wo
     OSTRUCTLIT // Type{List} (composite literal, Type is struct)
     OENUMLIT   // X(Type)    (composite literal, Type is enum) or X #wo
 
@@ -210,15 +213,15 @@ const (
     OORELSE       // Option[X] | X // pending #wo
 
     OINDEX         // X[Index] (index of array or slice)
-    OINDEXMAP      // X[Index] (index of map) - access
-    OINDEXSET      // X[Index] (index of set) - contains // TODO(bran) impl must gen STRINGER after adding the nodes
+    OINDEXMAP      // X[Index] (index of map)
+    OINDEXSET      // X[Index] (index of set) // #wo
     OKEY           // Key:Value (key:value in struct/array/map literal)
     OSTRUCTKEY     // Field:Value (key:value in struct literal, after type checking)
     OLEN           // len(X)
     OMAKE          // make(Args) (before type checking converts to one of the following)
     OMAKECHAN      // make(Type[, Len]) (type is chan)
-    OMAKEMAP       // make(Type[, Len]) (type is map) // TODO(bran) usages
-    OMAKESET       // make(Type[, Len]) (type is set) // #wo TODO(bran) impl must gen STRINGER after adding the nodes
+    OMAKEMAP       // make(Type[, Len]) (type is map)
+    OMAKESET       // make(Type[, Len]) (type is set) // #wo
     OMAKESLICE     // make(Type[, Len[, Cap]]) (type is slice)
     OMAKESLICECOPY // makeslicecopy(Type, Len, Cap) (type is slice; Len is length and Cap is the copied from slice)
     // OMAKESLICECOPY is created by the order pass and corresponds to:
@@ -569,7 +572,7 @@ func SetPos(n Node) src.XPos {
 
 // The result of InitExpr MUST be assigned back to n, e.g.
 //
-//	n.X = InitExpr(init, n.X)
+// n.X = InitExpr(init, n.X)
 func InitExpr(init []Node, expr Node) Node {
     if len(init) == 0 {
         return expr

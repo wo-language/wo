@@ -1199,6 +1199,8 @@ func checkassign(n ir.Node) {
 		base.Errorf("cannot assign to %v (strings are immutable)", n)
 	case n.Op() == ir.OLITERAL && n.Sym() != nil && ir.IsConstNode(n):
 		base.Errorf("cannot assign to %v (declared const)", n)
+    case n.Op() == ir.OINDEXSET:
+        base.Errorf("cannot assign to %v (sets aren't assignable, use Add/Remove)", n)
 	default:
 		base.Errorf("cannot assign to %v", n)
 	}

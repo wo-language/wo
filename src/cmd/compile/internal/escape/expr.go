@@ -87,7 +87,7 @@ func (e *escape) exprSkipInit(k hole, n ir.Node) {
 			e.expr(k.deref(n, "dot of pointer"), n.X)
 		}
 		e.discard(n.Index)
-	case ir.OINDEXMAP:
+	case ir.OINDEXMAP, OINDEXSET:
 		n := n.(*ir.IndexExpr)
 		e.discard(n.X)
 		e.discard(n.Index)
@@ -223,6 +223,15 @@ func (e *escape) exprSkipInit(k hole, n ir.Node) {
 			elt := elt.(*ir.KeyExpr)
 			e.assignHeap(elt.Key, "map literal key", n)
 			e.assignHeap(elt.Value, "map literal value", n)
+		}
+
+	case ir.OSETLIT:
+		n := n.(*ir.CompLitExpr)
+		e.spill(k, n)
+
+		// Set elements are always stored in the heap.
+		for _, elt := range n.List {
+			e.assignHeap(elt, "set literal element", n)
 		}
 
 	case ir.OCLOSURE:

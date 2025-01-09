@@ -160,6 +160,17 @@ func IndexMapRType(pos src.XPos, n *ir.IndexExpr) ir.Node {
 	return mapRType(pos, n.X.Type())
 }
 
+//// IndexSetRType asserts that n is a set index operation, and returns
+//// an expression that yields the *runtime._type value representing the
+//// set type.
+//func IndexSetRType(pos src.XPos, n *ir.IndexExpr) ir.Node {
+//	assertOp(n, ir.OINDEXSET)
+//	if hasRType(n, n.RType, "RType") {
+//		return n.RType
+//	}
+//	return mapRType(pos, n.X.Type())
+//}
+
 // MakeChanRType asserts that n is a "make" operation for a channel
 // type, and returns an expression that yields the *runtime._type
 // value representing that channel type.

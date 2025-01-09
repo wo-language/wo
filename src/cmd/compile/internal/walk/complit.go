@@ -16,7 +16,7 @@ import (
 )
 
 // walkCompLit walks a composite literal node:
-// OARRAYLIT, OSLICELIT, OMAPLIT, OSTRUCTLIT (all CompLitExpr), or OPTRLIT (AddrExpr).
+// OARRAYLIT, OSLICELIT, OMAPLIT, OSETLIT, OSTRUCTLIT (all CompLitExpr), or OPTRLIT (AddrExpr).
 func walkCompLit(n ir.Node, init *ir.Nodes) ir.Node {
 	if isStaticCompositeLiteral(n) && !ssa.CanSSA(n.Type()) {
 		n := n.(*ir.CompLitExpr) // not OPTRLIT
@@ -524,6 +524,117 @@ func maplit(n *ir.CompLitExpr, m ir.Node, init *ir.Nodes) {
 	}
 }
 
+func setlit(n *ir.CompLitExpr, m ir.Node, init *ir.Nodes) { // TODO(bran)
+	// make the set var
+	args := []ir.Node{ir.TypeNode(n.Type()), ir.NewInt(base.Pos, n.Len+int64(len(n.List)))}
+	a := typecheck.Expr(ir.NewCallExpr(base.Pos, ir.OMAKE, nil, args)).(*ir.MakeExpr)
+	//a.RType = n.RType
+	a.SetEsc(n.Esc())
+	appendWalkStmt(init, ir.NewAssignStmt(base.Pos, m, a))
+
+	entries := n.List
+
+	// The order pass already removed any dynamic (runtime-computed) entries.
+	// All remaining entries are static. Double-check that.
+	for _, r := range entries {
+		r := r.(ir.Expr)
+		if !isStaticCompositeLiteral(r) {
+			base.Fatalf("setlit: element is not a literal: %v", r)
+		}
+	}
+
+	if len(entries) > 25 {
+		// For a large number of entries, put them in an array and loop.
+
+		// build types [count]Tindex and [count]Tvalue
+		tk := types.NewArray(n.Type().Key(), int64(len(entries)))
+		//te := types.NewArray(n.Type().Elem(), int64(len(entries)))
+
+		// TODO(#47904): mark tk and te NoAlg here once the
+		// compiler/linker can handle NoAlg types correctly.
+
+		types.CalcSize(tk)
+		//types.CalcSize(te)
+
+		// make and initialize static arrays
+		vstatk := readonlystaticname(tk)
+		//vstate := readonlystaticname(te)
+
+		datak := ir.NewCompLitExpr(base.Pos, ir.OARRAYLIT, nil, nil)
+		//datae := ir.NewCompLitExpr(base.Pos, ir.OARRAYLIT, nil, nil)
+		for _, r := range entries {
+			r := r.(ir.Expr)
+			datak.List.Append(r)
+			//datae.List.Append(r.Value)
+		}
+		fixedlit(inInitFunction, initKindStatic, datak, vstatk, init)
+		//fixedlit(inInitFunction, initKindStatic, datae, vstate, init)
+
+		// loop adding structure elements to map
+		// for i = 0; i < len(vstatk); i++ {
+		//	map[vstatk[i]] = vstate[i]
+		//  set.append(vstaktk[i])
+		// }
+		i := typecheck.TempAt(base.Pos, ir.CurFunc, types.Types[types.TINT])
+		//rhs := ir.NewIndexExpr(base.Pos, vstate, i)
+		//rhs.SetBounded(true)
+
+		kidx := ir.NewIndexExpr(base.Pos, vstatk, i)
+		kidx.SetBounded(true)
+
+		// typechecker rewrites OINDEX to OINDEXMAP
+		lhs := typecheck.AssignExpr(ir.NewIndexExpr(base.Pos, m, kidx)).(*ir.IndexExpr)
+		base.AssertfAt(lhs.Op() == ir.OINDEXSET, lhs.Pos(), "want OINDEXSET, have %+v", lhs)
+		lhs.RType = n.RType
+
+		zero := ir.NewAssignStmt(base.Pos, i, ir.NewInt(base.Pos, 0))
+		cond := ir.NewBinaryExpr(base.Pos, ir.OLT, i, ir.NewInt(base.Pos, tk.NumElem()))
+		incr := ir.NewAssignStmt(base.Pos, i, ir.NewBinaryExpr(base.Pos, ir.OADD, i, ir.NewInt(base.Pos, 1)))
+
+		var body ir.Node = ir.NewAssignStmt(base.Pos, lhs, rhs)
+		body = typecheck.Stmt(body)
+		body = orderStmtInPlace(body, map[string][]*ir.Name{})
+
+		loop := ir.NewForStmt(base.Pos, nil, cond, incr, nil, false)
+		loop.Body = []ir.Node{body}
+		loop.SetInit([]ir.Node{zero})
+
+		appendWalkStmt(init, loop)
+		return
+	}
+	// For a small number of entries, just add them directly.
+
+	// Build list of var[c] = expr.
+	// Use temporaries so that mapassign1 can have addressable key, elem.
+	// TODO(josharian): avoid map key temporaries for mapfast_* assignments with literal keys.
+	// TODO(khr): assign these temps in order phase so we can reuse them across multiple maplits?
+	tmpkey := typecheck.TempAt(base.Pos, ir.CurFunc, m.Type().Key())
+	tmpelem := typecheck.TempAt(base.Pos, ir.CurFunc, m.Type().Elem())
+
+	for _, r := range entries {
+		r := r.(*ir.KeyExpr)
+		index, elem := r.Key, r.Value
+
+		ir.SetPos(index)
+		appendWalkStmt(init, ir.NewAssignStmt(base.Pos, tmpkey, index))
+
+		ir.SetPos(elem)
+		appendWalkStmt(init, ir.NewAssignStmt(base.Pos, tmpelem, elem))
+
+		ir.SetPos(tmpelem)
+
+		// typechecker rewrites OINDEX to OINDEXMAP
+		lhs := typecheck.AssignExpr(ir.NewIndexExpr(base.Pos, m, tmpkey)).(*ir.IndexExpr)
+		base.AssertfAt(lhs.Op() == ir.OINDEXMAP, lhs.Pos(), "want OINDEXMAP, have %+v", lhs)
+		lhs.RType = n.RType
+
+		var a ir.Node = ir.NewAssignStmt(base.Pos, lhs, tmpelem)
+		a = typecheck.Stmt(a)
+		a = orderStmtInPlace(a, map[string][]*ir.Name{})
+		appendWalkStmt(init, a)
+	}
+}
+
 func anylit(n ir.Node, var_ ir.Node, init *ir.Nodes) {
 	t := n.Type()
 	switch n.Op() {
@@ -605,6 +716,13 @@ func anylit(n ir.Node, var_ ir.Node, init *ir.Nodes) {
 			base.Fatalf("anylit: not map")
 		}
 		maplit(n, var_, init)
+
+	case ir.OSETLIT:
+		n := n.(*ir.CompLitExpr)
+		if !t.IsSet() {
+			base.Fatalf("anylit: not set")
+		}
+		setlit(n, var_, init)
 	}
 }
 
@@ -641,7 +759,7 @@ func oaslit(n *ir.AssignStmt, init *ir.Nodes) bool {
 		// not a special composite literal assignment
 		return false
 
-	case ir.OSTRUCTLIT, ir.OARRAYLIT, ir.OSLICELIT, ir.OMAPLIT:
+	case ir.OSTRUCTLIT, ir.OARRAYLIT, ir.OSLICELIT, ir.OMAPLIT, ir.OSETLIT: // TODO(bran) circular assignment blocker
 		if ir.Any(n.Y, func(y ir.Node) bool { return ir.Uses(y, x) }) {
 			// not safe to do a special composite literal assignment if RHS uses LHS.
 			return false

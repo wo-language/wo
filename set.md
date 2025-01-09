@@ -4,15 +4,17 @@
 - https://dave.cheney.net/2018/05/29/how-the-go-runtime-implements-maps-efficiently-without-generics
 - impl tests and redo benchmarks
 ```go
-m := map[kType]vType // init
+m := map[kType]vType{} // init
+make(map[Type], len)
 v := m[k]     // mapaccess1(m, k, &v)
 v, ok := m[k] // mapaccess2(m, k, &v, &ok)
 m[k] = 9001   // mapinsert(m, k, 9001)
 delete(m, k)  // mapdelete(m, k)
 
-s := set[eType] // init
+s := set[eType]{} // init - OSETLIT
+make(set[Type], len) // OMAKESET
 ---            // setaccess1 - disabled
-ok := s[e]     // setaccess2(s, e, &ok) - similar signature of mapaccess1
+ok := s[e]     // setaccess2(s, e, &ok) - similar signature of mapaccess1 - OINDEXSET
 s.insert(9001) // setinsert(s, e, 9001)
 delete(s, e)   // setdelete(s, e)
 
@@ -77,9 +79,6 @@ relevant files structure:
     - sets
     - sets_test
 
-
-data graph:
-
 hset <- value
 hset, reflect.type.Set <- reflectdata
 
@@ -90,6 +89,10 @@ TSET <- range
 
 OMAKESET
 
-
-
+impl progress:
+- Operators:
+   - OSETLIT (OMAPLIT) - Mostly Impl
+   - OSETLIT (OMAPLIT) - Implemented
+   - OASSETR (OAS2MAPR) - Not Started
+   - OINDEXSET (OINDEXMAP) - In Progress (Broken)
 

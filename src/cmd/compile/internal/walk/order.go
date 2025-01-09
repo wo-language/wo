@@ -5,9 +5,6 @@
 package walk
 
 import (
-	"fmt"
-	"go/constant"
-
 	"cmd/compile/internal/base"
 	"cmd/compile/internal/ir"
 	"cmd/compile/internal/reflectdata"
@@ -17,6 +14,8 @@ import (
 	"cmd/compile/internal/types"
 	"cmd/internal/objabi"
 	"cmd/internal/src"
+	"fmt"
+	"go/constant"
 )
 
 // Rewrite tree to use separate statements to enforce
@@ -1493,6 +1492,75 @@ func (o *orderState) expr1(n, lhs ir.Node) ir.Node {
 		n.Len += int64(len(dynamics))
 
 		return m
+
+	case ir.OSETLIT:
+		// Order set by converting:
+		//   set[int]{ a(), b, c() }
+		// to
+		//   s := set[int]{ b }
+		//   s.add(a())
+		//   s.add(c())
+		// Then order the result.
+		// Without this special case, order would otherwise compute all
+		// the keys and values before storing any of them to the set.
+		// See issue 26552.
+		n := n.(*ir.CompLitExpr)
+		entries := n.List
+		statics := entries[:0]
+		var dynamics []ir.Expr
+		for _, r := range entries {
+			r := r.(ir.Expr) // TODO(bran) idk the type
+
+			if !isStaticCompositeLiteral(r) {
+				dynamics = append(dynamics, r)
+				continue
+			}
+
+			// Recursively ordering some static entries can change them to dynamic;
+			// e.g., OCONVIFACE nodes. See #31777.
+			r = o.expr(r, nil).(*ir.BasicLit)
+			if !isStaticCompositeLiteral(r) {
+				dynamics = append(dynamics, r)
+				continue
+			}
+
+			statics = append(statics, r)
+		}
+		n.List = statics
+
+		if len(dynamics) == 0 {
+			return n
+		}
+
+		// Emit the creation of the set (with all its static entries).
+		s := o.newTemp(n.Type(), false)
+		as := ir.NewAssignStmt(base.Pos, s, n)
+		typecheck.Stmt(as)
+		o.stmt(as)
+
+		// Emit eval+insert of dynamic entries, one at a time.
+
+		// TODO(bran) use append or whatever, not iter Insert
+		var insertFunc = typecheck.LookupRuntime("Insert", types.NewSet(n.Type().Elem()), types.AnyType)
+
+		for _, r := range dynamics {
+			call := typecheck.Expr(ir.NewCallExpr(base.Pos, ir.OCALLFUNC, insertFunc, nil)).(*ir.CallExpr)
+			call.Args.Append(s)
+			call.Args.Append(r)
+			base.AssertfAt(call.Op() == ir.OINDEXSET, call.Pos(), "want OINDEXSET, have %+v", call)
+
+			o.stmt(call)
+		}
+
+		// Remember that we issued these assignments so we can include that count
+		// in the set alloc hint.
+		// We're assuming here that all the elements in the set literal are distinct.
+		// If any are equal, this will be an overcount. Probably not worth accounting
+		// for that, as equal keys in map literals are rare, and at worst we waste
+		// a bit of space.
+		n.Len += int64(len(dynamics))
+
+		return s
 	}
 
 	// No return - type-assertions above. Each case must return for itself.

@@ -165,6 +165,9 @@ func (e *escape) stmt(n ir.Node) {
 	case ir.OAS2MAPR: // v, ok = m[k]
 		n := n.(*ir.AssignListStmt)
 		e.assignList(n.Lhs, n.Rhs, "assign-pair-mapr", n)
+	//case ir.OASSETR: // has = s[e]
+	//	n := n.(*ir.AssignListStmt)
+	//	e.assignList(n.Lhs, n.Rhs, "assign-setr", n)
 	case ir.OAS2RECV, ir.OSELRECV2: // v, ok = <-ch
 		n := n.(*ir.AssignListStmt)
 		e.assignList(n.Lhs, n.Rhs, "assign-pair-receive", n)

@@ -19,6 +19,8 @@ var file = os.Open("hi.wo")!
 
 (Pending decisions here. It's a WIP)
 
+And similarly with the "ok" pattern:
+
 The point of these features is to look beyond banter and theories, and to just **try it out** to really see what works well before judgement. I try iterations of these features before listing them, and these were the most notable options. I hope you find it interesting - definitely feel free to give your own suggestions.
 
 ## *Currently, <u>none of these necessarily work yet</u>. It's more of a proof of concept*

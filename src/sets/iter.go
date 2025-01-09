@@ -34,6 +34,7 @@ func Elems[Map ~map[K]V, K comparable, V any](m Map) iter.Seq[K] {
 
 // Insert adds the key-value pairs from seq to m.
 // If a key in seq already exists in m, its value will be overwritten.
+// TODO(bran) After set keyword is implemented, this must be compiled differently; and order.go insertFunc must follow
 func Insert[Map ~map[K]V, K comparable, V any](m Map, seq iter.Seq2[K, V]) {
 	for k, v := range seq {
 		m[k] = v

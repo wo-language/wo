@@ -85,7 +85,7 @@ func NewAddrExpr(pos src.XPos, x Node) *AddrExpr {
 	n.pos = pos
 
 	switch x.Op() {
-	case OARRAYLIT, OMAPLIT, OSLICELIT, OSTRUCTLIT:
+	case OARRAYLIT, OMAPLIT, OSETLIT, OSLICELIT, OSTRUCTLIT:
 		n.op = OPTRLIT
 
 	default:
@@ -256,7 +256,7 @@ func (n *CompLitExpr) SetOp(op Op) {
 	switch op {
 	default:
 		panic(n.no("SetOp " + op.String()))
-	case OARRAYLIT, OCOMPLIT, OMAPLIT, OSTRUCTLIT, OSLICELIT:
+	case OARRAYLIT, OCOMPLIT, OMAPLIT, OSETLIT, OSTRUCTLIT, OSLICELIT:
 		n.op = op
 	}
 }
@@ -331,7 +331,7 @@ func (n *IndexExpr) SetOp(op Op) {
 	switch op {
 	default:
 		panic(n.no("SetOp " + op.String()))
-	case OINDEX, OINDEXMAP:
+	case OINDEX, OINDEXMAP, OINDEXSET:
 		n.op = op
 	}
 }
@@ -1070,7 +1070,7 @@ func SameSafeExpr(l Node, r Node) bool {
 		// Allow only numeric-ish types. This is a bit conservative.
 		return types.IsSimple[l.Type().Kind()] && SameSafeExpr(l.X, r.X)
 
-	case OINDEX, OINDEXMAP:
+	case OINDEX, OINDEXMAP: // OINDEXSET can't be on the left side. // TODO(bran) check
 		l := l.(*IndexExpr)
 		r := r.(*IndexExpr)
 		return SameSafeExpr(l.X, r.X) && SameSafeExpr(l.Index, r.Index)
