@@ -87,9 +87,9 @@ Features that change the functionality of the language beyond syntax and design 
 | Run other functions besides main          | `func main() { other() }`                                                                                                                   | `func otherMain() { }`                                                                              |
 | More liberal folder structure             | main, mod                                                                                                                                   | *TBD*                                                                                               |
 
-### To justify these decisions, I provide a deeper analysis of the design at ~~[err.nil](https://err.nil/)~~ [justifications.md](/justifications.md).
+### To justify these decisions, I provide a deeper analysis of the design at [justifications.md](https://github.com/wo-language/wo/blob/release-branch.go1.23.wo/justifications.md).
 
-And see summaries of the changes in [specification.md](/specification.md) and their implementation progress.
+And see summaries of the changes in [specification.md](https://github.com/wo-language/wo/blob/release-branch.go1.23.wo/specification.md) and their implementation progress.
 
 I am considering making each language features **modular**. If someone likes only the interface syntax, and that's all they want, then I could allow either compiler flags headers in the file to indicate which ones to have turned off.
 
