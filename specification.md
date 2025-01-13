@@ -53,12 +53,12 @@ The point of this file is to give a minimal depiction of each feature. See [just
 
 ## Versions
 
-Since this project is new and will change a lot, each new version will be breaking. I will have some separation of versions since I am developing it somewhat feature by feature.
+Since this project is new and will change a lot, each new version may be breaking. I will have some separation of versions since I am somewhat developing it feature by feature.
 There would be a many-many ratio with Go and Wo versions.
 
 Note, these are based on the priorities. It could change as the whole design could change.
 
-Current version: 0.0.0
+**Current version: 0.0.0**
 
 | Wo    | Features        | Go     |
 |-------|-----------------|--------|
@@ -70,7 +70,7 @@ Current version: 0.0.0
 | 0.1.3 | Variable Basics |        |
 | 0.2.1 | Err Handling    |        |
 | 0.2.2 | Std Lib Basics  |        |
-| 0.3.1 | ->              |        |
+| 0.3.1 | &#8594;         |        |
 | 0.3.2 | Union Literal   |        |
 | 0.3.3 | Tuple Literal   |        |
 | 0.4.1 | Variable Decls  |        |
@@ -119,13 +119,6 @@ Operators added from Go base:
 | ORELSE       | Option[X]                     |
 | SETLIT       | s[T]{List}                    |
 | ASSETR       | has = s[e]                    |
-
-
-### Replaced (Modified)
-
-| op    | replacement |
-|-------|-------------|
-| RANGE | ENHANCEDFOR |
 
 ### Modularity
 

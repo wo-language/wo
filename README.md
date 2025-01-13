@@ -1,8 +1,8 @@
 ### Wo is a fork of Go
 
-The Wo language is an interoperable successor to Go that offers alternative syntax and language features aimed at readability. To accomodate preference and situation, features will be modular - optional.
+The Wo language is an interoperable fork of Go that offers alternative syntax and language features aimed at readability. It's not endorsed by Go.
 
-For example, Go's error handling
+For example, Go's error handling,
 
 ```go
 f, err := os.Open("hi.wo")
@@ -28,17 +28,17 @@ The point of these features is to look beyond banter and theories, and to just *
 Also see [justifications.md](/justifications.md) and [specification.md](/specification.md).
 ### Syntax
 
-|           Syntax Feature           |                          Go Method                          |                              Wo Example                              |
-|:----------------------------------:|:-----------------------------------------------------------:|:--------------------------------------------------------------------:|
-|           `interface{}`            |              `interface{Length(interface{})}`               |                           `<Length(<>)>`                             |
-|       `interface{\|}` union        |                 `interface{int8 \| int16}`                  |                          `int8 \| int16`                             |
-|         Enhanced for loop          | `for i, v := range nums {}`<br/>`for _, v := range nums {}` |               `for i, v : nums {}`<br/>`for v : nums`                |
-|         Ternary expression         |       `var v int; if high { v = 99 } else { v = 1 }`        |                   `var v = if high then 99 else 1`                   |
-|     Has conditional assignment     |               `if a, cond := call(); cond {}`               |                        `if var a = call() {}`                        |
-|     `_` for multi return value     |                       `_, val = f()`                        | `func f() (skip, val, skip2)`<br/>`val = f()` (unless it's an error) |
-|           Function type            |              `func(int) func(func(), int) int`              |                    `int -> (() -> _, int) -> int`                    |
-|    Single line function literal    |            `func(v int) bool { return v == 0 }`             |                   `v -> v == 0`, `() -> effects()`                   |
-| Keep `func` for multi line literal |     `func() int {`<br/>`unlock()`<br/>`return open() }`     |         `func() int {`<br/>`unlock()`<br/>`return open() }`          |
+|           Syntax Feature           |                          Go Method                          |                     Wo Example                      |
+|:----------------------------------:|:-----------------------------------------------------------:|:---------------------------------------------------:|
+|           `interface{}`            |              `interface{Length(interface{})}`               |                   `<Length(<>)>`                    |
+|       `interface{\|}` union        |                 `interface{int8 \| int16}`                  |                   `int8 \| int16`                   |
+|         Enhanced for loop          | `for i, v := range nums {}`<br/>`for _, v := range nums {}` |       `for i, v : nums {}`<br/>`for v : nums`       |
+|         Ternary expression         |       `var v int; if high { v = 99 } else { v = 1 }`        |          `var v = if high then 99 else 1`           |
+|     Has conditional assignment     |               `if a, cond := call(); cond {}`               |               `if var a = call() {}`                |
+|     `_` for multi return value     |                       `_, val = f()`                        |    `func f() (skip, val, skip2)`<br/>`val = f()`    |
+|           Function type            |              `func(int) func(func(), int) int`              |           `int -> (() -> _, int) -> int`            |
+|    Single line function literal    |            `func(v int) bool { return v == 0 }`             |          `v -> v == 0`, `() -> effects()`           |
+| Keep `func` for multi line literal |     `func() int {`<br/>`unlock()`<br/>`return open() }`     | `func() int {`<br/>`unlock()`<br/>`return open() }` |
 
 ### Types & Data
 
@@ -62,7 +62,7 @@ Also see [justifications.md](/justifications.md) and [specification.md](/specifi
 |                             Design                              | Go Usage                                                                        | Wo Usage                                                          |
 |:---------------------------------------------------------------:|:--------------------------------------------------------------------------------|-------------------------------------------------------------------|
 | Doesn't allow **import overloading** or **keyword overloading** | `var int int = 1`, `rune := 'W'`<br/>`import { strings }; var strings []string` | *compile error*                                                   |
-|                 Warns for **unused variables**                  | `func f() { x := 1 }`<br/>*compile error*                                       | *warning*                                                         |
+|                 **Warns** for unused variables                  | `func f() { x := 1 }`<br/>*compile error*                                       | *warning*                                                         |
 |       No accessing uninitialized variables (zero values)        | `var s string // = ""`<br/>`s += "." // s == "."`                               | `var s string`<br/>`s += "." // error`<br/>`var t string? = None` |
 |               Assign variables with **only** `=`                | `var e int; e, z := 8, 9; e = 7`                                                | `var e = 0; e = 7`                                                |
 |  `:=` for shadowing **only** and not mixed with initialization  | `h := 1; { h, m := 2, 5 }`                                                      | `var h = 1; { h := 2; var m = 5 }`                                |
@@ -109,7 +109,6 @@ Potential Features...
 |----------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
 | Remove `func`, and remove parens from the receiver                                                                                                 | `func (C* c) f[A rune](a int) (float32, error) {}`             | `C.f[rune A](int a) float32? {}`                                                                                       |
 | Switch the type with the name in variable and struct [declarations](https://go.dev/blog/declaration-syntax), parameters, and function return types | `i int`                                                        | `int i`, `struct s`, `string proc(float32 f)`                                                                          |
-| Have tuples as an assignable type                                                                                                                  | `a, b; return a, b`                                            | `t; return t`                                                                                                          |
 | Don't use `type` in declarations                                                                                                                   | `type A interface {}`                                          | `interface A {}`, `struct B {}`                                                                                        |
 | Make it more obvious that map and slice are [pointers](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it)           | `map`                                                          | `*map`                                                                                                                 |
 | Allow methods to be in their struct                                                                                                                | `struct Bug { func fly() }`<br/>`func (f F*) flee() {f.fly()}` | `struct Bug { fly()`<br/>`flee() { this.fly() } }`<br/>and/or `struct (Bug* bug) { }` to allow `bug` instead of `this` |
@@ -120,10 +119,6 @@ Potential Features...
 I'd rather `wo` were a lite CLI command that just uses the Go compiler that's already installed rather than needing a different build of the entire compiler, but that'd make interoperability almost impossible, so it is its own compiler.
 
 You can install it by building it from this source checked out from the right version, as per https://go.dev/doc/install/source#bootstrapFromCrosscompiledSource. Currently, it's not guaranteed to work.
-
-### Status
-
-To summarize which code has actually been written, I've implemented tiny parts of a couple things, and the inner functionality and tree structure of `set`, but not its operators yet to test it. I have gotten it (the compiler) to compile and run ".wo" files.
 
 ## Trademark disclaimer
 

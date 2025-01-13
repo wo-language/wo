@@ -91,7 +91,7 @@ OMAKESET
 
 impl progress:
 - Operators:
-   - OSETLIT (OMAPLIT) - Mostly Impl
+   - OSETLIT (OMAPLIT) - Mostly Implemented
    - OSETLIT (OMAPLIT) - Implemented
    - OASSETR (OAS2MAPR) - Not Started
    - OINDEXSET (OINDEXMAP) - In Progress (Broken)

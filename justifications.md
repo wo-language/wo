@@ -6,11 +6,11 @@ In here, I explain and argue for Wo's design decisions. Maybe it could be intere
 
 ### Index
 
-1. [Theory](#Theory)
+1. [Theory](#Wo)
    1. [Background](#Background)
    2. [The goals of code](#The-goals-of-code)
    3. [To restrict or to allow](#To-restrict-or-to-allow)
-   4. [Unpredictible usage](#Unpredictible-usage)
+   4. [Unpredictable usage](#Unpredictable-usage)
    5. [Go's design reasons](#Gos-design-reasons)
    6. [Modularity](#Why-modularity)
 2. [Syntax](#Syntax)
@@ -59,143 +59,174 @@ In here, I explain and argue for Wo's design decisions. Maybe it could be intere
 
 ## Theory
 
+### Wo
+
+The Wo language is an interoperable fork of Go that offers alternative syntax and language features. To accommodate preference and situation, features are modular - optional. It focuses a lot on readability and user experience, and it may end up (coincidentally) address a lot of the critical feedback people have about Go, but my approach is from the bottom up.
+
+#### Current State
+
+Wo is currently a work in progress. [dev.md](dev.md) has some installation instructions, but it probably won't even compile. The exact time frame as to when any of this is available is very hard to say. [specification.md](specification.md#versions) draws out some of the versioning and current status - it's currently in an early experimental phase. As a single person with a day job, I can't really guarantee a release, but I will definitely add the first few starter versions. I've partially fleshed out `set` so far, and I've gotten the compiler to compile and run `.wo` files.
+
 ### Background
 
-When someone makes a new programming language, it should solve a problem, not just do something that vaguely feels attractive because it combines that paradigm from that language and is based on C so it's fast.
+When it comes to making a new programming language, it should solve a problem, not just do something that feels attractive because it combines those paradigm from those popular languages, and it's based on C. There needs to be a real problem statement.
 
-A similar situation was Scala over Java.
-Scala did something that Java wasn't providing.
-It took on Java's problem of verbosity, especially with pattern matching, and, importantly, interoped with Java.
+Still, the idea of a simple and clear C is very attractive to all of us. I want to still capture that same essence of simplicity and readability.
 
-I have not seen anything in the programming language landscape like that: **a direct child of Go that addresses design**.
-This project differs by modiifying the same compiler and compiling both languages at once.
+Similar to how Scala responded to Java, I seek to complement Go by experimenting with alternative designs.
 
-And let it be known that the internet is full of needless speculation as to "why Go did this and not that?".
+The internet is full of needless speculation when trying to answer "why Go did this and not that?".
 I'll be skeptical of any justification that people give to Go and make this design process transparent.
 I prioritize the "objective" best way of doing something regardless of what the theories originally purported.
 
 In other words, **this is about what happens in practice, not how logically sound or nice the theory is behind it** -
-or how bad you think it would be, which is just obstinance without actually trying it.
+or how bad you think it would be, which is just obstinance if you don't actually try it.
 
-*Trying something* is how you came to like programming in the first place, isn't it?
+#### *Trying something* is how you came to like programming in the first place, isn't it?
 
-For example, Vim sounds crazy on paper to people the first time they hear of it, thinking "but why can't you type by default!?", but only once they start to try it out do they realize that it's incredible to use in practice.
+For example, Vim sounds crazy on paper to people the first time they hear of it, saying "but why can't you type by default / just use the arrow keys!?", but only once they start to try it out do they realize that it's incredible to use in practice.
 Or, hypothetically, they end up realizing it's terrible, and they simply enjoy hurting their hands with the arrow keys.
 
-Obviously, the design I end up going with is going to be heavily influenced by my opinions, but I'm actually trying to base it on what I percieve as universal as well as delicately balanced.
+Obviously, the design I end up going with is going to be heavily influenced by my opinions, but I'm actually trying to base it on what I perceive as universally user-oriented by keeping a delicate balance.
 
+#### A design isn't good because another language does it.
 
-Additionally, the entire band of questions such as "wasn't it designed for bad programmers?" are irrelevent here.
-Whataboutisms like that which lead one astray from the real goals of programming language design are not the main topic here.
-Tip: it's a fallacy because something is what it is whether someone intended for it to be something or not (but it could give clues into its design as it is anyway, but people don't ask that question for that reason).
+If something I decide is the same in another language, then we came to the same conclusion. Expect there to be familiar patterns, but also potentially something completely new. Because the goal here isn't to have something back that I or others miss, but to just have excellency period. I will compare some features to other languages, but it's only for reference's sake. Again, a language does NOT have to be like other ones for reasons such as "familiarity for newcomers".
+
+Additionally, the entire band of questions such as "wasn't it designed for bad programmers?" are **irrelevant** here.
+Whataboutisms like that which lead one astray from the real goals of programming language design are just not what this is about.
+Tip: that's a fallacy because something is what it is _despite what someone intended for it to be_ (although it could give clues about its design, people don't typically ask that question for that reason).
 
 In terms of design, positions like "we have to do something because it's... fast, short, nice, efficient, what I'm used to, what I'm not used to, new, follows a principle" are all invalid, non sequitur arguments.
-For example, there are times when being slow is the better decusion, such as to sacrifice for security.
+For example, there are times when being slow is the better decision, such as to sacrifice for security.
 
-It's a massive balance that's hard to keep track of, but you should never have to rely on "only following an established principle". Obviously it's dogmatic and will just lead to a mess of inconsistency.
-Getting this right is actually a massive multidimensional game of minimax. You have to take a step back to see if we can redo everything for the better, if not then we pick the best option given our downsides, repeat for each option... in other words, we will have to sacrifice x for y. We HAVE to, and we do make decisions like that constantly.
+It's a massive balance that can be hard to keep track of, but you should never have to rely on "following an established principle".
 
-Please, I want any discussions about project and concept to be focused on design and programming. Even this introduction area is fringey. Some of these topics could even be contentious, but I don't want it to distract us from legit debate and discussion. Programming is what matters; don't let unfriendliness and grudges remove you from that. I want to be democratic, but I also want to be weary of the wisdom of the crowd effect fallacy. For example, it's hard to vote on which feature is better when you haven't even tried them, so polls should be done for a very particular kind of topic.
+"We do it because it's the philosophy of what we do" is just circular and dogmatic and will just lead to a mess of inconsistency. We must state why something is something. In terms of the language itself (excluding community conduct),
+
+#### There is no Wo philosophy.
+
+in that generic sense of "an attitude or philosophy held by a group as a guiding principle". Doing the right thing doesn't need that line of thinking. Sorry, there's nothing for you to stand on, but that's the integrity needed to plant the right seeds.
+
+#### Getting this right is actually a massive multidimensional game of minimax.
+
+You have to take a step back to see if we can redo something from that point, and if not then we pick the best option given its downsides, repeating for each option all the way down the tree. We have to sacrifice. Even using code at all is just some level of sacrifice. If I step really far back, even basing it off of the existing Go compiler is a question.
+
+I would like discussions about this project/concept to be primarily focused on design and programming in a respectful, constructive way. It's really a waste of your time otherwise. Some of these topics could even be contentious, but I don't want it to distract us from legit debate and discussion. Programming is what matters; don't let unfriendliness and grudges remove you from that. Especially avoiding personal bias. "Thank you in advance for your cooperation" as those scary corporate people say.
+
+I do want to be democratic, but I also want to be weary of the wisdom of the crowd effect fallacy. For example, it's hard to vote on which feature is better when you haven't even tried them, so polls should be done for only very particular kinds of topics. After enough time, we may all realize how impractical something is that we used to think would be great at first, and so we replace it.
 
 However, ultimately, additional programming capabilities can be more valuable in some circumstances, while it doesn't matter in others.
-For example, I had a Java program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) into Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by about 2.5 times as much because of pattern matching, but all the other files were fine being Java.
+For example, I had a Java program that simplifies math expressions, and making that [one file](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression.scala#L452) into Scala out of the whole project shortened [that code](https://github.com/Branzz/DiscreteMath/blob/scala_integration/src/bran/tree/compositions/expressions/operators/OperatorExpression0.java#L223) by 2.5 times as much because of pattern matching while also being more readable, but all the other files were still fine with being Java.
 
-So it is just nice to have the option of a design that is attuned to your circumstances, as opposed to some forced grifting replacement for all of Go that must be better because the author thinks so.
-
-That's why I am planning to make the features modular / able to be swapped in and out with some kind of attribute.
+So it is just nice to have the option of a design that is attuned to your circumstances, as opposed to some forced grifting replacement for all of Go that "must be better because the author thinks so".
 
 Despite my use of the first person, that is just to make it easier to understand this situation.
-When in reality, **<ins>this is not really my project. It's open.</ins>**
-It'll eventually be put into "we decided" and "Wo does" if others contribute.
-Anyone can contribute with issues, pull requests, or even maintaining.
-I will never be dismissive with pull requests even if I don't like the change, in order to be iterative and experimental (branches exist).
-We will finalize on something as long as it is the best option granted the downsides. It should clearly follow good language design.
-If it's something controversial, then it can just be a feature that's off by default - who cares?
+When in reality, **this is not really my project. <ins>It's a community project</ins>**. While I have to initiate the beginning, you decide what goes too.
+It'll eventually be put into terms of "we decided this" or "Wo does this" if others contribute.
 
-This project should be very unbackwards-compatible during its infancy at least, but please try it out for the sake of interest.
+Anyone can contribute with issues, pull requests, or even approvals and maintaining.
+I will never be dismissive with pull requests in order to be iterative and experimental (branches exist).
+We will finalize on something as long as it is the best option granted the downsides. It should clearly follow good language design.
+
+Also, I don't feel I need to explain this, but I've learned to always over qualify yourself for these sorts of things, but this isn't Go 2 as its goals are quite different, although it could overlap with its design in theory.
+
+During its infancy, this project should be very **un**backwards-compatible, so use it for the sake of interest and don't go out building massive production projects. Maybe if it becomes very established then this should start being guaranteed, but that isn't soon. Hopefully optional features will make updating easier, though.
 
 ### The goals of code
 
-Code communicates and guarantees that it achieves something when ran by a computer. These two fight with each other in ways I won't be able to describe fully here. Intention seems to be an important part of Go's design, and I believe it is important. Just keep this in mind for later.
+There are two faces of code. The part you read guarantees that it achieves something when ran by a computer. One side is about communicating intent, and the other tries to ensure correct behavior when executed by the computer. These two fight with each other in ways I won't be able to describe fully here. It's easy to mess up baking a cake if you try to remove an ingredient or add a new one. In the same way, it's easy to mess up this balance of language and execution, and this is probably what could make some languages feel "off". So, the goal is to both be readable and to also command a computer (which might not actually be doing exactly what you're writing at all the higher level you up).
 
-I believe that adding comments is to compensate for code that doesn't communicate. They should be rarely used in practice, only used deliberately for things like magic constants and documentation. Even with documentation, it should be obvious what a function is going to do from its name. The syntax and style of a language along with the programmer's design of the code, such as identifier names and logical design, all contribute to the given "intent" of the program. Therefore:
+I believe that comments are a sign that code isn't readable. They should be rarely used in practice, only used deliberately for things like magic constants and documentation. Even with documentation, it should be obvious what a function is going to do from its name. The syntax and style of a language along with the programmer's design of the code, such as identifier names and logical design, all contribute to the given "intent" of the program.
+
+Therefore:
 
 **The compiler should not force you to be unnecessarily vague.** Preferably, it should help you to be clear. When it does give you the ability to write vague and bad code, you should personally avoid it, like in variable names and abstractions.
 
 It's our job to pay attention to details, but let's still make it as easy on ourselves as possible.
 
-Go's style design recommends using vague variable and function names. I give an elaboration of this in [variable naming](#Variable naming). This isn't exactly a criticism, but just a description of how Go appears to me.
+Go's style design recommends using vague variable and function names. I give an elaboration of this in [variable naming](#Variable-naming). This isn't exactly a criticism, but just a description of how Go appears to me.
 
 Boilerplate actually is good by the way, but only when it holds up to all of our established code standards: readable, giving intent, functional, not much slower, etc. It's one extreme to make 5 functions with the only difference being a string literal inside rather than making that a parameter. However, on the other hand, code isn't meant to be just run, it's meant to be used and edited - the code base grows in unpredictable directions, and it grows off of that previously placed boilerplate. And, it serves to not overly compress useful language.
 
-The `if err != nil {}` pattern doesn't really satisfy that description of a useful boilerplate above. If something is important and constantly modified (besides the err check body, which does have different variations), it shouldn't be shortened, but if something is not very significant to your overall goal of the program, and it is repeated across many programs, this is prime for abstraction.
+In my opinion, the ubiquitous `if err != nil {}` doesn't satisfy that description above. If something is important and constantly modified (besides the err check body, which does have different variations), it shouldn't be shortened, but if something is not very significant to your overall goal of the program, and it is repeated across many programs, this is prime for abstraction.
 
-A Similar thing is true with `set`s. You will very rarely need a modified implementation, so it should be a standard type. How many times have you had to create your own set implementation when one was already provided when it wasn't for a data structures class or for fun? Personally, exactly once, which was when I implemented it here in this project.
+A similar thing is true with `set`s. You will very rarely need a modified implementation, so it should be a standard type. How many times have you had to create your own set implementation when one was already provided and wasn't for a data structures class? Personally, exactly once, which was when I implemented it here in this project.
 
 ### To restrict or to allow
 
 Should we allow bad language and hope that users don't use it? Or should we completely ban it...
 
-When I choose a syntax, it has to not already exist, or if it exists, in an unmistakably different context. If the most obvious or common choice is used elsewhere, or if it would confuse the compiler, then I will consider a syntax that seems completely foreign. All programming syntax was foreign at first, and plenty of people try out new ways of writing things that they hate at first and end up getting used to and enjoying. If you can't adapt to something like that (granted the syntax isn't atrocious), modern programming probably isn't right for you.
+When I choose a syntax in an existing system, it has to not already exist, or if it exists, in an unmistakably different context. If the most obvious or common choice is used elsewhere, or if it would confuse the compiler, or if I conjure up something that simply works, then I consider a completely foreign syntax. All programming syntax was foreign at first, and plenty of people try out new ways of writing things that they hate at first and end up getting used to and enjoying.
 
-For example, Learning Go 2nd edition says:
+The compiler shouldn't allow you to do something that you shouldn't do. We should be able to do everything with code, but in a controlled, safe way.
 
-> Note: The Go compiler won’t stop you from creating unread package-level variables. This is one more reason you should avoid creating package-level variables.
+### Unpredictable usage
 
-This is backwards logic to me from the compiler's perspective. It shouldn't allow you to do something that you shouldn't do.
+I want to eliminate "memorized arbitrary facts" or, simply, unpredictability, meaning inconsistency with established expectations. You can fix this by establishing different expectations or by aligning the inconsistency.
 
-### Unpredictible usage
+We should learn what things like `.` and `if` mean to start since the base components of language aren't necessarily going to be intuitive on their own, but some things are completely arbitrary given the context. So this establishes the expectations. Typically, you'd expect an `if` statement to work in the same way if someone said "this is a C based language", but would rightly expect it to be a bit different if it were a non-procedural, purely functional language since it might not even have statements.
 
-I want to eliminate "memorized arbitrary facts" or, simply, unpredictability.
+For example, it's not obvious that `map`s and slices are pointers when pointers already have a strict representation. And remember, I am speaking from a design perspective, this obviously isn't me saying it's bad or that they didn't make a good trade-off (that being the redundant usage of `*` on maps). It's not like some kind of "deal-breaker".
 
-We should learn what `.` and `if` mean to start since the base components of language aren't going to be intuitive, but some things are completely arbitrary given the context.
 
-It's not obvious that `map`s and slices are pointers.
 
-It's not obvious what each of the zero values are. If a string starts as `""`, then slice should start as `{}` if we are trying to be predictable.
+Some examples of unpredictability are: the meaning of `nil`, zero values, consistency across types with `[]` like calling getters but not setters on nil maps.
 
-The meaning of `nil` isn't obviously determined.
-
-In Go, you can call getters on unititialized maps, but not setters. They are both initialized as `nil`, since that's their zero value, but the way you use them ends up being different since `append(nil, ...)` on slices, but not `nilmap[key] = v`.
-
-There is unexpected slice appending behavior.
-
-Obviously, you have to learn this from a book, documentation, or experimenting, just like a lot of other things in programming, but I'm saying you shouldn't have to do that for very certain unobvious things given you are used to the language at hand. It should be obvious even after you've learned it. These situations should be intuitive based on their appearance and programmatic context. `slice` could return extra information about what has happened to make it less vague for example.
+Obviously, you have to learn this from a book, documentation, or experimenting, just like a lot of other things in programming, but I'm saying you shouldn't have to do that for very certain unobvious things given you are used to the language at hand. It should be as obvious as it can be even after you've learned it. These situations should be intuitive based on their appearance and programmatic context. `slice` could return extra information about what has happened to make it less vague for example.
 
 ### Go's design reasons
 
-When people try to answer this online, like on Stack Overflow, there are a mix of reasons provided for the language decisions with Go, with a mixed supposed underlying principle behind these. On Go's FAQ however, it's quite more straight forward, though, and it's useful here.
+When people try to answer this online, like on Stack Overflow, there are a mix of reasons provided for the language decisions with Go, with a mixed supposed underlying principle behind these. On Go's FAQ however, it's a lot more straight forward, and it's useful here.
 
 Besides the obvious reasons of "having a good feature that lets you program", [their FAQ](https://go.dev/doc/faq#Design) has these categories of justifications
 
 - Prevention of a feature because it:
   1. Makes compiling easier to implement
-  2. It can be or always is
+  2. Prevents backwards compatability
+  3. It can be or is always
      - confusing
      - convoluted
-     - unreadable
+     - unreadable/unclear
      - harder to use
-  3. So they have to think about something important instead
-  4. Slow
+     - increases overall complexity of the language
+  4. So they have to think about something important instead
+  5. Slow
 - Inclusion of a feature because it:
   1. Was fine in practice
-  2. To replace a prevented feature
+  2. Replaces a prevented feature
+  3. Fits the current model (of concurrency)
+  4. Gives value proportionate to the complexity/downside
+  5. Supports their consistent formatting
+  6. Makes development easier like static analysis
 
-They don't go too far into depth on what exactly makes something readable or not, but I'm going to analyze it for each syntactical design feature.
-
-*To be continued*
+They don't go too far into depth on what exactly makes something readable or not, but I will analyze it exhaustively throughout this page.
 
 ### Why modularity
 
 I am considering making different language features **modular**. That is, they can be enabled or disabled either through a compiler flag, in the module file, or with some file header.
 
-This isn't the newest idea, as languages all have versions one can choose of their liking. Rust has that capability with something like `#![allow(unused)]` which allows unused variables in the entire file.
+This isn't the newest idea, as languages all have versions one can choose of their liking. Go already has experimental features. Rust has that capability per scope with something like `#![allow(unused)]` which allows unused variables in the entire file. I might want this to apply on a file to file basis if it's often that people would need to switch the features around, but I predict that it won't be, so something like experiments is already fine.
 
-If someone just likes only the interface syntax, and that's all they want, then they can still use Wo in that way without dealing with the parts they don't like.
+If someone likes only the interface syntax of Wo and that's all they want, then they can still use Wo in that way without dealing with the parts they don't need in their situation.
 
-For example, enforcing the type before the variable name is universally disagreed on, so this could just be an additional option, not the Wo default. If a feature isn't restrictive, then it doesn't need a flag.
+If there's a feature that's controversial, then it can just be off by default - who cares?
+
+For example, having the type before the variable name like (`int x`) seems to be disagreed on by many, so this could just be an additional option, not the default. If a feature isn't restrictive, then it doesn't need a flag.
+
+The biggest problem here is that it's based on personal preference. That does not work for collaborative projects, so the optional features need to be chosen skillfully.
+
+We should also be weary of getting used to way too personally customized of a language and then having to switch back.
 
 That means there are these types of features: Those enforced without an option which are naturally optional, those that are on by default, those that are off by default. Experimental or "very indifferent" ones would be the ones that are disabled by default.
+
+Also, if it turns out that a certain set of features is basically always wanted, then this concept of modularity won't really be needed anymore.
+
+### See [specification.md](/specification.md) for really minimized representations of each design choice.
+
+### Or head back to the [index](#Index) to browse features by name.
+
+Ok, let's finally start swimming:
 
 ## Syntax
 
@@ -222,9 +253,10 @@ type I <
     bool
 >
 ```
-which is a bit weird unless you really like C++. Using `interface` in the type declaration doesn't feel exasperating anyway.
 
-So I'll keep `type Name interface {}` for now.
+which I think is a bit unnecessary and inconsistent. Using `interface` in the type declaration doesn't feel exasperating anyway as it already takes up a single line plus the trailing `}`.
+
+So, I'll keep `type Name interface {}` for now. However, later on, when `type Name =` declarations [are being discussed](#Algebraic-types), it ends up being consistent with the rest of the design.
 
 For the union syntax, the `<>`, let alone the `interface{}` around some union type can just be dropped:
 
@@ -243,28 +275,41 @@ for i, v := range nums {
 }
 ```
 
-It's basically an enhanced for loop. `range` isn't used anywhere else, and it's not like you can assign a variable as a range. I think they needed `range` because `i, v := nums` alone is misleading since that doesn't actually return the index and value, but we can just get around that by doing what Java did back when I was a baby:
+It's similar to an enhanced for loop. `range` isn't used anywhere else, and it's not like you can assign a variable as a range. I think they needed `range` because `i, v := nums` alone is misleading since "`nums`" doesn't actually return the index and value like that, but we can just get around that by doing what Java did back when I was a baby:
 
 ```go
 for i, v : nums {
     sum += v
 }
 ```
-as `:` is given a new meaning.
 
-Note that this will use the **value** by default for a single variable
+`:` is given a new meaning to be able to avoid giving `:=` inconsistent meanings.
 
-`for value : nums {}`
+This will also use the **value** by default for a single variable
+
+`for num : nums {}`
 
 In Go, when there is a single variable declared, it is for the index
 
 `for index := range nums {}`
 
-I see this as "memorized information"; it's arbitrary. There's no way of knowing whether it's "for the indices in the range of a collection" or "for the values in the range of a collection" without seeing it before. Since people are used to that way, switching it could be confusing, but I don't really want to rely on something like that when my goal is to offer an alternative design. Additionally, `for value : values` is the common pattern seen in other languages anyway, so it shouldn't really be surprising that `for i : values` isn't actually the index when taken out of the context of Go.
+I think "range" is used to signify that it's the indices we are dealing with.
 
-I chose to make it the **value** by default as it would be more common and intuitive as one seems to want to ignore the index by nature of using the enhanced "for an item *in* items", possibly opting for a traditional `for i = 0; i < len; i++` otherwise, or just using `for i, _ : values {}` for access to the index.
+Since people are used to it being with index, switching it could be confusing, but I don't really want to rely on something like that when my goal is to offer an alternative design. It's a different syntax, however, so it shouldn't be too surprising.
 
-- That could be problematic when frequently using this when trying to modify arrays or slices by their index, so range could be kept to mean "range of indices over"
+I chose to make it the **value** by default as it would be more common and intuitive as one seems to want to ignore the index by nature of using the enhanced "for an item *in* items".
+
+`range` could be kept to mean "range of indices over". Otherwise, `range` will be removed.
+
+Other options are the traditional `for var i = 0; i < len; i++` or just using `for i, _ : values {}` for access to the index.
+
+`for i : range values {} // indices`
+
+At that point, I don't see why range should be a reserved word, while something like `for i : range(values) {}` or `for i : values.range() {}` could just be the pattern used.
+
+Not that a native implementation could do something different, but of course `values.range()` is just `[]uint{0, 1, ..., len(values)}`, which can also function as a general utility function.
+
+In the end, I don't think there is a point in keeping the `range` keyword as its use is way too niche for something that a helper function could do. Although I don't intend to follow the exact same design reasons, this does follow the idea of "removing unnecessary complexity".
 
 ### Ternary
 
@@ -430,13 +475,13 @@ For arrays and slices, I say either keep [ ]arr with map[A, B], or just don't ma
 
 ### Map
 
-I think `map[key]value` is supposed to reflect the `func(input) val` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's is still better in practice.
+I think `map[key]value` is supposed to reflect the `func(input) val` pattern, as well as the `value = map[key]`, but there is nothing about the fundamental concept of maps that imply they should reflect the "return type afterwards" pattern. If anything, `map[key]` should not necessarily mean "get", it could have meant `contains` or `indexOf` as arrays do with `[index]`. `get(key K) V {}` will already represent the function format, since it is just a function. There aren't many other options besides `map[key, value]`. However, I think Go's default is the best in practice.
 
 I think this is too disruptive and unnecessary of a change as shown in the previous section, so I'll keep `map[key]value`
 
 ### Function
 
-The `func(P) R` syntax is fine at fixing C's spiriling function types, and, in the case of its instantiation, takes up a lot of space for minimal meaning when it's being used in function arguments.
+The `func(P) R` syntax is fine at fixing C's spiraling function types, and, in the case of its instantiation, takes up a lot of space for minimal meaning when it's being used in function arguments.
 
 People often cite `->`, but I looked at other styles later. There are way more variations than you'd expect, so don't spend too much time thinking about that.
 
@@ -548,7 +593,7 @@ With some function with side effects, `e(...)` and a function that creates a `T`
 | `func(a func())` | `(a _ -> _) -> _` | `(a _ -> ) ->` | `(a() -> _) -> _` | `(a() -> {}) -> {}` | `(a() ->) ->` | `fn(a())`   | `(a -> ) ->` | `(a -> e()) -> e()` |
 
 I like how `()` as the parameters lets the variable name work like the name of the function, which matches how it's called. Therefore, `() :` is my favorite.
-As cool as `->` is, having an empty paramater type could be really weird with names like in the last row.
+As cool as `->` is, having an empty parameter type could be really weird with names like in the last row.
 The main problem is that when they are named, like `var a ->`, `a` is too similar to a parameter.
 As well as `func(f T)` and `f func(T)`, both looking like `f T -> T` But, I think it's fine with the return empty removed if we use `f(T)` for function names and `f T` for parameters.
 Except, it feels very vague whether it's returning anything like that with no return symbol, so I say `() ->`.
@@ -582,7 +627,7 @@ Except, it feels very vague whether it's returning anything like that with no re
 
 For literals, if it actually wants to return nothing like `->_` or `->` instead of an explicit call like `noop()` in the literals, it could be a no-op by default to have it empty.
 
-In a similar way, it's hard to tell between parameters and tuples. I tried to distinguish between them by dropping the parantheses on the tuple, but leads to impossible situations.
+In a similar way, it's hard to tell between parameters and tuples. I tried to distinguish between them by dropping the parentheses on the tuple, but leads to impossible situations.
 And, I noticed that it was interesting to type using this style since I did have to think about types and literals very carefully, but it did feel unnecessarily weird at times.
 
 Mandatory check, is it literally readable? I think you can. For example, `_ : T : T` means like `take nothing and return a function that takes T and returns T` and `(sa T) : ((ri T) : T, (ga T) : T )` is like "take sa which is a T and return a pair of a func that takes ri which is a T and gives a T with a func that takes ga which is a T and returns a T"
@@ -668,10 +713,7 @@ In general, having a term like `set` while also preventing reserved words from b
 
 There isn't anything inherently significant about the keywords `map` or `len`; it can just be represented by a struct or function. So it's down to just making a language nicer. I'm also proposing `enum`, `some`, and `none`. I don't think this is crossing the line yet of having to consistently and annoyingly rename things like class to clazz yet, but that does feel like a dishonest representation of a program when renamings like that have to happen, since the restriction is coming from a meta syntactical problem, not a functional one.
 
-### Map
-
-
-*To be continued*
+I will also add that the number of keywords a language has is not what determines its complexity or simplicity. For example, you can create types and make it complex in a way. There are multiple kinds of complexities, like cyclomatic complexity, bad code flow / spaghetti code, and the complexity derived from necessary functionality of the problem are all independent but related.
 
 ### Set
 
@@ -712,7 +754,7 @@ One problem is that it implies that the set is paired with booleans, when it rea
 
 I'm going to go ahead and keep it, but it's a hard call. Ultimately, it keeps that reflection with the getter and initializer, and I feel like this functionality would be missed. I would also say it is intuitive. It also can't really create bad or even unreadable code, it just seems a bit inconsistent with the meaning of a set.
 
-It makes sense to also the boolean as a remover, it's actually similiar to how maps originally did it.
+It makes sense to also the boolean as a remover, it's actually similar to how maps originally did it.
 
 Although I prefer add and remove, I kept it as delete and insert for consistency.
 
@@ -770,7 +812,7 @@ nil/zero value can mean none or something special depending on your situation, s
 
 `Some(nil)` could eval to `None` in some contexts,
 
-but we have to detetrmine when that would happen like with `Option.OfNilable(nil)`
+but we have to determine when that would happen like with `Option.OfNilable(nil)`
 
 Option and Result are a solution to the "nilable" problem.
 
@@ -1141,7 +1183,6 @@ It should maybe be `name()` and `pos()` or `position`.
 
 In order to separate the instances from the fields, I could either use commas, which is inconsistent, or it could be two blocks:
 
-
 ```go
 type Day enum { // matches the other definition styles
     string // untagged type
@@ -1186,7 +1227,7 @@ enum Permissions {
 }
 ```
 
-It also lets you choose the type of the number, like `enum Settings : byte {}`. In my case, I will make the default the smallest possible unsigned int, but maybe they should be allowed to change it like by declaring `val int32`. It should be an implentation detail though, so it'd make more sense for them to use their own definition like `func (e E) MyVal() { 2 * e.val() - 1 }`.
+It also lets you choose the type of the number, like `enum Settings : byte {}`. In my case, I will make the default the smallest possible unsigned int, but maybe they should be allowed to change it like by declaring `val int32`. It should be an implementation detail though, so it'd make more sense for them to use their own definition like `func (e E) MyVal() { 2 * e.val() - 1 }`.
 
 I can not think of any good syntax for flags other than just doing what all the other types do.
 
@@ -1232,7 +1273,7 @@ Since these `enum` types share characteristics, their hierarchy would look like 
 
 Sum <- Enum <- Flags
 
-Since they each use `enum` and one is also called enum, I wish for a way to differentiate it. I natuarally began calling it "regular", but this could just mean "any kind of" enum, so I have decided that a "tab" ("tabulation", "tabular", "tabulate", "table") is a good way of representing it, since a tab is (oftened keyed) rows with columns of data per row. The columns here being the enum constant name and the fields.
+Since they each use `enum` and one is also called enum, I wish for a way to differentiate it. I naturally began calling it "regular", but this could just mean "any kind of" enum, so I have decided that a "tab" ("tabulation", "tabular", "tabulate", "table") is a good way of representing it, since a tab is (often keyed) rows with columns of data per row. The columns here being the enum constant name and the fields.
 
 So, with the example from earlier, this would be a tab:
 
@@ -1250,7 +1291,7 @@ That means the table above could be equal to a final `(root string, workday bool
 
 ### Union
 
-First, there is alse the question of whether the `union` keyword is needed, since these two are equal:
+First, there is also the question of whether the `union` keyword is needed, since these two are equal:
 
 ```go
 type pos = int | [2]int
@@ -1298,7 +1339,7 @@ As long as they are each distinct and useful in their own circumstances for that
 | Property                 | `struct`/tuple     | `interface`           | Union `interface`    | Functional `interface` | Tab `enum` (Wo)                               | Flags `enum` (Wo) | Sum `enum` (Wo)                      |
 |--------------------------|--------------------|-----------------------|----------------------|------------------------|-----------------------------------------------|-------------------|--------------------------------------|
 | Tagged                   | Optional           | Optional              | No                   | Optional               | Yes                                           | Yes               | Yes                                  |
-| Inner Type Decl Content  | Types              | Methods/Types         | Untaggedt Variant    | Method                 | Final Instances and Methods/Types             | `uint`s           | Tagged Variants                      |
+| Inner Type Decl Content  | Types              | Methods/Types         | Untagged Variant     | Method                 | Final Instances and Methods/Types             | `uint`s           | Tagged Variants                      |
 | Inner Decl `type X _`... | `{ int\ *string }` | `{ int\func walk() }` | `{ int16 \| int64 }` | `{ hash() int }`       | `{ moons int } const X { Earth(1), Mars(2) }` | `{ R\W\Ex }`      | `{ None\Num(int)\Big(string) }`      |
 | Value `var t = `...      | `{5, &"C++"}`      | `3` or `walkable`     | `10`                 | `func hash() ...`      | `Earth`                                       | `Wood \| Brick`   | `None` or `Big("999")`               |
 | Algebraic Symbol Usage   | `([]int, string)`  | `<Walk(), Find()>`    | `float32 \| int32`   | `func()` or `<f()>`    | `Arabic(false) + Latin(true) + Greek(true)`   | `N + S + W + E`   | `Out(sea int) + In(mountain string)` |
@@ -1412,7 +1453,7 @@ And the same goes for structs since they similarly have fields.
 
 What if we extend the Union type syntax with the other set symbols as above? Would it still make sense? would it be useful? Other languages can do this, but let's see how that would work with Go's system.
 
-Also see: https://go.dev/ref/spec#Type_unification
+Also see: https://go.dev/ref/spec#Type_unification.
 
 It is already possible with union, but I think it can be done with structs and sums. Enum could be weird when it has field info.
 
@@ -1489,7 +1530,7 @@ The last one is a bit excessive and is probably better as a full `struct`.
 
 This is just like the tuple type but without parens, which makes perfect sense. This is basically just allowing tuples as a type beyond the return type. All the same logic would follow; tuples can also be null and have methods.
 
-I think it should always have parantheses. This also differentiates it with tuple literals.
+I think it should always have parentheses. This also differentiates it with tuple literals.
 
 ```go
 type Walk = (distance float32, StayedHome + Outdoors(destinations ...string))
@@ -1610,7 +1651,6 @@ func (length Length) ToInches() float32 {
 
 Switch-case could also be an expression as shown here.
 
-
 ## Generics
 
 Here are some limitations of Go generics. These aren't necessarily unnecessary limitations, and they could be serving as something deliberately useful. If I change the rest of the type system, all of this does need to be looked at too though.
@@ -1636,7 +1676,7 @@ The description [from Google](https://go.googlesource.com/proposal/+/refs/heads/
 > 
 > In Go, one of the main roles of methods is to permit types to implement interfaces. It is not clear whether it is reasonably possible to permit parameterized methods to implement interfaces.
 
-It then gives an example that makes this argument: A type `S` with a `Func[any]` that matches an interface `H` with a parameterized method `Func[any]` could be called in a different scope than `S.Func` as: `S.(H).Func[int]`, which needs to be instatiated.
+It then gives an example that makes this argument: A type `S` with a `Func[any]` that matches an interface `H` with a parameterized method `Func[any]` could be called in a different scope than `S.Func` as: `S.(H).Func[int]`, which needs to be instantiated.
 
 It provides some solutions: Instantiate it at link time. Instantiate it at runtime, which may use JIT. And, make it not implement the matching interfaces. Out of all of these, the last seems the most sensible.
 
@@ -1668,44 +1708,52 @@ Wo would simply allow this. It will become a warning and compiled away. The reas
 
 ### Variable declaration
 
+Note that I haven't come to a final conclusion on this one yet.
+
 Go offers these styles of declarations:
 
 ```go
 //z := 1 // not possible at package level
 func declares() {
- var a int = 1
- var c = 1
- d := 1
- var e int
- var (
-     // all the same things it could already do
- )
- var m, n int = 1, 2
- var q, r = 1, 2
- s, t := 1, 2
- var u, v int
- 
- e = 2        // possible, just assigns
- e, y := 2, 3 // possible
- if d == 1 {
-     d := 2   // possible
-     m, n := 3, 4 // possible
- }
- // at this point,
- // d == 1
- // m, n == 1, 2 
- 
- // note: e was already declared (we wouldn't need this note if shadowing were more explicit)
- e := 2       // not possible
- e, _ := 2, 3 // not possible
- 
- b int := 1 // not possible
- f int // not possible (unlike C style int f;)
- var X // not possible
-o, p int := 1, 2 // not possible
-w, x int // not possible
- 
- fmt.Println(a, b, ... x, y) // haha
+  var a int = 1 // suggestion: unnecessary type
+  var c = 1
+  d := 1
+  var e int // except const
+  var m, n int = 1, 2
+  var q, r = 1, 2
+  s, t := 1, 2
+  var u, v int // except const
+  e = 2 // except const e
+  e, n = 0, 1 // except const e
+  e, y := 2, 3 // except const e
+  var (
+    // ...all the same things above without "var" and no := declarations
+    // same with const but no "name type" declarations
+  )
+  { // shadow
+    var a int = 2
+    var c = 1
+    d := "other type"
+    var e int16
+    var q, r = 2, 1
+
+    fmt.Println(a, c, d, e, q, r)
+  }
+  // at this point,
+  // d == 1
+  // m, n == 1, 2 
+
+  // e was already declared
+  e := 2        // not possible
+  e, _ := 2, 3  // not possible
+   
+  b int := 1    // not possible
+  f int         // not possible (unlike C style int f;)
+  var X         // not possible
+  o, p int := 1, 2 // not possible
+  w, x int      // not possible
+   
+   fmt.Println(a, c, ... x, y)
 }
 ```
 
@@ -1719,24 +1767,31 @@ const g int = 8      const ( h = 8 )
 f, _ = 10, 11        c = "aoeu"
 ```
 
-R - Required, ! - None, ? - Optional, # - Other
+`X` - Required
 
-Each column will represent these in order. So the last column of this grid represents an assignment
+` ` - Not allowed
+
+`?` - Optional
+
+`#` - Special
+
+Each column represents a case. For example, the second to last column of this grid represents an assignment `name = val`.
 
 ```
-const  ! ! ! R !
-var    R R ! ! !
-(...)  ? ? ! ? ? // var ( a = 1, ... )
-names  R R R R R
-  :=   ! ! R ! !
-types  ? R ! ? !
-litral ? ? ? R ?
-  =    R ! ! R R
-values R ! R R R
-at pkg ? ? ! ? ?
-multi  ? ? R ? ? // a, b =
-shadow ! ! # ! ?
-count  2 1 2 2 2
+const         X   ?
+var     X X       ?
+(...)   ? ?   ? ? X  var/const ( a = 1, ... )
+names   X X X X X  
+  :=        X      
+types   ? X   ?    
+litral  ? ? ? X ?  
+  =     X     X X  
+values  X   X X X  
+at pkg  ? ?   ? ?    scope
+multi   ? ? X ? ?    a, b
+shadow      #   ?  
+
+count   2 1 2 2 2  
 
 var names (type  |  (= values))  |
 var \( (names (type  |  (= values)))... \)   |
@@ -1745,71 +1800,188 @@ name := value {not in package level}
 // where names is really (name | (name | _)...)
 ```
 
-That adds up to 9 main possibilities by ignoring literal, package, multi declaration, and `( ... )`
+That adds up to 9 main possibilities by ignoring literal, package, multi declaration, and `var ( ... )`.
 
-For C, it would be like this, ignoring anything that became all disallowed
+You can technically have a `var()` or `const()` alone, that's what the last column is. Some other obscured rules are that you can't assign constant variables and that you can shadow `const`s with `var`s or vice versa.
 
-```
-prefxs ? ! (const, volatile, static)
-types  R !
-names  R R
-  =    R R
-value  ? R
-```
-
-the first column represents `long id = 16`
-
-and the second is `id = 32`
-
-These two systems both result in basically the same exact thing, except adapting to different needs for optimization.
-
-Can I make it stricter without sacrificing Go's functionality?
+For C, it would be like this, ignoring anything that became completely disallowed.
 
 ```
-const  ? ! R ! ! #
-names  R R R R R R
-types  R ! ! ! ! R
-  =    R R R R ! R
-values R R R R R ?
-
-var    ! R ! ! ! R
-(...)  ! ! ! ! ! R
-
-  :=   ! ! ! ! R !
-shadow ! ! ! ! R !
-count  2 1 1 1 1 3
+prefxs ?   (extern, const, volatile, static)
+types  X  
+names  X X
+  =    X X
+value  ? X
 ```
 
-I made const like a prefix, required the type, only allow var for multi line and untyped decl, allow everything in or out of the package, and actually added more specification than before by requiring `:=` for shadowing.
+The first column represents something like `long id = 16`,
 
-This is 7 possibilities without including `(...)` as before, but 8 otherwise, which takes the original 9, removes 5 redundant ones, then adds 3 restrictive one. It adds conditions so there are not multiple ways to do the same task. Only one assignment, only one const declaration, only one shadow, etc., but does not merge untyped declaration.
+and the second columns is an assignment like `id = 32`.
 
-Here's every possibility in Wo according to that grid:
+These two systems can both basically do the same exact thing, except for when adapting to different needs for optimization.
+
+Can I make Go's grid stricter without sacrificing functionality (almost like finding first normal form)?
+
+```
+const   ?   X  
+var       X    
+names   X X X X
+types   X   ?  
+  =     X X X X
+values  X X X X
+(...)     X X  
+multi   ? ? ?  
+:(=)    ? ? ?  
+
+count   2 1 2 1
+ident   x a B x  the variable names used below
+```
+
+I've yet to modify how the multiple declaration works at this point, but here's every possibility according to that grid:
 
 ```go
-x int = 8
-a var = 8
-var e int // = undefined, not = 0. can't be const
-y const int = 9 // maybe: const y int = 9
-b const = y // maybe: b const var = y
+// hypothetical, not final decision. There are more options down below.
+
+x int = 3
+var a = 8
+const X int = 9
+const B = X
 x = b
-{ x := 0 }
-var ( z, _ (int, error) = count() )
-    // ~~ g const int        = 84 // mixed ~~
-const ( b string = "永", e error = nil )
+// x := b not allowed; doesn't shadow, use var x = for defining
+{ // shadow
+  x int := 0
+  var a := "other type"
+  const X int := 99
+  const B := a
+  x = b  // assign
+  // x := 1 not allowed
+}
+var ( z, _ = count() )
+const ( H = "永", E error = nil ) // same rules
 ```
 
-`var` and `const` are not placed at the start of the line to keep the variable names inline with each other, but puts it before the type since that's what it is a part of, so it is then readable with the type as "y is a constant integer" and "a is a variable".
+I required the type, but left `var` for only when it's untyped.
 
-TBD I could put both `const var` together to show that the **type** is variable.
+Everything is allowed both in and out of the package level.
 
-TBD I'm not sure whether to require the type to be stated. The one time that could be annoying is for tuples, since their types are a bit bigger. I tried without the parentheses, it becomes hard to tell between the name and type.
+Multiple line declarations can't be empty.
+ 
+That has `:=` as required for shadowing - when making a new variable in an inner scope with the same name. Since that's its only rule, and since you can shadow with `var` or with the types, then `:=` is allowed with `var` in this layout. That pattern exists in many places already, like you could theoretically use get rid of `func` and `struct` by going `type fn() {}` and `type S {}`. We don't do that since it's just hard to read, and shadowing is also hard and difficult to read. Or, if you go the opposite direction, then we'd say `union` instead of `interface`, and if you go too far, then the reserved words become as specific as `uint13` or `recursive_static_package_deprecated_helper_inline_method f()`. At the very least, shadowed shouldn't be conflated with assignments, which it already isn't.
 
-Requiring the value does mean that zero values are removed. It might sound like a dramatic change, but zero values are unpredictable; they do not declare intent. string's default value is "", even though it is similar to a char* internally and most languages default strings to null, making that more expected, especially since nullptr is 0. I could just make string nullable / require their value to be defined, but I'm removing it for all the other types anyway because they're still vague.
+Fuller comparison at [variables.go](https://github.com/wo-language/wo-info/blob/main/examples/go/variables.go).
 
-I recycled the same symbols by keeping just some of their usage with `var ()` and `const ()`. As well as with `:=`.
+I removed the multi assignment, `a, b = 5, "Z"` as this is tricky to read and unnecessarily horizontal. I kept the other multi declares since it is useful for unwrapping tuples.
 
-I made `:=` as only shadow since that's what it already does, but now it will be seen as a rare symbol. Like the table implies, `=` can't be used for the exclusive case of shadowing. This serves as an alert. If either you make a new variable that is getting shadowed by later code, or if you name something the same as earlier code, this will error "`can't shadow a variable with =`". And if you were to unshadow something like as just described, then the reverse would happen "`can't assign a variable with :=`".
+I understand it can be used as a shortcut in the for loop iteration like:
+
+`for i, val := 0, 1; i < 10; i, val = i + 1, val * val {}`
+
+but this is pervasively long. It seems to be unnecessarily generalizing. That sort of logic should go into the loop:
+
+`for var i, val = 0, 1; i < 10; i++ { val *= val }`
+
+From the original 9 cases, I removed some redundant cases and added some restrictive one. Without including multi declarations `(...)` or shadowing included as before with the 9, then this is something like 6 cases. It adds conditions so that there are not multiple ways to achieve the same thing. Only one assignment, only one const declaration, only one shadow, etc. except that there is still both `var ( D )` and `var D` at this point.
+
+To show the extent of redundancy in variable declarations, these five all result in the same thing in Go:
+
+```go
+var same string = "winter"
+var same = "winter"
+same := "winter"
+var ( same string = "winter"
+      same = "winter" )
+```
+
+Right now, I'm proposing this:
+
+```go
+same string = "winter"
+var same = "winter"
+var ( same = "winter" )
+```
+
+I'm not sure whether to require the type to be always stated in the first place. Since this language isn't really focused on polymorphism, then it's not too important. The one time that could be annoying is for tuples, since their types are a bit bigger. I tried without the parentheses, it becomes hard to tell between the name and type. I don't think it's actually insecure to not state the type on the left hand side, but probably unnecessarily verbose.
+
+This variable model is not yet fully described, since the placements weren't specified.
+
+"Go has `var` since it does that with `func` and `type` too" isn't a well-formed argument, especially since `:=` doesn't have `var` anyway.
+
+As for `var` and `const`, I've debated whether to keep them at the start of the line to keep the variable names inline with each other. It'd go along with where the type goes. `y const int` and `alpha var` would then be read as "y is a constant integer" and "alpha is a variable". I've decided that its consistency with the other declarations isn't really needed. This is what it would look like, though:
+
+```go
+x int = 3        // x is an integer which equals three
+age var = 8      // age is a var that equals eight / age varies in type and equals eight
+y const int = 9  // y is a constant integer which equals nine
+b const = y      // b is a constant which equals y / b is a constant that varies in type and equals y
+var ( z, _ (*int, error) = count() )
+const ( H = "永", E error = nil )
+```
+
+`var ()` and `const ()` become inconsistent with the regular declarations. The simple resolution is to just have both though. However, the enum pattern could make those redundant anyway. So, if there is rarely any other reason to have it, then it should be removed. If it's only meant to differentiate package and function level declarations, then I don't think it's necessary.
+
+Another problem here is that `var` doesn't really just mean variable now, otherwise we could use it everywhere. It has two meanings, one is to guess the type, and the other is "variable". This has a very similar meaning as `auto`. `var` does mean that in Java, but `var` already came with that extra meaning here. I guess it could just mean something different though. I will try `auto` though, since that's actually what's happening.
+
+I have also thought about making const like a prefix. That means using `const var` together since `const` is technically just a shortcut of that. What that would look like with `auto` is:
+
+```c
+x int = 3         // x is an integer which equals three
+age auto = 8      // age is an auto-typed which equals eight
+y const int = 9   // y is a constant integer which equals nine
+b const auto = y  // b is a constant auto-typed which equals y
+var ( z int = 9, h auto = x )
+const var ( B string = "永", E error = nil )
+```
+
+This also lets `var` and `auto` to be mixed together.
+
+This is interesting since it's semantically very obvious, but only one potential issue is that:
+
+```
+name := val
+name auto = val
+```
+
+The simple case is 4 characters longer than the typical `:=`. I'm not a fan of making decisions based on typing time, so I still think it's quite readable.
+
+However, it should be obvious that the lack of a type implies that the type will be automatically determined anyway.
+
+What if I revive `:=` for all auto typing? I'll put `const` back at the start since it doesn't need to be coupled with the type as `var` was anymore. And I won't do anything with shadowing.
+
+```go
+x int = 3          // x is an integer which equals three
+age := 8           // age is set to eight
+{
+  x int = -10
+  age := -4
+  const y int = 9  // y is a constant integer which equals nine
+  const b := y     // b is a constant set to y
+} // x == 3
+var ( z int = 9, h = x )
+```
+
+It's pretty hard for this to budge without stepping even further back. This is the final grid I'm at, though:
+
+```
+const   ? ?   X  
+var         X    
+names   X X X X X
+types     X   ?  
+  =       X X X X
+values  X X X X X
+(...)       X X  
+multi     ? ? ?  
+ :=     X        
+
+count   1 2 1 2 1
+```
+
+#### Zero values
+
+Requiring the value does mean that zero values are removed. It might sound like a dramatic change, but zero values are unpredictable; they do not declare intent. If a string starts as `""`, then slice should start as `{}` if we are trying to be predictable. `string`'s default value is "" even though it is similar to a char* internally and most languages default strings to null, making that more expected, especially since nullptr is 0. I could just make string nullable / require their value to be defined, but I'm removing it for all the other types anyway because they're still vague.
+
+I made `:=` as only shadow since that's what it already does, but now it will be seen as a rare symbol. Like the table implies, `=` can't be used for the exclusive case of shadowing.
+
+This serves as an alert. If either you make a new variable that is getting shadowed by later code, or if you name something the same as earlier code, this will error "`can't shadow a variable with =`". And if you were to unshadow something like as just described, then the reverse would happen "`can't assign a variable with :=`".
 
 `:=` can theoretically happen at the package level, while it is not allowed in Go.
 
@@ -1825,18 +1997,10 @@ d, _ := getPoint()
 but you would not be able to do `p := getPoint()` nor could you do `y := getPoint()` to select just the `y` part of the return values. One pattern is to use a struct, but let's see what it could look like in a longer flow of functions
 
 ```go
-
+// just imagine it for now, okay?
 ```
 
 Although it's more of an exception, since `for i := range stuff {}` is already allowed to shorten the `i, _` in Go, it's easy to justify it being allowed elsewhere.
-
-TBD I will probably remove it for multiple valued assignments like
-
-```go
-a, b = 1, 2
-```
-
-as this is tricky to read and unnecessarily horizontal.
 
 ### Inline multiple values
 
@@ -1872,10 +2036,10 @@ Some functions will be added as a side effect of adding in types, like the `sets
 A planned feature is to have shortcut semi-methods, where `Delete(m, e)` could be written as `m.Delete(e)`.
 
 Should Wo also have standard library functions? It was originally meant to just focus on language features, as opposed to something one could just import,
-however, if an addition to the library contributes to all of the same goals (i.e. readability) that everything else was, then it should be considered.
+however, if an addition to the library contributes to all of the same goals (i.e. readability) that everything else was, then it should be considered. Some packages are just necessary by nature of the design goal, though.
 
 Another example is [DebugString()](https://www.dolthub.com/blog/2025-01-03-gos-debug-string-pseudo-standard/). Not only could I have this as a default, but I could add it to existing native types, so it's a stronger contender than something that could just be an import.
-I've yet to fully explore wihch packages should be included, but it should only be something needed or utterly wanted.
+I've yet to fully explore which packages should be included, but it should only be something needed or utterly wanted.
 
 All the packages/files to be added: [sets](/src/sets/sets.go), [set](/src/runtime/set.go), [setiter](src/sets/iter.go), option, errable, enum, and collections
 
@@ -1923,7 +2087,7 @@ tree.leftBranch().cut()
 
 `tree` is intentionally vague to a certain level. If I'm talking about an abstract tree, then `tree` is the best name as it has an intentional amount of vagueness, which actually makes it less vague because it makes it more descriptive overall. Even then, I could be referring to a literal tree plant or a programmatic tree, but `t` still has much less meaning than that.
 
-Do removing characters improve readability and adding characters impede readability? Readability means **the ability to read**, which requires the existence of text to read. Cutting off the text makes it har
+Does removing characters improve readability and adding characters impede readability? Readability means **the ability to read**, which requires the existence of text to read. Cutting off the text makes it har
 
 Get it?
 
@@ -2075,6 +2239,10 @@ It's not really a laughing matter at that point, programs should be able to repr
 > Type conversions between slices and array pointers can fail at runtime and don’t support the comma ok idiom, so be careful when using them!
 >
 > Learning Go
+
+There is unexpected slice appending behavior with references and resizing.
+
+In Go, you can call getters on uninitialized maps, but not setters. They are both initialized as `nil`, since that's their zero value, but the way you use them ends up being different since `append(nil, ...)` on slices, but not `nilmap[key] = v`.
 
 *To be continued*
 
