@@ -64,9 +64,8 @@ Also see [justifications.md](/justifications.md) and [specification.md](/specifi
 | Doesn't allow **import overloading** or **keyword overloading** | `var int int = 1`, `rune := 'W'`<br/>`import { strings }; var strings []string` | *compile error*                                                   |
 |                 **Warns** for unused variables                  | `func f() { x := 1 }`<br/>*compile error*                                       | *warning*                                                         |
 |       No accessing uninitialized variables (zero values)        | `var s string // = ""`<br/>`s += "." // s == "."`                               | `var s string`<br/>`s += "." // error`<br/>`var t string? = None` |
-|               Assign variables with **only** `=`                | `var e int; e, z := 8, 9; e = 7`                                                | `var e = 0; e = 7`                                                |
-|  `:=` for shadowing **only** and not mixed with initialization  | `h := 1; { h, m := 2, 5 }`                                                      | `var h = 1; { h := 2; var m = 5 }`                                |
-|             Untyped declaration with **only** `var`             | `var a = 1`, `x := 1`                                                           | `var a = 1`<br/>                                                  |
+|    Assign variables with **only** `=` (not mixed with init)     | `var e int; e, z := 8, 9; e = 7`                                                | `var e = 0; e = 7`                                                |
+|             Untyped declaration with **only** `:=`              | `var a = 1`, `x := 1`                                                           | `a := 1`<br/>                                                     |
 |       Initialize with type with **only** `=` and no `var`       | `var i int = 2`                                                                 | `i int = 2`                                                       |
 |                       No multi assignment                       | `p, q = 20, 30`                                                                 | *compile error*                                                   |
 

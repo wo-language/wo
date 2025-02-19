@@ -1736,6 +1736,7 @@ func declares() {
     d := "other type"
     var e int16
     var q, r = 2, 1
+	  b, t := 9, 8 // half init, half shadow
 
     fmt.Println(a, c, d, e, q, r)
   }
@@ -1778,40 +1779,35 @@ f, _ = 10, 11        c = "aoeu"
 Each column represents a case. For example, the second to last column of this grid represents an assignment `name = val`.
 
 ```
-const         X   ?
-var     X X       ?
-(...)   ? ?   ? ? X  var/const ( a = 1, ... )
-names   X X X X X  
-  :=        X      
-types   ? X   ?    
-litral  ? ? ? X ?  
-  =     X     X X  
-values  X   X X X  
-at pkg  ? ?   ? ?    scope
-multi   ? ? X ? ?    a, b
-shadow      #   ?  
+const           X   ?
+var     X X         ?
+(...)   ? ?     ? ? X  var/const ( a = 1, ... )
+names   X X X X X X  
+types   ? X     ?    
+  =     X       X X  
+ :=         X X      
+values  X   X X X X  
+at pkg  ? ?     ? ? ?  scope
+multi   ? ? ? X ? ?    a, b
+assign        X ? X  
+shadow  ? ? ? ? ? ?  
 
-count   2 1 2 2 2  
-
-var names (type  |  (= values))  |
-var \( (names (type  |  (= values)))... \)   |
-name := value {not in package level}
-
-// where names is really (name | (name | _)...)
+count   2 1 1 1 2 1 1
 ```
 
 That adds up to 9 main possibilities by ignoring literal, package, multi declaration, and `var ( ... )`.
 
 You can technically have a `var()` or `const()` alone, that's what the last column is. Some other obscured rules are that you can't assign constant variables and that you can shadow `const`s with `var`s or vice versa.
 
-For C, it would be like this, ignoring anything that became completely disallowed.
+For C, it would be like this, ignoring anything that became redundant.
 
 ```
-prefxs ?   (extern, const, volatile, static)
+prfxs  ?   (extern, const, volatile, static)
 types  X  
 names  X X
   =    X X
 value  ? X
+multi  ?  
 ```
 
 The first column represents something like `long id = 16`,
@@ -1825,13 +1821,13 @@ Can I make Go's grid stricter without sacrificing functionality (almost like fin
 ```
 const   ?   X  
 var       X    
+(...)     X X  
 names   X X X X
 types   X   ?  
   =     X X X X
-values  X X X X
-(...)     X X  
-multi   ? ? ?  
 :(=)    ? ? ?  
+values  X X X X
+multi   ? ? ?  
 
 count   2 1 2 1
 ident   x a B x  the variable names used below
@@ -1866,7 +1862,7 @@ Everything is allowed both in and out of the package level.
 
 Multiple line declarations can't be empty.
  
-That has `:=` as required for shadowing - when making a new variable in an inner scope with the same name. Since that's its only rule, and since you can shadow with `var` or with the types, then `:=` is allowed with `var` in this layout. That pattern exists in many places already, like you could theoretically use get rid of `func` and `struct` by going `type fn() {}` and `type S {}`. We don't do that since it's just hard to read, and shadowing is also hard and difficult to read. Or, if you go the opposite direction, then we'd say `union` instead of `interface`, and if you go too far, then the reserved words become as specific as `uint13` or `recursive_static_package_deprecated_helper_inline_method f()`. At the very least, shadowed shouldn't be conflated with assignments, which it already isn't.
+That design has `:=` as required for shadowing - when making a new variable in an inner scope with the same name. Since that's its only rule, and since you can shadow with `var` or with the types, then `:=` is allowed with `var` in this layout. That pattern exists in many places already, like you could theoretically use get rid of `func` and `struct` by going `type fn() {}` and `type S {}`. We don't do that since it's just hard to read, and shadowing is also hard and difficult to read. Or, if you go the opposite direction, then we'd say `union` instead of `interface`, and if you go too far, then the reserved words become as specific as `uint13` or `recursive_static_package_deprecated_helper_inline_method f()`. At the very least, shadowed shouldn't be conflated with assignments, which it already isn't.
 
 Fuller comparison at [variables.go](https://github.com/wo-language/wo-info/blob/main/examples/go/variables.go).
 
@@ -1892,7 +1888,7 @@ var ( same string = "winter"
       same = "winter" )
 ```
 
-Right now, I'm proposing this:
+Right now, this is:
 
 ```go
 same string = "winter"
@@ -1900,11 +1896,11 @@ var same = "winter"
 var ( same = "winter" )
 ```
 
-I'm not sure whether to require the type to be always stated in the first place. Since this language isn't really focused on polymorphism, then it's not too important. The one time that could be annoying is for tuples, since their types are a bit bigger. I tried without the parentheses, it becomes hard to tell between the name and type. I don't think it's actually insecure to not state the type on the left hand side, but probably unnecessarily verbose.
+I'm not sure whether to require the type to be always stated in the first place. Since this language isn't really focused on polymorphism, then it's not too important. The one time that could be annoying is for tuples, since their types are a bit bigger. I tried without the parentheses, it becomes hard to tell between the name and type. I don't think it's actually insecure to not state the type on the left hand side, but it's unnecessarily verbose.
 
 This variable model is not yet fully described, since the placements weren't specified.
 
-"Go has `var` since it does that with `func` and `type` too" isn't a well-formed argument, especially since `:=` doesn't have `var` anyway.
+"Go has `var` since it does that with `func` and `type` too" isn't a well-formed argument, especially since `:=` doesn't have a `var` anyway.
 
 As for `var` and `const`, I've debated whether to keep them at the start of the line to keep the variable names inline with each other. It'd go along with where the type goes. `y const int` and `alpha var` would then be read as "y is a constant integer" and "alpha is a variable". I've decided that its consistency with the other declarations isn't really needed. This is what it would look like, though:
 
@@ -1949,31 +1945,45 @@ What if I revive `:=` for all auto typing? I'll put `const` back at the start si
 
 ```go
 x int = 3          // x is an integer which equals three
-age := 8           // age is set to eight
+age := 8           // age is defined as eight
 {
   x int = -10
+  x = 5
   age := -4
   const y int = 9  // y is a constant integer which equals nine
-  const b := y     // b is a constant set to y
+  const b := y     // b is a constant defined as y
 } // x == 3
 var ( z int = 9, h = x )
 ```
 
+But having a leading `var` for `x int` is probably meant to make it more visible that this is a declaration and not an assignment. The `int x = 0` style was already recognizable as a declaration though, and I think the same is true here too.
+
+It's also semantically inconsistent for `=` to mean equals and `:=` to mean defined as, when they both mean the same thing in practice. `:=` could either replace all `=` for declarations, or `:=` could just be verbally redefined as a "type prediction initialization".
+
+It might be a little weird that I ended up at `const _ :=`, but this is because I had made `const` like a prefix to add onto any declaration, rather than a variation of `var`. If `:=` is to imply type prediction, then this should stay to mean "constant type predicted".
+
 It's pretty hard for this to budge without stepping even further back. This is the final grid I'm at, though:
 
 ```
-const   ? ?   X  
-var         X    
-names   X X X X X
-types     X   ?  
-  =       X X X X
-values  X X X X X
+const   ? ? ? ?  
+var         X X  
 (...)       X X  
-multi     ? ? ?  
- :=     X        
+names   X X X X X
+types     X   X  
+ :=     X   X    
+  =       X   X X
+values  X X X X X
+multi   ? ? ? ?  
 
-count   1 2 1 2 1
+count   1 2 1 1 1
 ```
+
+The only overlaps are the multi-declarations, which technically aren't overlaps if you consider being able to declare multiple things as separate. It's technically more verbose since `const` and `var` don't turn `:=` into an `=`.
+
+What if
+
+*To be continued.*
+
 
 #### Zero values
 
@@ -2048,6 +2058,8 @@ Added, but are meant to be private: [set_fast32](/src/runtime/set_fast32.go), [s
 More options:
 
 Time, Testing
+
+It also lacks some integer math like absolute value https://stackoverflow.com/questions/57648933/why-doesnt-go-have-a-function-to-calculate-the-absolute-value-of-integers
 
 ### Variable naming
 
@@ -2244,7 +2256,78 @@ There is unexpected slice appending behavior with references and resizing.
 
 In Go, you can call getters on uninitialized maps, but not setters. They are both initialized as `nil`, since that's their zero value, but the way you use them ends up being different since `append(nil, ...)` on slices, but not `nilmap[key] = v`.
 
-*To be continued*
+This is an example from *Learning Go* (with modified numbers):
+
+*What does this print?*
+
+```go
+x := make([]int, 0, 5)
+x = append(x, 1, 2, 3, 4)
+y := x[:2]
+z := x[2:]
+y = append(y, 5, 6, 7)
+x = append(x, 8)
+z = append(z, 9)
+fmt.Println("x:", x)
+fmt.Println("y:", y)
+fmt.Println("z:", z)
+```
+
+I do challenge you to solve this on your own.
+
+If you aren't familiar with Go's slice manipulation or need a reminder:
+
+`make([]type, length, capacity) *[]type`
+
+`slice[a:b]` is a pointer at index `a` on the slice, with a length of `b - a`
+
+`s[:b]` means `[0:b]`, pointing at the start of `s` with a length of `b`, and `[a:]` cuts `a` elements off of the left side.
+
+And, crucially, assigning arrays does not copy the values of the array, it gives you a pointer.
+
+And here's what it prints:
+
+>! x: [1 2 5 6 9], y: [1 2 5 6 9], z: [5 6 9]
+
+Did you get it right?
+
+Let's annotate it to see what's happening:
+
+```go
+// x ...                  // [a{b c}d X] means x = [b c]; x points to b with a length of 2, and X is unset
+x := make([]int, 0, 5)    // [ X X X X X ] x = []
+x = append(x, 1, 2, 3, 4) // [{1 2 3 4}X ] cap(x) = 5
+y := x[:2]                // [{1 2}3 4 X ] cap(y) = 5
+z := x[2:]                // [ 1 2{3 4}X ] cap(z) = 3 - caps don't change again
+y = append(y, 5, 6, 7)    // [{1 2}3 4 X ] = [{1 2 5 6 7}]
+x = append(x, 8)          // [{1 2 5 6}7 ] = [{1 2 5 6 8}]
+z = append(z, 9)          // [ 1 2{5 6}8 ] = [ 1 2{5 6 9}]
+fmt.Println("x:", x)      // [{1 2 5 6 9}]
+fmt.Println("y:", y)      // [{1 2 5 6 9}]
+fmt.Println("z:", z)      // [ 1 2{5 6 9}]
+```
+
+To me, figuring this out was crazy. It felt like a relatively beginner problem about the basics of slices and arrays, but it took me some careful debugging to get this one.
+
+The key here is that they are all overwriting the same memory at different spots.
+
+Maybe it's more comprehensible if we look at it in the same way we look at C arrays:
+
+```c
+// x+1 = ...                   // [a>b c] means x+1 is pointing to b
+int* x = malloc(5 * sizeof(int)); // [ X X X X X ] x = []
+x = {1, 2, 3, 4}; // [>1 2 3 4 X ] // len(x) = 4
+int* y = x;                // [>1 2 3 4 X ] // len(y) = 2
+int* z = x + 2;            // [ 1 2>3 4 X ] // len(z) = 3
+y + len(y) = {5, 6, 7};    // [ 1 2>3 4 X ] = [ 1 2>5 6 7 ]
+x + len(x) = {8};          // [ 1 2>5 6 7 ] = [ 1 2>5 6 8 ]
+z + len(z) = {9};          // [ 1 2 5 6>8 ] = [ 1 2 5 6>9 ]
+                        // x: [>1 2 5 6 9 ]
+                        // y: [>1 2 5 6 9 ]
+                        // z: [ 1 2>5 6 9 ]
+```
+
+This isn't actually how C works, but I think this makes it clearer what's actually happening when we consider their pointer nature.
 
 ## Other
 
